@@ -6,117 +6,234 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary_dark"
-    android:padding="16dp"
+    android:padding="24dp"
     tools:context=".HomeActivity">
 
-    <TextView
-        android:id="@+id/tvHomeTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/home_title"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold"
+    <!-- Top App Logo and Header -->
+    <ImageView
+        android:id="@+id/ivHeaderLogo"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_app_logo_hero"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tvStatus"
+        android:id="@+id/tvHeaderTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/app_name"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivHeaderLogo" />
+
+    <TextView
+        android:id="@+id/tvServerStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Status: Connecting..."
-        android:textColor="@color/accent_green"
-        android:textSize="13sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvHomeTitle" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilRoomCode"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:hint="Room Code (e.g. A3K9P)"
-        android:textColorHint="@color/text_secondary"
-        app:boxStrokeColor="@color/accent_green"
-        app:hintTextColor="@color/accent_green"
+        android:text="Status: Connecting to server..."
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvStatus">
+        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etRoomCode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textCapCharacters"
-            android:maxLength="5"
-            android:textColor="@color/white"
-            android:textSize="16sp" />
-    </com.google.android.material.textfield.TextInputLayout>
-
+    <!-- SECTION 1: Initial State (Create Room & Join Room Buttons) -->
     <LinearLayout
-        android:id="@+id/llActions"
+        android:id="@+id/llHomeActions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tilRoomCode">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCreateRoom"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:text="Create Room"
-            android:textColor="@color/black"
-            app:backgroundTint="@color/accent_green" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnJoinRoom"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:text="Join Room"
-            android:textColor="@color/black"
-            app:backgroundTint="@color/accent_green" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLeaveRoom"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_weight="1"
-            android:text="Leave"
-            android:textColor="@color/white"
-            app:backgroundTint="#FF5252" />
-    </LinearLayout>
-
-    <ScrollView
-        android:id="@+id/svLog"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:background="@color/card_background"
-        android:padding="12dp"
+        android:orientation="vertical"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/llActions">
+        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
 
-        <TextView
-            android:id="@+id/tvLog"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCreateRoom"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/create_room"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/accent_green"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnJoinRoom"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/join_room"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/accent_green"
+            app:strokeWidth="2dp" />
+
+    </LinearLayout>
+
+    <!-- SECTION 2: Join Input Section (Shown when Join Room is tapped) -->
+    <LinearLayout
+        android:id="@+id/llJoinInputSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilJoinRoomCode"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:text="=== WebRTC Debug Logs ===\n"
+            android:hint="Enter 5-Character Room Code"
+            android:textColorHint="@color/text_secondary"
+            app:boxStrokeColor="@color/accent_green"
+            app:hintTextColor="@color/accent_green">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etJoinRoomCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:inputType="textCapCharacters"
+                android:maxLength="5"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <ProgressBar
+            android:id="@+id/pbConnecting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:indeterminateTint="@color/accent_green"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitJoin"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:text="Join Room"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/accent_green"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackToHome"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Cancel"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <!-- SECTION 3: Connected Room View (Shown after creating or joining a room) -->
+    <LinearLayout
+        android:id="@+id/llConnectedRoomSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ROOM CODE"
             android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-    </ScrollView>
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- Large 48sp+ Room Code with Copy Button -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvDisplayRoomCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A3K9P"
+                android:textColor="@color/accent_green"
+                android:textSize="52sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCopyCode"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/copy_code"
+                android:textColor="@color/white"
+                app:icon="@android:drawable/ic_menu_share"
+                app:iconTint="@color/accent_green" />
+        </LinearLayout>
+
+        <!-- Live Member Count -->
+        <TextView
+            android:id="@+id/tvMemberCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="1/5 connected"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Continue / Go to Game Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="28dp"
+            android:text="@string/continue_go_to_game"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/accent_green"
+            app:cornerRadius="12dp" />
+
+        <!-- Leave Room Option -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLeaveRoom"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/leave_room"
+            android:textColor="#FF5252" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

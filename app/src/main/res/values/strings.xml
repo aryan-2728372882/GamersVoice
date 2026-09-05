@@ -4,5 +4,11 @@
     <string name="status_ready">Ready for low-latency voice chat</string>
     <string name="permission_message">GamerVoice needs microphone access to work</string>
     <string name="btn_allow_continue">Allow &amp; Continue</string>
-    <string name="home_title">GamerVoice Home</string>
+    <string name="home_title">GamerVoice</string>
+    <string name="create_room">Create Room</string>
+    <string name="join_room">Join Room</string>
+    <string name="copy_code">Copy Code</string>
+    <string name="continue_go_to_game">Go to Game</string>
+    <string name="leave_room">Leave Room</string>
+    <string name="code_copied">Room code copied!</string>
 </resources>

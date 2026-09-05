@@ -1,6 +1,10 @@
 package com.gamervoice.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.gamervoice.app.databinding.ActivityHomeBinding
@@ -27,52 +31,97 @@ class HomeActivity : AppCompatActivity(),
         peerConnectionManager.init()
 
         setupUI()
-        appendLog("Connecting to Signaling Server...")
+        showHomeView()
         signalingClient.connect()
     }
 
     private fun setupUI() {
+        // Home view actions
         binding.btnCreateRoom.setOnClickListener {
-            appendLog("Requesting Create Room...")
+            binding.tvServerStatus.text = "Status: Creating room..."
             signalingClient.createRoom()
         }
 
         binding.btnJoinRoom.setOnClickListener {
-            val code = binding.etRoomCode.text.toString().trim()
+            showJoinInputView()
+        }
+
+        // Join input view actions
+        binding.btnSubmitJoin.setOnClickListener {
+            val code = binding.etJoinRoomCode.text.toString().trim().uppercase()
             if (code.length == 5) {
-                appendLog("Requesting Join Room $code...")
+                binding.pbConnecting.visibility = View.VISIBLE
+                binding.btnSubmitJoin.isEnabled = false
                 signalingClient.joinRoom(code)
             } else {
-                Toast.makeText(this, "Please enter a valid 5-character Room Code", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Room code must be 5 characters", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        binding.btnBackToHome.setOnClickListener {
+            showHomeView()
+        }
+
+        // Connected room view actions
+        binding.btnCopyCode.setOnClickListener {
+            val code = binding.tvDisplayRoomCode.text.toString()
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("GamerVoice Room Code", code)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, getString(R.string.code_copied), Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnContinue.setOnClickListener {
+            Toast.makeText(this, "GamerVoice running in background. Enjoy your game!", Toast.LENGTH_SHORT).show()
+            // Minimize app to background so user can open/switch to their game
+            moveTaskToBack(true)
         }
 
         binding.btnLeaveRoom.setOnClickListener {
-            appendLog("Leaving Room...")
             signalingClient.leaveRoom()
             peerConnectionManager.closeAll()
             peerConnectionManager.init()
-            binding.tvStatus.text = "Status: Connected (Not in Room)"
+            showHomeView()
         }
     }
 
-    private fun appendLog(message: String) {
+    private fun showHomeView() {
         runOnUiThread {
-            val currentText = binding.tvLog.text.toString()
-            binding.tvLog.text = "$currentText\n> $message"
-            binding.svLog.post {
-                binding.svLog.fullScroll(android.view.View.FOCUS_DOWN)
-            }
+            binding.llHomeActions.visibility = View.VISIBLE
+            binding.llJoinInputSection.visibility = View.GONE
+            binding.llConnectedRoomSection.visibility = View.GONE
+            binding.pbConnecting.visibility = View.GONE
+            binding.btnSubmitJoin.isEnabled = true
         }
     }
 
-    private fun updateMemberCountStatus() {
-        val count = peerConnectionManager.getActivePeerCount() + 1
-        val code = signalingClient.currentRoomCode ?: ""
+    private fun showJoinInputView() {
         runOnUiThread {
-            if (code.isNotEmpty()) {
-                binding.tvStatus.text = "Status: In Room $code ($count/5 members)"
-            }
+            binding.llHomeActions.visibility = View.GONE
+            binding.llJoinInputSection.visibility = View.VISIBLE
+            binding.llConnectedRoomSection.visibility = View.GONE
+            binding.pbConnecting.visibility = View.GONE
+            binding.btnSubmitJoin.isEnabled = true
+            binding.etJoinRoomCode.setText("")
+        }
+    }
+
+    private fun showConnectedRoomView(roomCode: String) {
+        runOnUiThread {
+            binding.llHomeActions.visibility = View.GONE
+            binding.llJoinInputSection.visibility = View.GONE
+            binding.llConnectedRoomSection.visibility = View.VISIBLE
+            binding.pbConnecting.visibility = View.GONE
+            binding.btnSubmitJoin.isEnabled = true
+            binding.tvDisplayRoomCode.text = roomCode
+            updateMemberCountUI()
+        }
+    }
+
+    private fun updateMemberCountUI() {
+        val totalMembers = peerConnectionManager.getActivePeerCount() + 1
+        runOnUiThread {
+            binding.tvMemberCount.text = "$totalMembers/5 connected"
         }
     }
 
@@ -80,51 +129,43 @@ class HomeActivity : AppCompatActivity(),
 
     override fun onConnected() {
         runOnUiThread {
-            binding.tvStatus.text = "Status: Connected to Server"
+            binding.tvServerStatus.text = "Status: Server Connected"
         }
-        appendLog("Connected to Signaling Server")
     }
 
     override fun onDisconnected() {
         runOnUiThread {
-            binding.tvStatus.text = "Status: Disconnected"
+            binding.tvServerStatus.text = "Status: Disconnected from Server"
         }
-        appendLog("Disconnected from Signaling Server")
     }
 
     override fun onRoomCreated(roomCode: String, myPeerId: String) {
         runOnUiThread {
-            binding.etRoomCode.setText(roomCode)
-            binding.tvStatus.text = "Status: In Room $roomCode (1/5 members)"
+            binding.tvServerStatus.text = "Status: Connected to Room $roomCode"
         }
-        appendLog("Room Created: $roomCode | Peer ID: ${myPeerId.take(8)}...")
+        showConnectedRoomView(roomCode)
     }
 
     override fun onRoomJoined(roomCode: String, myPeerId: String, existingPeers: List<String>) {
-        val totalMembers = existingPeers.size + 1
         runOnUiThread {
-            binding.tvStatus.text = "Status: In Room $roomCode ($totalMembers/5 members)"
+            binding.tvServerStatus.text = "Status: Connected to Room $roomCode"
         }
-        appendLog("Joined Room: $roomCode | Existing Peers in Room: ${existingPeers.size}")
+        showConnectedRoomView(roomCode)
 
-        // Connect to all existing peers in the room
         for (peerId in existingPeers) {
             peerConnectionManager.connectToPeer(peerId)
         }
     }
 
     override fun onPeerJoined(peerId: String) {
-        appendLog("New Peer Joined Room: ${peerId.take(8)}...")
-        updateMemberCountStatus()
+        updateMemberCountUI()
     }
 
     override fun onOfferReceived(senderPeerId: String, sdp: String) {
-        appendLog("Received Offer from ${senderPeerId.take(8)}...")
         peerConnectionManager.handleOffer(senderPeerId, sdp)
     }
 
     override fun onAnswerReceived(senderPeerId: String, sdp: String) {
-        appendLog("Received Answer from ${senderPeerId.take(8)}...")
         peerConnectionManager.handleAnswer(senderPeerId, sdp)
     }
 
@@ -138,14 +179,14 @@ class HomeActivity : AppCompatActivity(),
     }
 
     override fun onPeerLeft(peerId: String) {
-        appendLog("Peer Left: ${peerId.take(8)}...")
         peerConnectionManager.removePeer(peerId)
-        updateMemberCountStatus()
+        updateMemberCountUI()
     }
 
     override fun onError(message: String) {
-        appendLog("ERROR: $message")
         runOnUiThread {
+            binding.pbConnecting.visibility = View.GONE
+            binding.btnSubmitJoin.isEnabled = true
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -153,21 +194,18 @@ class HomeActivity : AppCompatActivity(),
     // --- PeerConnectionListener Callbacks ---
 
     override fun onIceConnectionStateChanged(peerId: String, newState: PeerConnection.IceConnectionState) {
-        appendLog("ICE State [${peerId.take(8)}...]: $newState")
-        if (newState == PeerConnection.IceConnectionState.CONNECTED ||
-            newState == PeerConnection.IceConnectionState.COMPLETED) {
-            appendLog("🟢 MESH AUDIO CONNECTED WITH PEER ${peerId.take(8)}!")
-        }
-        updateMemberCountStatus()
+        updateMemberCountUI()
     }
 
     override fun onLog(message: String) {
-        appendLog(message)
+        // Internal logging handled silently in production home view
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        peerConnectionManager.closeAll()
-        signalingClient.disconnect()
+        if (isFinishing) {
+            peerConnectionManager.closeAll()
+            signalingClient.disconnect()
+        }
     }
 }
