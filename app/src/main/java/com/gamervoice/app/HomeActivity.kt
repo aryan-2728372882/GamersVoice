@@ -66,6 +66,16 @@ class HomeActivity : AppCompatActivity(),
         }
     }
 
+    private fun updateMemberCountStatus() {
+        val count = peerConnectionManager.getActivePeerCount() + 1
+        val code = signalingClient.currentRoomCode ?: ""
+        runOnUiThread {
+            if (code.isNotEmpty()) {
+                binding.tvStatus.text = "Status: In Room $code ($count/5 members)"
+            }
+        }
+    }
+
     // --- SignalingListener Callbacks ---
 
     override fun onConnected() {
@@ -85,18 +95,19 @@ class HomeActivity : AppCompatActivity(),
     override fun onRoomCreated(roomCode: String, myPeerId: String) {
         runOnUiThread {
             binding.etRoomCode.setText(roomCode)
-            binding.tvStatus.text = "Status: In Room $roomCode"
+            binding.tvStatus.text = "Status: In Room $roomCode (1/5 members)"
         }
         appendLog("Room Created: $roomCode | Peer ID: ${myPeerId.take(8)}...")
     }
 
     override fun onRoomJoined(roomCode: String, myPeerId: String, existingPeers: List<String>) {
+        val totalMembers = existingPeers.size + 1
         runOnUiThread {
-            binding.tvStatus.text = "Status: In Room $roomCode (${existingPeers.size + 1}/5 members)"
+            binding.tvStatus.text = "Status: In Room $roomCode ($totalMembers/5 members)"
         }
-        appendLog("Joined Room: $roomCode | Existing Peers: ${existingPeers.size}")
+        appendLog("Joined Room: $roomCode | Existing Peers in Room: ${existingPeers.size}")
 
-        // Connect to each existing peer in the room
+        // Connect to all existing peers in the room
         for (peerId in existingPeers) {
             peerConnectionManager.connectToPeer(peerId)
         }
@@ -104,7 +115,7 @@ class HomeActivity : AppCompatActivity(),
 
     override fun onPeerJoined(peerId: String) {
         appendLog("New Peer Joined Room: ${peerId.take(8)}...")
-        // Wait for offer from joining peer, or initiate connection
+        updateMemberCountStatus()
     }
 
     override fun onOfferReceived(senderPeerId: String, sdp: String) {
@@ -129,6 +140,7 @@ class HomeActivity : AppCompatActivity(),
     override fun onPeerLeft(peerId: String) {
         appendLog("Peer Left: ${peerId.take(8)}...")
         peerConnectionManager.removePeer(peerId)
+        updateMemberCountStatus()
     }
 
     override fun onError(message: String) {
@@ -144,8 +156,9 @@ class HomeActivity : AppCompatActivity(),
         appendLog("ICE State [${peerId.take(8)}...]: $newState")
         if (newState == PeerConnection.IceConnectionState.CONNECTED ||
             newState == PeerConnection.IceConnectionState.COMPLETED) {
-            appendLog("🟢 AUDIO CONNECTED WITH PEER ${peerId.take(8)}!")
+            appendLog("🟢 MESH AUDIO CONNECTED WITH PEER ${peerId.take(8)}!")
         }
+        updateMemberCountStatus()
     }
 
     override fun onLog(message: String) {
