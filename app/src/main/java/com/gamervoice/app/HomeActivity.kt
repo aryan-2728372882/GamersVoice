@@ -28,6 +28,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
             svc.listener = this@HomeActivity
             isServiceBound = true
 
+            // Enable action buttons now that service is bound and ready
+            runOnUiThread {
+                binding.btnCreateRoom.isEnabled = true
+                binding.btnJoinRoom.isEnabled = true
+                binding.tvServerStatus.text = "Status: Ready"
+            }
+
             // Restore state if returning to active room
             val activeRoomCode = svc.currentRoomCode
             if (!activeRoomCode.isNullOrEmpty()) {
@@ -49,9 +56,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initially disable buttons until service binds
+        binding.btnCreateRoom.isEnabled = false
+        binding.btnJoinRoom.isEnabled = false
+
         setupUI()
 
-        // Bind VoiceService cleanly without throwing background IllegalStateException
+        // Bind VoiceService cleanly
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
@@ -66,8 +77,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     private fun setupUI() {
         binding.btnCreateRoom.setOnClickListener {
-            binding.tvServerStatus.text = "Status: Creating room..."
-            voiceService?.createRoom()
+            val svc = voiceService
+            if (svc != null) {
+                binding.tvServerStatus.text = "Status: Creating room..."
+                svc.createRoom()
+            } else {
+                Toast.makeText(this, "Voice service connecting, please wait...", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.btnJoinRoom.setOnClickListener {
@@ -76,10 +92,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
         binding.btnSubmitJoin.setOnClickListener {
             val code = binding.etJoinRoomCode.text.toString().trim().uppercase()
-            if (code.length == 5) {
+            val svc = voiceService
+            if (code.length == 5 && svc != null) {
                 binding.pbConnecting.visibility = View.VISIBLE
                 binding.btnSubmitJoin.isEnabled = false
-                voiceService?.joinRoom(code)
+                svc.joinRoom(code)
+            } else if (svc == null) {
+                Toast.makeText(this, "Voice service connecting, please wait...", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Room code must be 5 characters", Toast.LENGTH_SHORT).show()
             }
@@ -136,6 +155,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
             binding.llJoinInputSection.visibility = View.GONE
             binding.llConnectedRoomSection.visibility = View.GONE
             binding.pbConnecting.visibility = View.GONE
+            binding.btnCreateRoom.isEnabled = true
+            binding.btnJoinRoom.isEnabled = true
             binding.btnSubmitJoin.isEnabled = true
             binding.tvServerStatus.text = "Status: Ready"
         }
@@ -217,6 +238,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
     override fun onError(message: String) {
         runOnUiThread {
             binding.pbConnecting.visibility = View.GONE
+            binding.btnCreateRoom.isEnabled = true
+            binding.btnJoinRoom.isEnabled = true
             binding.btnSubmitJoin.isEnabled = true
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         }
