@@ -1,58 +1,86 @@
 package com.gamervoice.app
 
-import android.content.ClipData
-import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.view.KeyEvent
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.gamervoice.app.databinding.ActivityHomeBinding
-import com.gamervoice.app.webrtc.PeerConnectionManager
-import com.gamervoice.app.webrtc.SignalingClient
-import org.webrtc.PeerConnection
+import com.gamervoice.app.service.VoiceService
 
-class HomeActivity : AppCompatActivity(),
-    SignalingClient.SignalingListener,
-    PeerConnectionManager.PeerConnectionListener {
+class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     private lateinit var binding: ActivityHomeBinding
-    private lateinit var signalingClient: SignalingClient
-    private lateinit var peerConnectionManager: PeerConnectionManager
+
+    private var voiceService: VoiceService? = null
+    private var isServiceBound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as VoiceService.LocalBinder
+            val svc = binder.getService()
+            voiceService = svc
+            svc.listener = this@HomeActivity
+            isServiceBound = true
+
+            // Restore state if returning to active room
+            val activeRoomCode = svc.currentRoomCode
+            if (!activeRoomCode.isNullOrEmpty()) {
+                showConnectedRoomView(activeRoomCode)
+            } else {
+                showHomeView()
+            }
+            updateMicModeUI(svc.isPttModeEnabled())
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            voiceService = null
+            isServiceBound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        signalingClient = SignalingClient(this)
-        peerConnectionManager = PeerConnectionManager(this, signalingClient, this)
-
-        peerConnectionManager.init()
-
         setupUI()
-        showHomeView()
-        signalingClient.connect()
+
+        // Start and bind VoiceService
+        val serviceIntent = Intent(this, VoiceService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        voiceService?.currentRoomCode?.let { roomCode ->
+            showConnectedRoomView(roomCode)
+        }
     }
 
     private fun setupUI() {
-        // Home view actions
         binding.btnCreateRoom.setOnClickListener {
             binding.tvServerStatus.text = "Status: Creating room..."
-            signalingClient.createRoom()
+            voiceService?.createRoom()
         }
 
         binding.btnJoinRoom.setOnClickListener {
             showJoinInputView()
         }
 
-        // Join input view actions
         binding.btnSubmitJoin.setOnClickListener {
             val code = binding.etJoinRoomCode.text.toString().trim().uppercase()
             if (code.length == 5) {
                 binding.pbConnecting.visibility = View.VISIBLE
                 binding.btnSubmitJoin.isEnabled = false
-                signalingClient.joinRoom(code)
+                voiceService?.joinRoom(code)
             } else {
                 Toast.makeText(this, "Room code must be 5 characters", Toast.LENGTH_SHORT).show()
             }
@@ -62,27 +90,45 @@ class HomeActivity : AppCompatActivity(),
             showHomeView()
         }
 
-        // Connected room view actions
         binding.btnCopyCode.setOnClickListener {
             val code = binding.tvDisplayRoomCode.text.toString()
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("GamerVoice Room Code", code)
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("GamerVoice Room Code", code)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(this, getString(R.string.code_copied), Toast.LENGTH_SHORT).show()
         }
 
+        binding.btnToggleMicMode.setOnClickListener {
+            voiceService?.toggleMicMode()
+        }
+
         binding.btnContinue.setOnClickListener {
             Toast.makeText(this, "GamerVoice running in background. Enjoy your game!", Toast.LENGTH_SHORT).show()
-            // Minimize app to background so user can open/switch to their game
             moveTaskToBack(true)
         }
 
         binding.btnLeaveRoom.setOnClickListener {
-            signalingClient.leaveRoom()
-            peerConnectionManager.closeAll()
-            peerConnectionManager.init()
+            voiceService?.leaveRoom()
             showHomeView()
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && (voiceService?.isPttModeEnabled() == true)) {
+            voiceService?.setPttTransmitting(true)
+            binding.tvPttStatus.text = getString(R.string.ptt_speaking_hint)
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && (voiceService?.isPttModeEnabled() == true)) {
+            voiceService?.setPttTransmitting(false)
+            binding.tvPttStatus.text = getString(R.string.ptt_muted_hint)
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     private fun showHomeView() {
@@ -92,6 +138,7 @@ class HomeActivity : AppCompatActivity(),
             binding.llConnectedRoomSection.visibility = View.GONE
             binding.pbConnecting.visibility = View.GONE
             binding.btnSubmitJoin.isEnabled = true
+            binding.tvServerStatus.text = "Status: Ready"
         }
     }
 
@@ -114,28 +161,35 @@ class HomeActivity : AppCompatActivity(),
             binding.pbConnecting.visibility = View.GONE
             binding.btnSubmitJoin.isEnabled = true
             binding.tvDisplayRoomCode.text = roomCode
-            updateMemberCountUI()
+            updateMemberCountUI(voiceService?.getMemberCount() ?: 1)
+            voiceService?.isPttModeEnabled()?.let { updateMicModeUI(it) }
         }
     }
 
-    private fun updateMemberCountUI() {
-        val totalMembers = peerConnectionManager.getActivePeerCount() + 1
+    private fun updateMemberCountUI(count: Int) {
         runOnUiThread {
-            binding.tvMemberCount.text = "$totalMembers/5 connected"
+            binding.tvMemberCount.text = "$count/5 connected"
         }
     }
 
-    // --- SignalingListener Callbacks ---
-
-    override fun onConnected() {
+    private fun updateMicModeUI(isPtt: Boolean) {
         runOnUiThread {
-            binding.tvServerStatus.text = "Status: Server Connected"
+            if (isPtt) {
+                binding.btnToggleMicMode.text = getString(R.string.mode_ptt)
+                binding.tvPttStatus.visibility = View.VISIBLE
+                binding.tvPttStatus.text = getString(R.string.ptt_muted_hint)
+            } else {
+                binding.btnToggleMicMode.text = getString(R.string.mode_always_on)
+                binding.tvPttStatus.visibility = View.GONE
+            }
         }
     }
 
-    override fun onDisconnected() {
+    // --- VoiceServiceListener Callbacks ---
+
+    override fun onConnectedStateChanged(statusMessage: String) {
         runOnUiThread {
-            binding.tvServerStatus.text = "Status: Disconnected from Server"
+            binding.tvServerStatus.text = statusMessage
         }
     }
 
@@ -151,36 +205,14 @@ class HomeActivity : AppCompatActivity(),
             binding.tvServerStatus.text = "Status: Connected to Room $roomCode"
         }
         showConnectedRoomView(roomCode)
-
-        for (peerId in existingPeers) {
-            peerConnectionManager.connectToPeer(peerId)
-        }
     }
 
-    override fun onPeerJoined(peerId: String) {
-        updateMemberCountUI()
+    override fun onMemberCountUpdated(count: Int) {
+        updateMemberCountUI(count)
     }
 
-    override fun onOfferReceived(senderPeerId: String, sdp: String) {
-        peerConnectionManager.handleOffer(senderPeerId, sdp)
-    }
-
-    override fun onAnswerReceived(senderPeerId: String, sdp: String) {
-        peerConnectionManager.handleAnswer(senderPeerId, sdp)
-    }
-
-    override fun onIceCandidateReceived(
-        senderPeerId: String,
-        candidate: String,
-        sdpMid: String,
-        sdpMLineIndex: Int
-    ) {
-        peerConnectionManager.handleIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex)
-    }
-
-    override fun onPeerLeft(peerId: String) {
-        peerConnectionManager.removePeer(peerId)
-        updateMemberCountUI()
+    override fun onMicModeChanged(isPtt: Boolean) {
+        updateMicModeUI(isPtt)
     }
 
     override fun onError(message: String) {
@@ -191,21 +223,12 @@ class HomeActivity : AppCompatActivity(),
         }
     }
 
-    // --- PeerConnectionListener Callbacks ---
-
-    override fun onIceConnectionStateChanged(peerId: String, newState: PeerConnection.IceConnectionState) {
-        updateMemberCountUI()
-    }
-
-    override fun onLog(message: String) {
-        // Internal logging handled silently in production home view
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        if (isFinishing) {
-            peerConnectionManager.closeAll()
-            signalingClient.disconnect()
+        if (isServiceBound) {
+            voiceService?.listener = null
+            unbindService(serviceConnection)
+            isServiceBound = false
         }
     }
 }

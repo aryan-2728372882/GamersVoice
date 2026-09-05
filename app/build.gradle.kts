@@ -1,3 +1,5 @@
+@file:Suppress("GradleDependency", "UseVersionCatalog", "ExpiredTargetSdkVersion", "OldTargetApi")
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -14,6 +16,15 @@ android {
         versionName = "1.0.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
     }
 
     buildTypes {
@@ -43,7 +54,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.webrtc.sdk)
+    implementation(libs.webrtc)
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)

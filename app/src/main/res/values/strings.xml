@@ -11,4 +11,8 @@
     <string name="continue_go_to_game">Go to Game</string>
     <string name="leave_room">Leave Room</string>
     <string name="code_copied">Room code copied!</string>
+    <string name="mode_ptt">Mode: Push-To-Talk</string>
+    <string name="mode_always_on">Mode: Always On (VAD)</string>
+    <string name="ptt_muted_hint">🔇 MUTED (Hold Vol-Down to Speak)</string>
+    <string name="ptt_speaking_hint">🎙️ SPEAKING (PTT Active)</string>
 </resources>

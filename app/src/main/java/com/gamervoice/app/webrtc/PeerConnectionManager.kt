@@ -37,11 +37,14 @@ class PeerConnectionManager(
     private var audioSource: AudioSource? = null
     private var localAudioTrack: AudioTrack? = null
 
-    // Mesh Topology Map: targetPeerId -> PeerConnection (Up to 4 active remote connections)
+    // Mesh Topology Map: targetPeerId -> PeerConnection
     private val peerConnections = ConcurrentHashMap<String, PeerConnection>()
 
-    // Pending ICE candidates queue per peer (applied after remote description is set)
+    // Pending ICE candidates queue per peer
     private val pendingIceCandidates = ConcurrentHashMap<String, MutableList<IceCandidate>>()
+
+    private var isPttMode = true
+    private var isMicTransmitting = false
 
     private val iceServers = listOf(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
@@ -56,8 +59,9 @@ class PeerConnectionManager(
         continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
     }
 
-    fun init() {
-        // Configure Android audio routing for communication/gaming voice chat
+    fun init(isPtt: Boolean = true) {
+        this.isPttMode = isPtt
+
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
 
@@ -76,13 +80,41 @@ class PeerConnectionManager(
             .setAudioDeviceModule(audioDeviceModule)
             .createPeerConnectionFactory()
 
-        val audioConstraints = MediaConstraints()
+        val audioConstraints = MediaConstraints().apply {
+            // Voice Activity Detection (VAD) & Noise Suppression constraints
+            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter", "true"))
+        }
+
         audioSource = factory?.createAudioSource(audioConstraints)
         localAudioTrack = factory?.createAudioTrack("ARDAMSa0", audioSource)
-        localAudioTrack?.setEnabled(true)
 
-        listener.onLog("WebRTC Mesh Engine Initialized (Max $MAX_PEERS remote connections)")
+        // Default state: If PTT mode, start muted until key held down. If Always On, start enabled.
+        setMicTransmitting(!isPttMode)
+
+        listener.onLog("WebRTC Mesh Engine Initialized (PTT Mode = $isPttMode)")
     }
+
+    fun setPttModeEnabled(enabled: Boolean) {
+        this.isPttMode = enabled
+        if (enabled) {
+            setMicTransmitting(false) // Mute at rest in PTT mode
+        } else {
+            setMicTransmitting(true) // Always On mode with VAD
+        }
+        listener.onLog("Mic Mode set to: ${if (enabled) "Push-To-Talk" else "Always On (VAD)"}")
+    }
+
+    fun isPttModeEnabled(): Boolean = isPttMode
+
+    fun setMicTransmitting(transmitting: Boolean) {
+        this.isMicTransmitting = transmitting
+        localAudioTrack?.setEnabled(transmitting)
+    }
+
+    fun isMicTransmitting(): Boolean = isMicTransmitting
 
     fun connectToPeer(targetPeerId: String) {
         if (peerConnections.size >= MAX_PEERS) {
@@ -162,7 +194,6 @@ class PeerConnectionManager(
         if (pc != null && pc.remoteDescription != null) {
             pc.addIceCandidate(iceCandidate)
         } else {
-            // Queue candidate until remote description is set
             pendingIceCandidates.getOrPut(senderPeerId) { mutableListOf() }.add(iceCandidate)
         }
     }
@@ -173,7 +204,7 @@ class PeerConnectionManager(
         }
         peerConnections.remove(peerId)
         pendingIceCandidates.remove(peerId)
-        listener.onLog("Peer $peerId disconnected & removed from mesh (${peerConnections.size}/$MAX_PEERS active)")
+        listener.onLog("Peer $peerId disconnected from mesh (${peerConnections.size}/$MAX_PEERS active)")
     }
 
     fun closeAll() {
@@ -225,7 +256,7 @@ class PeerConnectionManager(
             override fun onDataChannel(dataChannel: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
             override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
-                listener.onLog("🔊 Remote Audio Track Received from $targetPeerId! (Audio mixing active)")
+                listener.onLog("🔊 Remote Audio Track Received from $targetPeerId!")
             }
         })
 
