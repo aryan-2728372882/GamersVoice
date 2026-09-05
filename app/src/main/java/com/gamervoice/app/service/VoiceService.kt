@@ -73,8 +73,7 @@ class VoiceService : Service(),
         signalingClient = SignalingClient(this)
         peerConnectionManager = PeerConnectionManager(this, signalingClient, this)
 
-        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-        peerConnectionManager.init(isPtt = isPttDefault)
+        // Connect signaling server in background; WebRTC audio initializes lazily on room join/create
         signalingClient.connect()
     }
 
@@ -123,19 +122,20 @@ class VoiceService : Service(),
     override fun onBind(intent: Intent?): IBinder = binder
 
     fun createRoom() {
+        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+        peerConnectionManager.init(isPtt = isPttDefault)
         signalingClient.createRoom()
     }
 
     fun joinRoom(code: String) {
+        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+        peerConnectionManager.init(isPtt = isPttDefault)
         signalingClient.joinRoom(code)
     }
 
     fun leaveRoom() {
         signalingClient.leaveRoom()
         peerConnectionManager.closeAll()
-
-        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-        peerConnectionManager.init(isPtt = isPttDefault)
 
         currentRoomCode = null
         isCallActive = false

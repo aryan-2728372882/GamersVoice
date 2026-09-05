@@ -18,6 +18,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
+            debugSymbolLevel = "none"
             abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
         }
     }
