@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">GamerVoice</string>
+    <string name="welcome_message">GamerVoice - In-Game Voice Chat</string>
+    <string name="status_ready">Ready for low-latency voice chat</string>
+    <string name="permission_message">GamerVoice needs microphone access to work</string>
+    <string name="btn_allow_continue">Allow &amp; Continue</string>
+    <string name="home_title">GamerVoice Home</string>
+</resources>
