@@ -1,4 +1,10 @@
-# Add project specific ProGuard rules here.
-# By default, the flags in this file are appended to flags specified
-# in C:\Users\prabh\AppData\Local\Android\Sdk/tools/proguard/proguard-android.txt
-# You can edit the include line and the file paths to fit your project structure.
+# WebRTC ProGuard Rules
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+
+# OkHttp ProGuard Rules
+-keepattributes Signature
+-keepattributes Annotation
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+-dontwarn okhttp3.**
