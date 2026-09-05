@@ -26,6 +26,7 @@ class PeerConnectionManager(
     companion object {
         private const val TAG = "PeerConnectionManager"
         private const val MAX_PEERS = 4 // Max 4 remote peers = 5 people total in room
+        private var isFactoryInitialized = false
     }
 
     interface PeerConnectionListener {
@@ -66,11 +67,19 @@ class PeerConnectionManager(
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
             audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
 
-            PeerConnectionFactory.initialize(
-                PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
-                    .setEnableInternalTracer(false)
-                    .createInitializationOptions()
-            )
+            // Prevent multiple initialization crash
+            if (!isFactoryInitialized) {
+                try {
+                    PeerConnectionFactory.initialize(
+                        PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
+                            .setEnableInternalTracer(false)
+                            .createInitializationOptions()
+                    )
+                    isFactoryInitialized = true
+                } catch (e: Throwable) {
+                    Log.w(TAG, "PeerConnectionFactory already initialized", e)
+                }
+            }
 
             val audioDeviceModule = try {
                 JavaAudioDeviceModule.builder(context.applicationContext)
