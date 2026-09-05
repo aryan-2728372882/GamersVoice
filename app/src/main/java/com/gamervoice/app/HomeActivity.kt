@@ -51,9 +51,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
         setupUI()
 
-        // Start and bind VoiceService
+        // Bind VoiceService cleanly without throwing background IllegalStateException
         val serviceIntent = Intent(this, VoiceService::class.java)
-        startService(serviceIntent)
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 

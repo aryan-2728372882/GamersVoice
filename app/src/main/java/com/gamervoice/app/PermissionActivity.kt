@@ -27,15 +27,13 @@ class PermissionActivity : AppCompatActivity() {
 
     private val batteryOptimizationLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
-            if (isRecordAudioGranted()) {
-                navigateToHome()
-            }
+            navigateToHome()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (isRecordAudioGranted() && isBatteryOptimizationIgnored()) {
+        if (isRecordAudioGranted()) {
             navigateToHome()
             return
         }
