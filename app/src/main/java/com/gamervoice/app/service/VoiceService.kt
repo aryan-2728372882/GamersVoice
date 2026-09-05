@@ -12,6 +12,7 @@ import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.gamervoice.app.HomeActivity
 import com.gamervoice.app.R
@@ -24,6 +25,7 @@ class VoiceService : Service(),
     PeerConnectionManager.PeerConnectionListener {
 
     companion object {
+        private const val TAG = "VoiceService"
         const val ACTION_LEAVE_ROOM = "com.gamervoice.app.action.LEAVE_ROOM"
         const val ACTION_TOGGLE_MIC_MODE = "com.gamervoice.app.action.TOGGLE_MIC_MODE"
         const val ACTION_PTT_DOWN = "com.gamervoice.app.action.PTT_DOWN"
@@ -145,33 +147,45 @@ class VoiceService : Service(),
     }
 
     private fun startForegroundService() {
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            val notification = buildNotification()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            isCallActive = true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start foreground service", e)
         }
-        isCallActive = true
     }
 
     private fun updateNotification() {
         if (!isCallActive) return
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, buildNotification())
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(NOTIFICATION_ID, buildNotification())
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update notification", e)
+        }
     }
 
     private fun stopForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+            stopSelf()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to stop foreground service", e)
         }
-        stopSelf()
     }
 
     private fun buildNotification(): Notification {
