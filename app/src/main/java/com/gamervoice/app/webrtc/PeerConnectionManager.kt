@@ -60,41 +60,52 @@ class PeerConnectionManager(
     }
 
     fun init(isPtt: Boolean = true) {
-        this.isPttMode = isPtt
+        try {
+            this.isPttMode = isPtt
 
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-        audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
 
-        PeerConnectionFactory.initialize(
-            PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
-                .setEnableInternalTracer(false)
-                .createInitializationOptions()
-        )
+            PeerConnectionFactory.initialize(
+                PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
+                    .setEnableInternalTracer(false)
+                    .createInitializationOptions()
+            )
 
-        val audioDeviceModule = JavaAudioDeviceModule.builder(context.applicationContext)
-            .setUseHardwareAcousticEchoCanceler(true)
-            .setUseHardwareNoiseSuppressor(true)
-            .createAudioDeviceModule()
+            val audioDeviceModule = try {
+                JavaAudioDeviceModule.builder(context.applicationContext)
+                    .setUseHardwareAcousticEchoCanceler(true)
+                    .setUseHardwareNoiseSuppressor(true)
+                    .createAudioDeviceModule()
+            } catch (e: Throwable) {
+                Log.w(TAG, "Hardware audio module failed, using software fallback", e)
+                JavaAudioDeviceModule.builder(context.applicationContext)
+                    .setUseHardwareAcousticEchoCanceler(false)
+                    .setUseHardwareNoiseSuppressor(false)
+                    .createAudioDeviceModule()
+            }
 
-        factory = PeerConnectionFactory.builder()
-            .setAudioDeviceModule(audioDeviceModule)
-            .createPeerConnectionFactory()
+            factory = PeerConnectionFactory.builder()
+                .setAudioDeviceModule(audioDeviceModule)
+                .createPeerConnectionFactory()
 
-        val audioConstraints = MediaConstraints().apply {
-            // Voice Activity Detection (VAD) & Noise Suppression constraints
-            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter", "true"))
+            val audioConstraints = MediaConstraints().apply {
+                mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter", "true"))
+            }
+
+            audioSource = factory?.createAudioSource(audioConstraints)
+            localAudioTrack = factory?.createAudioTrack("ARDAMSa0", audioSource)
+
+            setMicTransmitting(!isPttMode)
+
+            listener.onLog("WebRTC Engine Initialized (PTT = $isPttMode)")
+        } catch (e: Throwable) {
+            Log.e(TAG, "Critical error initializing PeerConnectionManager", e)
+            listener.onLog("WebRTC Init Warning: ${e.message}")
         }
-
-        audioSource = factory?.createAudioSource(audioConstraints)
-        localAudioTrack = factory?.createAudioTrack("ARDAMSa0", audioSource)
-
-        // Default state: If PTT mode, start muted until key held down. If Always On, start enabled.
-        setMicTransmitting(!isPttMode)
-
-        listener.onLog("WebRTC Mesh Engine Initialized (PTT Mode = $isPttMode)")
     }
 
     fun setPttModeEnabled(enabled: Boolean) {
@@ -208,23 +219,27 @@ class PeerConnectionManager(
     }
 
     fun closeAll() {
-        peerConnections.forEach { (_, pc) ->
-            pc.close()
+        try {
+            peerConnections.forEach { (_, pc) ->
+                pc.close()
+            }
+            peerConnections.clear()
+            pendingIceCandidates.clear()
+
+            localAudioTrack?.dispose()
+            localAudioTrack = null
+            audioSource?.dispose()
+            audioSource = null
+            factory?.dispose()
+            factory = null
+
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audioManager?.mode = AudioManager.MODE_NORMAL
+
+            listener.onLog("WebRTC PeerConnectionManager mesh closed")
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error closing PeerConnectionManager", e)
         }
-        peerConnections.clear()
-        pendingIceCandidates.clear()
-
-        localAudioTrack?.dispose()
-        localAudioTrack = null
-        audioSource?.dispose()
-        audioSource = null
-        factory?.dispose()
-        factory = null
-
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-        audioManager?.mode = AudioManager.MODE_NORMAL
-
-        listener.onLog("WebRTC PeerConnectionManager mesh closed")
     }
 
     fun getActivePeerCount(): Int = peerConnections.size
