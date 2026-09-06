@@ -5,20 +5,24 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.gamervoice.app.HomeActivity
 import com.gamervoice.app.R
 import com.gamervoice.app.webrtc.PeerConnectionManager
 import com.gamervoice.app.webrtc.SignalingClient
 import org.webrtc.PeerConnection
+import java.util.concurrent.Executors
 
 class VoiceService : Service(),
     SignalingClient.SignalingListener,
@@ -52,6 +56,9 @@ class VoiceService : Service(),
     }
 
     private val binder = LocalBinder()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val executor = Executors.newSingleThreadExecutor()
+
     var listener: VoiceServiceListener? = null
 
     lateinit var signalingClient: SignalingClient
@@ -67,13 +74,13 @@ class VoiceService : Service(),
 
     override fun onCreate() {
         super.onCreate()
-        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         createNotificationChannel()
 
         signalingClient = SignalingClient(this)
         peerConnectionManager = PeerConnectionManager(this, signalingClient, this)
 
-        // Connect signaling server in background; WebRTC audio initializes lazily on room join/create
+        // Connect signaling server in background
         signalingClient.connect()
     }
 
@@ -104,11 +111,15 @@ class VoiceService : Service(),
     }
 
     fun toggleMicMode() {
-        val newPttMode = !peerConnectionManager.isPttModeEnabled()
-        prefs.edit().putBoolean(PREF_PTT_ENABLED, newPttMode).apply()
-        peerConnectionManager.setPttModeEnabled(newPttMode)
-        updateNotification()
-        listener?.onMicModeChanged(newPttMode)
+        executor.execute {
+            val newPttMode = !peerConnectionManager.isPttModeEnabled()
+            prefs.edit { putBoolean(PREF_PTT_ENABLED, newPttMode) }
+            peerConnectionManager.setPttModeEnabled(newPttMode)
+            updateNotification()
+            mainHandler.post {
+                listener?.onMicModeChanged(newPttMode)
+            }
+        }
     }
 
     fun isPttModeEnabled(): Boolean = peerConnectionManager.isPttModeEnabled()
@@ -122,69 +133,99 @@ class VoiceService : Service(),
     override fun onBind(intent: Intent?): IBinder = binder
 
     fun createRoom() {
-        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-        peerConnectionManager.init(isPtt = isPttDefault)
-        signalingClient.createRoom()
+        executor.execute {
+            try {
+                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+                peerConnectionManager.init(isPtt = isPttDefault)
+                signalingClient.createRoom()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Error in createRoom background task", t)
+                mainHandler.post {
+                    listener?.onError("Failed to initialize audio call: ${t.message}")
+                }
+            }
+        }
     }
 
     fun joinRoom(code: String) {
-        val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-        peerConnectionManager.init(isPtt = isPttDefault)
-        signalingClient.joinRoom(code)
+        executor.execute {
+            try {
+                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+                peerConnectionManager.init(isPtt = isPttDefault)
+                signalingClient.joinRoom(code)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Error in joinRoom background task", t)
+                mainHandler.post {
+                    listener?.onError("Failed to initialize audio call: ${t.message}")
+                }
+            }
+        }
     }
 
     fun leaveRoom() {
-        signalingClient.leaveRoom()
-        peerConnectionManager.closeAll()
-
-        currentRoomCode = null
-        isCallActive = false
-        stopForegroundService()
+        executor.execute {
+            try {
+                signalingClient.leaveRoom()
+                peerConnectionManager.closeAll()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Error leaving room", t)
+            }
+            mainHandler.post {
+                currentRoomCode = null
+                isCallActive = false
+                stopForegroundService()
+            }
+        }
     }
 
     fun getMemberCount(): Int {
         return peerConnectionManager.getActivePeerCount() + 1
     }
 
+    @Suppress("InlinedApi")
     private fun startForegroundService() {
-        try {
-            val notification = buildNotification()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-                )
-            } else {
-                startForeground(NOTIFICATION_ID, notification)
+        mainHandler.post {
+            try {
+                val serviceIntent = Intent(this, VoiceService::class.java)
+                ContextCompat.startForegroundService(this, serviceIntent)
+
+                val notification = buildNotification()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(
+                        NOTIFICATION_ID,
+                        notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
+                    )
+                } else {
+                    startForeground(NOTIFICATION_ID, notification)
+                }
+                isCallActive = true
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to start foreground service", t)
             }
-            isCallActive = true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start foreground service", e)
         }
     }
 
     private fun updateNotification() {
         if (!isCallActive) return
-        try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(NOTIFICATION_ID, buildNotification())
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to update notification", e)
+        mainHandler.post {
+            try {
+                val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(NOTIFICATION_ID, buildNotification())
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to update notification", t)
+            }
         }
     }
 
     private fun stopForegroundService() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        mainHandler.post {
+            try {
                 stopForeground(STOP_FOREGROUND_REMOVE)
-            } else {
-                @Suppress("DEPRECATION")
-                stopForeground(true)
+                stopSelf()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to stop foreground service", t)
             }
-            stopSelf()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to stop foreground service", e)
         }
     }
 
@@ -196,7 +237,7 @@ class VoiceService : Service(),
             this,
             0,
             contentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val leaveIntent = Intent(this, VoiceService::class.java).apply {
@@ -206,7 +247,7 @@ class VoiceService : Service(),
             this,
             1,
             leaveIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val toggleModeIntent = Intent(this, VoiceService::class.java).apply {
@@ -216,7 +257,7 @@ class VoiceService : Service(),
             this,
             2,
             toggleModeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val isPtt = peerConnectionManager.isPttModeEnabled()
@@ -232,103 +273,130 @@ class VoiceService : Service(),
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(pendingContentIntent)
             .addAction(
-                android.R.drawable.ic_btn_speak_now,
+                R.mipmap.ic_launcher,
                 if (isPtt) "Switch to Always On" else "Switch to PTT",
-                pendingToggleIntent
+                pendingToggleIntent,
             )
             .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
+                R.mipmap.ic_launcher,
                 "Leave Room",
-                pendingLeaveIntent
+                pendingLeaveIntent,
             )
             .build()
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "GamerVoice Voice Call",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Persistent notification for active GamerVoice in-game audio calls"
-                setShowBadge(false)
-            }
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "GamerVoice Voice Call",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = "Persistent notification for active GamerVoice in-game audio calls"
+            setShowBadge(false)
         }
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     // --- SignalingListener Callbacks ---
 
     override fun onConnected() {
-        listener?.onConnectedStateChanged("Status: Server Connected")
+        mainHandler.post {
+            listener?.onConnectedStateChanged("Status: Server Connected")
+        }
     }
 
     override fun onDisconnected() {
-        listener?.onConnectedStateChanged("Status: Server Disconnected")
+        mainHandler.post {
+            listener?.onConnectedStateChanged("Status: Server Disconnected")
+        }
     }
 
     override fun onRoomCreated(roomCode: String, myPeerId: String) {
-        currentRoomCode = roomCode
-        startForegroundService()
-        listener?.onRoomCreated(roomCode, myPeerId)
+        mainHandler.post {
+            currentRoomCode = roomCode
+            startForegroundService()
+            listener?.onRoomCreated(roomCode, myPeerId)
+        }
     }
 
     override fun onRoomJoined(roomCode: String, myPeerId: String, existingPeers: List<String>) {
-        currentRoomCode = roomCode
-        startForegroundService()
-        listener?.onRoomJoined(roomCode, myPeerId, existingPeers)
+        mainHandler.post {
+            currentRoomCode = roomCode
+            startForegroundService()
+            listener?.onRoomJoined(roomCode, myPeerId, existingPeers)
 
-        for (peerId in existingPeers) {
-            peerConnectionManager.connectToPeer(peerId)
+            executor.execute {
+                for (peerId in existingPeers) {
+                    peerConnectionManager.connectToPeer(peerId)
+                }
+            }
         }
     }
 
     override fun onPeerJoined(peerId: String) {
-        updateNotification()
-        listener?.onMemberCountUpdated(getMemberCount())
+        mainHandler.post {
+            updateNotification()
+            listener?.onMemberCountUpdated(getMemberCount())
+        }
     }
 
     override fun onOfferReceived(senderPeerId: String, sdp: String) {
-        peerConnectionManager.handleOffer(senderPeerId, sdp)
+        executor.execute {
+            peerConnectionManager.handleOffer(senderPeerId, sdp)
+        }
     }
 
     override fun onAnswerReceived(senderPeerId: String, sdp: String) {
-        peerConnectionManager.handleAnswer(senderPeerId, sdp)
+        executor.execute {
+            peerConnectionManager.handleAnswer(senderPeerId, sdp)
+        }
     }
 
     override fun onIceCandidateReceived(
         senderPeerId: String,
         candidate: String,
         sdpMid: String,
-        sdpMLineIndex: Int
+        sdpMLineIndex: Int,
     ) {
-        peerConnectionManager.handleIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex)
+        executor.execute {
+            peerConnectionManager.handleIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex)
+        }
     }
 
     override fun onPeerLeft(peerId: String) {
-        peerConnectionManager.removePeer(peerId)
-        updateNotification()
-        listener?.onMemberCountUpdated(getMemberCount())
+        executor.execute {
+            peerConnectionManager.removePeer(peerId)
+            mainHandler.post {
+                updateNotification()
+                listener?.onMemberCountUpdated(getMemberCount())
+            }
+        }
     }
 
     override fun onError(message: String) {
-        listener?.onError(message)
+        mainHandler.post {
+            listener?.onError(message)
+        }
     }
 
     // --- PeerConnectionListener Callbacks ---
 
     override fun onIceConnectionStateChanged(peerId: String, newState: PeerConnection.IceConnectionState) {
-        updateNotification()
-        listener?.onMemberCountUpdated(getMemberCount())
+        mainHandler.post {
+            updateNotification()
+            listener?.onMemberCountUpdated(getMemberCount())
+        }
     }
 
     override fun onLog(message: String) {}
 
     override fun onDestroy() {
         super.onDestroy()
-        peerConnectionManager.closeAll()
-        signalingClient.disconnect()
+        executor.execute {
+            peerConnectionManager.closeAll()
+            signalingClient.disconnect()
+        }
+        executor.shutdown()
     }
 }

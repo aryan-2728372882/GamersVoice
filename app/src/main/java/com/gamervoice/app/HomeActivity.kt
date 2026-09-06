@@ -1,7 +1,8 @@
 package com.gamervoice.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -32,7 +33,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
             runOnUiThread {
                 binding.btnCreateRoom.isEnabled = true
                 binding.btnJoinRoom.isEnabled = true
-                binding.tvServerStatus.text = "Status: Ready"
+                binding.tvServerStatus.text = getString(R.string.status_ready)
             }
 
             // Restore state if returning to active room
@@ -64,7 +65,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
         // Bind VoiceService cleanly
         val serviceIntent = Intent(this, VoiceService::class.java)
-        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -79,10 +80,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         binding.btnCreateRoom.setOnClickListener {
             val svc = voiceService
             if (svc != null) {
-                binding.tvServerStatus.text = "Status: Creating room..."
+                binding.tvServerStatus.text = getString(R.string.status_creating_room)
                 svc.createRoom()
             } else {
-                Toast.makeText(this, "Voice service connecting, please wait...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.status_connecting_service), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -93,12 +94,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         binding.btnSubmitJoin.setOnClickListener {
             val code = binding.etJoinRoomCode.text.toString().trim().uppercase()
             val svc = voiceService
-            if (code.length == 5 && svc != null) {
+            if ((code.length == 5) && (svc != null)) {
                 binding.pbConnecting.visibility = View.VISIBLE
                 binding.btnSubmitJoin.isEnabled = false
                 svc.joinRoom(code)
             } else if (svc == null) {
-                Toast.makeText(this, "Voice service connecting, please wait...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.status_connecting_service), Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Room code must be 5 characters", Toast.LENGTH_SHORT).show()
             }
@@ -110,8 +111,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
         binding.btnCopyCode.setOnClickListener {
             val code = binding.tvDisplayRoomCode.text.toString()
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("GamerVoice Room Code", code)
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("GamerVoice Room Code", code)
             clipboard.setPrimaryClip(clip)
             Toast.makeText(this, getString(R.string.code_copied), Toast.LENGTH_SHORT).show()
         }
@@ -132,8 +133,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && (voiceService?.isPttModeEnabled() == true)) {
-            voiceService?.setPttTransmitting(true)
+        if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && (voiceService?.isPttModeEnabled() == true)) {
+            voiceService?.setPttTransmitting(transmitting = true)
             binding.tvPttStatus.text = getString(R.string.ptt_speaking_hint)
             return true
         }
@@ -141,8 +142,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && (voiceService?.isPttModeEnabled() == true)) {
-            voiceService?.setPttTransmitting(false)
+        if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && (voiceService?.isPttModeEnabled() == true)) {
+            voiceService?.setPttTransmitting(transmitting = false)
             binding.tvPttStatus.text = getString(R.string.ptt_muted_hint)
             return true
         }
@@ -158,7 +159,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
             binding.btnCreateRoom.isEnabled = true
             binding.btnJoinRoom.isEnabled = true
             binding.btnSubmitJoin.isEnabled = true
-            binding.tvServerStatus.text = "Status: Ready"
+            binding.tvServerStatus.text = getString(R.string.status_ready)
         }
     }
 
@@ -188,7 +189,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     private fun updateMemberCountUI(count: Int) {
         runOnUiThread {
-            binding.tvMemberCount.text = "$count/5 connected"
+            binding.tvMemberCount.text = getString(R.string.connected_count_fmt, count)
         }
     }
 

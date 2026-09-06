@@ -1,7 +1,7 @@
 package com.gamervoice.app
 
 import android.Manifest
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -64,6 +64,7 @@ class PermissionActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("BatteryLife")
     private fun requestBatteryOptimizationExemption() {
         if (!isBatteryOptimizationIgnored()) {
             try {
@@ -71,7 +72,7 @@ class PermissionActivity : AppCompatActivity() {
                     data = Uri.parse("package:$packageName")
                 }
                 batteryOptimizationLauncher.launch(intent)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 navigateToHome()
             }
         } else {
@@ -82,12 +83,12 @@ class PermissionActivity : AppCompatActivity() {
     private fun isRecordAudioGranted(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun isBatteryOptimizationIgnored(): Boolean {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as? PowerManager
         return powerManager?.isIgnoringBatteryOptimizations(packageName) ?: true
     }
 
