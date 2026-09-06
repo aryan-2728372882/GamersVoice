@@ -17,7 +17,7 @@ android {
 
         ndk {
             debugSymbolLevel = "none"
-            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a", "x86_64"))
+            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 
