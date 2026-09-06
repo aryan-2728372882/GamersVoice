@@ -14,6 +14,15 @@
 }
 -dontwarn org.webrtc.**
 
+# Keep GamerVoice WebRTC and Service classes for JNI callbacks and Binder
+-keep class com.gamervoice.app.webrtc.** { *; }
+-keepclassmembers class com.gamervoice.app.webrtc.** { *; }
+-keep class com.gamervoice.app.service.** { *; }
+-keepclassmembers class com.gamervoice.app.service.** { *; }
+
+# Keep inner classes and annotations essential for WebRTC JNI
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions
+
 # OkHttp ProGuard Rules
 -keepattributes Signature
 -keepattributes Annotation

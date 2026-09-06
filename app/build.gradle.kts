@@ -1,5 +1,3 @@
-@file:Suppress("GradleDependency", "UseVersionCatalog", "ExpiredTargetSdkVersion", "OldTargetApi")
-
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -19,7 +17,7 @@ android {
 
         ndk {
             debugSymbolLevel = "none"
-            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
+            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a", "x86_64"))
         }
     }
 

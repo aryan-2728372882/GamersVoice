@@ -122,6 +122,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         }
 
         binding.btnContinue.setOnClickListener {
+            try {
+                val serviceIntent = Intent(this, VoiceService::class.java).apply {
+                    action = VoiceService.ACTION_START_FOREGROUND
+                }
+                androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
+            } catch (e: Exception) {
+                android.util.Log.w("HomeActivity", "Failed to startForegroundService on continue", e)
+            }
             Toast.makeText(this, "GamerVoice running in background. Enjoy your game!", Toast.LENGTH_SHORT).show()
             moveTaskToBack(true)
         }

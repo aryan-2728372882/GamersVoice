@@ -30,6 +30,7 @@ class VoiceService : Service(),
 
     companion object {
         private const val TAG = "VoiceService"
+        const val ACTION_START_FOREGROUND = "com.gamervoice.app.action.START_FOREGROUND"
         const val ACTION_LEAVE_ROOM = "com.gamervoice.app.action.LEAVE_ROOM"
         const val ACTION_TOGGLE_MIC_MODE = "com.gamervoice.app.action.TOGGLE_MIC_MODE"
         const val ACTION_PTT_DOWN = "com.gamervoice.app.action.PTT_DOWN"
@@ -86,6 +87,10 @@ class VoiceService : Service(),
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
+            ACTION_START_FOREGROUND -> {
+                startForegroundNotification()
+            }
+
             ACTION_LEAVE_ROOM -> {
                 leaveRoom()
                 stopForegroundService()
@@ -182,20 +187,31 @@ class VoiceService : Service(),
         return peerConnectionManager.getActivePeerCount() + 1
     }
 
-    @Suppress("InlinedApi")
-    private fun startForegroundService() {
+    fun startForegroundNotification() {
         mainHandler.post {
             try {
-                val serviceIntent = Intent(this, VoiceService::class.java)
-                ContextCompat.startForegroundService(this, serviceIntent)
-
                 val notification = buildNotification()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    startForeground(
-                        NOTIFICATION_ID,
-                        notification,
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
-                    )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val hasMicPermission = ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.RECORD_AUDIO
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                    if (hasMicPermission) {
+                        try {
+                            startForeground(
+                                NOTIFICATION_ID,
+                                notification,
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
+                            )
+                        } catch (se: SecurityException) {
+                            Log.w(TAG, "SecurityException starting microphone foreground service, fallback", se)
+                            startForeground(NOTIFICATION_ID, notification)
+                        }
+                    } else {
+                        Log.w(TAG, "RECORD_AUDIO not granted when starting foreground service")
+                        startForeground(NOTIFICATION_ID, notification)
+                    }
                 } else {
                     startForeground(NOTIFICATION_ID, notification)
                 }
@@ -204,6 +220,10 @@ class VoiceService : Service(),
                 Log.e(TAG, "Failed to start foreground service", t)
             }
         }
+    }
+
+    private fun startForegroundService() {
+        startForegroundNotification()
     }
 
     private fun updateNotification() {
@@ -268,17 +288,17 @@ class VoiceService : Service(),
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("GamerVoice ($modeLabel)")
             .setContentText("Room: $roomText | $countText")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(pendingContentIntent)
             .addAction(
-                R.mipmap.ic_launcher,
+                R.drawable.ic_mic_white,
                 if (isPtt) "Switch to Always On" else "Switch to PTT",
                 pendingToggleIntent,
             )
             .addAction(
-                R.mipmap.ic_launcher,
+                R.drawable.ic_call_end_white,
                 "Leave Room",
                 pendingLeaveIntent,
             )
