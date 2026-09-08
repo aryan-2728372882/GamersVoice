@@ -607,7 +607,19 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         sliderBinding.tvDrawerAudioRoute.setOnClickListener {
             isSpeakerphone = !isSpeakerphone
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            audioManager.isSpeakerphoneOn = isSpeakerphone
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val targetType = if (isSpeakerphone) android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER else android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                val targetDevice = audioManager.availableCommunicationDevices.find { it.type == targetType }
+                if (targetDevice != null) {
+                    audioManager.setCommunicationDevice(targetDevice)
+                } else {
+                    @Suppress("DEPRECATION")
+                    audioManager.isSpeakerphoneOn = isSpeakerphone
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.isSpeakerphoneOn = isSpeakerphone
+            }
             sliderBinding.tvDrawerAudioRoute.text = if (isSpeakerphone) "Speakerphone 🔊" else "Earpiece 👂"
             Toast.makeText(this, "Audio Output: " + (if (isSpeakerphone) "Speakerphone" else "Earpiece"), Toast.LENGTH_SHORT).show()
         }

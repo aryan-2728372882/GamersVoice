@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.gamervoice.app
 
 import android.content.Intent
@@ -15,6 +16,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 
+@Suppress("DEPRECATION")
 class AuthActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAuthBinding

@@ -69,7 +69,20 @@ class PeerConnectionManager(
 
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
             audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
-            audioManager?.isSpeakerphoneOn = true
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val speakerDevice = audioManager?.availableCommunicationDevices?.find {
+                    it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                }
+                if (speakerDevice != null) {
+                    audioManager?.setCommunicationDevice(speakerDevice)
+                } else {
+                    @Suppress("DEPRECATION")
+                    audioManager?.isSpeakerphoneOn = true
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager?.isSpeakerphoneOn = true
+            }
 
             // 1. Initialize WebRTC Native Globals once if not already done
             if (!isFactoryInitialized) {
