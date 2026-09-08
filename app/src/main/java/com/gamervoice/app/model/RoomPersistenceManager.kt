@@ -23,7 +23,8 @@ data class SavedRoom(
     val roomCode: String,
     val roomName: String,
     val createdAt: String,
-    val ownerUid: String
+    val ownerUid: String,
+    val pin: String = ""
 )
 
 object RoomPersistenceManager {
@@ -61,7 +62,8 @@ object RoomPersistenceManager {
                         roomCode = obj.optString("roomCode"),
                         roomName = obj.optString("roomName", "Squad Room"),
                         createdAt = obj.optString("createdAt", ""),
-                        ownerUid = obj.optString("ownerUid", "")
+                        ownerUid = obj.optString("ownerUid", ""),
+                        pin = obj.optString("pin", "")
                     )
                 )
             }
@@ -80,6 +82,7 @@ object RoomPersistenceManager {
                     put("roomName", r.roomName)
                     put("createdAt", r.createdAt)
                     put("ownerUid", r.ownerUid)
+                    put("pin", r.pin)
                 }
                 arr.put(obj)
             }
@@ -126,9 +129,10 @@ object RoomPersistenceManager {
                             val name = fields.optJSONObject("roomName")?.optString("stringValue") ?: "Squad Room"
                             val created = fields.optJSONObject("createdAt")?.optString("stringValue") ?: ""
                             val owner = fields.optJSONObject("ownerUid")?.optString("stringValue") ?: user.uid
+                            val pin = fields.optJSONObject("pin")?.optString("stringValue") ?: ""
 
                             if (code.isNotEmpty()) {
-                                list.add(SavedRoom(code, name, created, owner))
+                                list.add(SavedRoom(code, name, created, owner, pin))
                             }
                         }
                     }
@@ -150,23 +154,22 @@ object RoomPersistenceManager {
 
     /**
      * Saves a room in Firestore, enforcing Free plan limits (max 2 rooms).
+     * VIP members can provide custom roomName and an optional private squad PIN.
      */
-    fun saveRoom(roomCode: String, customName: String? = null, callback: (SaveResult) -> Unit) {
+    fun saveRoom(roomCode: String, customName: String? = null, pin: String? = null, callback: (SaveResult) -> Unit) {
         val user = AuthManager.getCurrentUser()
         if (user == null) {
-            callback(SaveResult.Error("User not logged in"))
+            callback(SaveResult.Error("User must be logged in to save rooms"))
             return
         }
 
         val cached = getCachedRooms().toMutableList()
-        // If room is already saved, succeed immediately
         val existing = cached.find { it.roomCode == roomCode }
         if (existing != null) {
             callback(SaveResult.Success(existing))
             return
         }
 
-        // Check plan quota limit
         val limit = PlanManager.getRoomLimit()
         if (cached.size >= limit) {
             callback(SaveResult.LimitReached)
@@ -174,20 +177,20 @@ object RoomPersistenceManager {
         }
 
         val roomName = customName ?: "Squad Room #${cached.size + 1}"
+        val roomPin = pin ?: ""
         val nowFormatted = SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date())
-        val newRoom = SavedRoom(roomCode, roomName, nowFormatted, user.uid)
+        val newRoom = SavedRoom(roomCode, roomName, nowFormatted, user.uid, roomPin)
 
-        // Optimistically update local cache
         cached.add(newRoom)
         updateLocalCache(cached)
 
-        // Persist to Cloud Firestore
         val url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/${user.uid}/saved_rooms/$roomCode"
         val fields = JSONObject().apply {
             put("roomCode", JSONObject().put("stringValue", roomCode))
             put("roomName", JSONObject().put("stringValue", roomName))
             put("createdAt", JSONObject().put("stringValue", nowFormatted))
             put("ownerUid", JSONObject().put("stringValue", user.uid))
+            put("pin", JSONObject().put("stringValue", roomPin))
         }
         val body = JSONObject().apply {
             put("fields", fields)

@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_terminal_box"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="18dp">
 
     <!-- Top Header with Close Icon -->
     <LinearLayout
@@ -20,15 +20,29 @@
             android:text="👑"
             android:textSize="22sp" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:fontFamily="sans-serif-black"
-            android:text="GAMERVOICE VIP SQUAD"
-            android:textColor="#FFD700"
-            android:textSize="17sp" />
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="GAMERVOICE VIP SQUAD"
+                android:textColor="#FFD700"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="PRO GAMING VOICE ENGINE"
+                android:textColor="@color/accent_green"
+                android:textSize="9sp" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/ivCloseVipDialog"
@@ -46,14 +60,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="You reached the 2-room Free limit! Upgrade to save unlimited persistent squad rooms with zero ads."
+        android:text="Dominate Free Fire with &lt; 10% background noise, 48kHz HD audio &amp; in-game precision crosshair."
         android:textColor="#CBD5E0"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginVertical="12dp"
+        android:layout_marginVertical="10dp"
         android:background="#26FFFFFF" />
 
     <!-- Feature Checklist -->
@@ -66,42 +80,60 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
-            android:text="⚡ Unlimited Permanent Squad Rooms (rejoin anytime)"
+            android:text="🛡️ Ultra-Studio AI Noise Shield (&lt; 10% Noise, Fan Muted)"
             android:textColor="@color/white"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:fontFamily="sans-serif-medium"
-            android:text="🚫 100% Ad-Free Experience"
+            android:text="🔊 48kHz HD Audio Turbo (64kbps Studio Opus)"
             android:textColor="@color/white"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:fontFamily="sans-serif-medium"
-            android:text="👑 Gold VIP Badge in Room &amp; Profile"
+            android:text="🎯 Tactical In-Game Crosshair Overlay (Free Fire Aim Assist)"
             android:textColor="@color/white"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:fontFamily="sans-serif-medium"
-            android:text="🔊 Ultra-HD Audio Priority"
+            android:text="⚡ Unlimited Permanent Rooms (Rejoin anytime with 0 online)"
             android:textColor="@color/white"
-            android:textSize="12sp" />
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="🔒 Private Squad PIN Lock &amp; Custom Room Names"
+            android:textColor="@color/white"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="🚫 100% Ad-Free Clean UI (Zero Banner Ads)"
+            android:textColor="@color/white"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginVertical="12dp"
+        android:layout_marginVertical="10dp"
         android:background="#26FFFFFF" />
 
     <!-- Plan Selection Options -->
@@ -110,14 +142,16 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <!-- Weekly Pass -->
+        <!-- Weekly Pass (7 Days) -->
         <LinearLayout
             android:id="@+id/llPlanWeekly"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="5dp"
             android:layout_weight="1"
             android:background="@drawable/bg_code_input"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
             android:padding="8dp">
@@ -126,7 +160,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-black"
-                android:text="WEEKLY"
+                android:text="7 DAYS"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -147,13 +181,15 @@
                 android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Monthly Pro (Featured) -->
+        <!-- Monthly Pro (30 Days) -->
         <LinearLayout
             android:id="@+id/llPlanMonthly"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1.2"
             android:background="@drawable/bg_terminal_box"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
             android:padding="8dp">
@@ -162,7 +198,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-black"
-                android:text="⭐ MONTHLY"
+                android:text="⭐ 30 DAYS"
                 android:textColor="#FFD700"
                 android:textSize="10sp" />
 
@@ -173,7 +209,7 @@
                 android:fontFamily="sans-serif-black"
                 android:text="₹89"
                 android:textColor="@color/accent_green"
-                android:textSize="16sp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -183,14 +219,16 @@
                 android:textSize="9sp" />
         </LinearLayout>
 
-        <!-- Lifetime -->
+        <!-- Lifetime (N/A Expiry) -->
         <LinearLayout
             android:id="@+id/llPlanLifetime"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="5dp"
             android:layout_weight="1"
             android:background="@drawable/bg_code_input"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
             android:padding="8dp">
@@ -215,34 +253,115 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Once"
+                android:text="N/A Expiry"
                 android:textColor="@color/text_secondary"
                 android:textSize="9sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Upgrade / Activate VIP Button -->
+    <!-- Upgrade / Purchase Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnActivateVip"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginTop="14dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
         android:backgroundTint="#FFD700"
         android:fontFamily="sans-serif-black"
-        android:text="👑 UPGRADE TO VIP NOW"
+        android:text="👑 PURCHASE VIP (SAVED TO CLOUD)"
         android:textColor="@color/black"
-        android:textSize="13sp"
-        app:cornerRadius="10dp" />
+        android:textSize="12sp"
+        app:cornerRadius="8dp" />
 
-    <!-- Test Activation Button (Allows instantaneous verification) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnTestToggleVip"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
+    <!-- Instant Test Mode Section (Verify 7d, 30d, Lifetime & Expiration) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:text="[TEST MODE] Activate / Deactivate VIP Pass"
-        android:textColor="@color/accent_green"
-        android:textSize="11sp" />
+        android:layout_marginTop="10dp"
+        android:background="#0DFFFFFF"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-bold"
+            android:text="TEST MODE (INSTANT VERIFICATION):"
+            android:textColor="@color/accent_green"
+            android:textSize="9sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestWeekly"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="7D Pass"
+                android:textColor="@color/white"
+                android:textSize="9sp"
+                app:cornerRadius="4dp"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestMonthly"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="30D Pass"
+                android:textColor="#00E5FF"
+                android:textSize="9sp"
+                app:cornerRadius="4dp"
+                app:strokeColor="#3300E5FF"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestLifetime"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="Lifetime"
+                android:textColor="#FFD700"
+                android:textSize="9sp"
+                app:cornerRadius="4dp"
+                app:strokeColor="#33FFD700"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestExpire"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:text="Expire Now"
+                android:textColor="#FF5252"
+                android:textSize="9sp"
+                app:cornerRadius="4dp"
+                app:strokeColor="#33FF5252"
+                app:strokeWidth="1dp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

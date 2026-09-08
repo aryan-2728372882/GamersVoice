@@ -44,6 +44,20 @@
                 android:textColor="@color/accent_green"
                 android:textSize="12sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvSavedRoomPinBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="#26FFD700"
+                android:fontFamily="sans-serif-bold"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="2dp"
+                android:text="🔒 PIN"
+                android:textColor="#FFD700"
+                android:textSize="9sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView

@@ -13,9 +13,12 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.gamervoice.app.R
+import com.gamervoice.app.auth.PlanManager
 import com.gamervoice.app.databinding.LayoutFloatingHudBinding
+import com.gamervoice.app.databinding.LayoutGameCrosshairBinding
 import com.gamervoice.app.service.VoiceService
 
 object FloatingHudManager {
@@ -26,6 +29,7 @@ object FloatingHudManager {
     private var binding: LayoutFloatingHudBinding? = null
     private var layoutParams: WindowManager.LayoutParams? = null
 
+    private var crosshairView: View? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var isMuted = false
 
@@ -101,11 +105,20 @@ object FloatingHudManager {
                 }
             }
 
-            // Button Click Handlers
+            // Mic Toggle
             b.flHudMicButton.setOnClickListener {
                 service.toggleMicMode()
                 val isPtt = service.isPttModeEnabled()
                 updateMicState(isPtt)
+            }
+
+            // Crosshair Toggle (VIP Gamer Feature)
+            b.btnHudCrosshair.setOnClickListener {
+                if (!PlanManager.isVip()) {
+                    Toast.makeText(context, "👑 In-Game Precision Crosshair is a VIP feature! Upgrade to unlock.", Toast.LENGTH_SHORT).show()
+                } else {
+                    toggleCrosshair(context)
+                }
             }
 
             b.btnDismissHud.setOnClickListener {
@@ -123,6 +136,49 @@ object FloatingHudManager {
         }
     }
 
+    private fun toggleCrosshair(context: Context) {
+        val wm = windowManager ?: return
+        if (crosshairView != null) {
+            try {
+                wm.removeView(crosshairView)
+            } catch (_: Exception) {}
+            crosshairView = null
+            binding?.btnHudCrosshair?.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            Toast.makeText(context, "Crosshair hidden", Toast.LENGTH_SHORT).show()
+        } else {
+            try {
+                val inflater = LayoutInflater.from(context)
+                val chBinding = LayoutGameCrosshairBinding.inflate(inflater)
+                crosshairView = chBinding.root
+
+                val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                } else {
+                    @Suppress("DEPRECATION")
+                    WindowManager.LayoutParams.TYPE_PHONE
+                }
+
+                val chParams = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    type,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+
+                wm.addView(crosshairView, chParams)
+                binding?.btnHudCrosshair?.setTextColor(ContextCompat.getColor(context, R.color.accent_green))
+                Toast.makeText(context, "🎯 VIP Aim Crosshair Activated (Centered for Free Fire)!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding crosshair overlay", e)
+            }
+        }
+    }
+
     fun isHudShowing(): Boolean = binding != null
 
     fun updateMicState(isMutedOrPtt: Boolean) {
@@ -135,7 +191,16 @@ object FloatingHudManager {
                 ContextCompat.getColor(b.root.context, R.color.accent_green)
             }
             b.ivHudMicIcon.setColorFilter(color)
-            b.tvHudStatus.text = if (isMutedOrPtt) "MIC MUTED" else "VOICE ACTIVE"
+
+            val isVip = PlanManager.isVip()
+            val statusText = if (isMutedOrPtt) {
+                "MIC MUTED"
+            } else if (isVip) {
+                "👑 VIP NOISE SHIELD"
+            } else {
+                "VOICE ACTIVE"
+            }
+            b.tvHudStatus.text = statusText
             b.tvHudStatus.setTextColor(color)
         }
     }
@@ -152,8 +217,12 @@ object FloatingHudManager {
         val wm = windowManager ?: return
 
         try {
+            if (crosshairView != null) {
+                wm.removeView(crosshairView)
+                crosshairView = null
+            }
             wm.removeView(b.root)
-            Log.i(TAG, "Floating HUD removed")
+            Log.i(TAG, "Floating HUD and crosshair removed")
         } catch (_: Exception) {}
 
         binding = null

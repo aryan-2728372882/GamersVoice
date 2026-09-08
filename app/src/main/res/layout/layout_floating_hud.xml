@@ -48,12 +48,25 @@
         android:textColor="@color/accent_green"
         android:textSize="11sp" />
 
+    <!-- VIP In-Game Aim Crosshair Toggle -->
+    <TextView
+        android:id="@+id/btnHudCrosshair"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_code_input"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="🎯"
+        android:textSize="12sp" />
+
     <!-- Close / Dismiss HUD Button -->
     <ImageView
         android:id="@+id/btnDismissHud"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="6dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="true"
         android:contentDescription="Close HUD"

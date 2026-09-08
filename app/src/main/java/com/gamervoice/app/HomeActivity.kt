@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import com.gamervoice.app.auth.AuthManager
 import com.gamervoice.app.auth.PlanManager
+import com.gamervoice.app.auth.PlanTier
 import com.gamervoice.app.auth.UserProfile
 import com.gamervoice.app.databinding.ActivityHomeBinding
 import com.gamervoice.app.databinding.DialogLegalDocBinding
@@ -126,6 +127,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
     override fun onStart() {
         super.onStart()
         AppLogger.addListener(logListener)
+        verifyPlanExpiry()
         loadInstalledGames()
         refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
         RoomPersistenceManager.fetchSavedRooms { freshRooms ->
@@ -144,6 +146,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     override fun onResume() {
         super.onResume()
+        verifyPlanExpiry()
         updatePlanUI()
         sliderBinding.switchDrawerHud.isChecked = FloatingHudManager.isHudShowing()
 
@@ -379,6 +382,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
                 itemBinding.tvSavedRoomName.text = room.roomName
                 itemBinding.tvSavedRoomCode.text = room.roomCode
                 itemBinding.tvSavedRoomDate.text = "Saved in Cloud • Rejoin anytime"
+                itemBinding.tvSavedRoomPinBadge.visibility = if (room.pin.isNotEmpty()) View.VISIBLE else View.GONE
 
                 itemBinding.btnRejoinRoom.setOnClickListener {
                     joinRoomWithCode(room.roomCode)
@@ -404,6 +408,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
                 itemBinding.tvSavedRoomName.text = room.roomName
                 itemBinding.tvSavedRoomCode.text = room.roomCode
                 itemBinding.tvSavedRoomDate.text = "Permanent Squad Room"
+                itemBinding.tvSavedRoomPinBadge.visibility = if (room.pin.isNotEmpty()) View.VISIBLE else View.GONE
 
                 itemBinding.btnRejoinRoom.setOnClickListener {
                     binding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -421,6 +426,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     // --- Monetization & VIP UI ---
 
+    private fun verifyPlanExpiry() {
+        val wasExpired = PlanManager.checkAndEnforceExpiry {
+            runOnUiThread {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "⚠️ Your VIP Pass has expired. Reverted to Free Plan.", Toast.LENGTH_LONG).show()
+            }
+        }
+        if (wasExpired) {
+            updatePlanUI()
+            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+        }
+    }
+
     private fun updatePlanUI() {
         val isVip = PlanManager.isVip()
         if (isVip) {
@@ -429,7 +448,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
             binding.tvHomePlanBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvHomePlanBadge.setBackgroundColor(Color.parseColor("#26FFD700"))
 
-            sliderBinding.tvDrawerPlanBadge.text = "👑 VIP SQUAD MEMBER"
+            val countdown = PlanManager.getExpiryCountdown()
+            sliderBinding.tvDrawerPlanBadge.text = "👑 " + PlanManager.getPlanName() + "\n" + countdown
             sliderBinding.tvDrawerPlanBadge.setTextColor(Color.parseColor("#FFD700"))
             sliderBinding.tvDrawerPlanBadge.setBackgroundColor(Color.parseColor("#26FFD700"))
             sliderBinding.llDrawerVipBanner.visibility = View.GONE
@@ -447,6 +467,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
     }
 
     private fun showVipUpgradeDialog(customSubtitle: String? = null) {
+        val user = AuthManager.getCurrentUser()
+        if (user == null) {
+            Toast.makeText(this, "Please sign in to purchase VIP", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, AuthActivity::class.java))
+            return
+        }
+
         val dialog = Dialog(this)
         val vipBinding = DialogVipUpgradeBinding.inflate(layoutInflater)
         dialog.setContentView(vipBinding.root)
@@ -460,22 +487,71 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
         vipBinding.ivCloseVipDialog.setOnClickListener { dialog.dismiss() }
 
-        vipBinding.btnActivateVip.setOnClickListener {
-            PlanManager.setVip(true, "Monthly Pro Pass")
-            updatePlanUI()
-            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-            Toast.makeText(this, "👑 Welcome to GamerVoice VIP! Unlimited rooms unlocked & Ads removed.", Toast.LENGTH_LONG).show()
-            dialog.dismiss()
+        var selectedTier = PlanTier.MONTHLY
+
+        fun updateCardSelection() {
+            vipBinding.llPlanWeekly.setBackgroundResource(if (selectedTier == PlanTier.WEEKLY) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
+            vipBinding.llPlanMonthly.setBackgroundResource(if (selectedTier == PlanTier.MONTHLY) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
+            vipBinding.llPlanLifetime.setBackgroundResource(if (selectedTier == PlanTier.LIFETIME) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
+        }
+        updateCardSelection()
+
+        vipBinding.llPlanWeekly.setOnClickListener {
+            selectedTier = PlanTier.WEEKLY
+            updateCardSelection()
+        }
+        vipBinding.llPlanMonthly.setOnClickListener {
+            selectedTier = PlanTier.MONTHLY
+            updateCardSelection()
+        }
+        vipBinding.llPlanLifetime.setOnClickListener {
+            selectedTier = PlanTier.LIFETIME
+            updateCardSelection()
         }
 
-        vipBinding.btnTestToggleVip.setOnClickListener {
-            val newVip = !PlanManager.isVip()
-            PlanManager.setVip(newVip)
-            updatePlanUI()
-            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-            val msg = if (newVip) "👑 VIP Pass ACTIVATED (Unlimited rooms, No Ads)" else "Switched back to Free Plan"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
+        vipBinding.btnActivateVip.setOnClickListener {
+            PlanManager.purchasePlan(selectedTier) {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "👑 Purchased ${selectedTier.title}! Saved to Firestore under ${user.email}.", Toast.LENGTH_LONG).show()
+                dialog.dismiss()
+            }
+        }
+
+        vipBinding.btnTestWeekly.setOnClickListener {
+            PlanManager.activateTestTier(PlanTier.WEEKLY) {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "👑 7-Day Weekly Pass Activated! Expires in 7 days.", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+
+        vipBinding.btnTestMonthly.setOnClickListener {
+            PlanManager.activateTestTier(PlanTier.MONTHLY) {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "👑 30-Day Monthly Pass Activated! Expires in 30 days.", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+
+        vipBinding.btnTestLifetime.setOnClickListener {
+            PlanManager.activateTestTier(PlanTier.LIFETIME) {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "👑 Lifetime Legend Pass Activated! Never expires (N/A).", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+
+        vipBinding.btnTestExpire.setOnClickListener {
+            PlanManager.simulateExpiry {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "⏰ Expiration simulated! Reverted to Free Plan in Cloud Firestore.", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
         }
 
         dialog.show()

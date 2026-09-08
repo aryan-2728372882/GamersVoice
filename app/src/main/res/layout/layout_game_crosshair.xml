@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flCrosshairRoot"
+    android:layout_width="32dp"
+    android:layout_height="32dp">
+
+    <!-- Vertical Crosshair Line -->
+    <View
+        android:layout_width="2dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:background="#9900E676" />
+
+    <!-- Horizontal Crosshair Line -->
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_gravity="center"
+        android:background="#9900E676" />
+
+    <!-- Center Precision Dot -->
+    <View
+        android:layout_width="4dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:background="#FF00E676" />
+
+</FrameLayout>
