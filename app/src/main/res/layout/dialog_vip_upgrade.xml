@@ -60,7 +60,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Dominate Free Fire with &lt; 10% background noise, 48kHz HD audio &amp; in-game precision crosshair."
+        android:text="Dominate Free Fire with &lt; 10% background noise, 48kHz HD audio &amp; unlimited squad rooms."
         android:textColor="#CBD5E0"
         android:textSize="11sp" />
 
@@ -90,15 +90,6 @@
             android:layout_marginTop="5dp"
             android:fontFamily="sans-serif-medium"
             android:text="🔊 48kHz HD Audio Turbo (64kbps Studio Opus)"
-            android:textColor="@color/white"
-            android:textSize="11sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="🎯 Tactical In-Game Crosshair Overlay (Free Fire Aim Assist)"
             android:textColor="@color/white"
             android:textSize="11sp" />
 
