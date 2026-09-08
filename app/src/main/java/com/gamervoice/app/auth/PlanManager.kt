@@ -56,6 +56,7 @@ object PlanManager {
         if (prefs == null) {
             prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             checkAndEnforceExpiry()
+            enforceValidPaidStatus()
         }
     }
 
@@ -156,6 +157,86 @@ object PlanManager {
 
     fun getPaymentId(): String? {
         return prefs?.getString(KEY_PAYMENT_ID, null)
+    }
+
+    /**
+     * Revokes VIP privileges immediately, resets local cache to Free plan, and updates Cloud Firestore.
+     */
+    fun revokeVip(callback: (() -> Unit)? = null) {
+        Log.i(TAG, "Revoking VIP status. Reverting to Free Plan.")
+        prefs?.edit()
+            ?.putBoolean(KEY_IS_VIP, false)
+            ?.putString(KEY_PLAN_TIER, PlanTier.FREE.id)
+            ?.putString(KEY_EXPIRY_LABEL, "Free Plan")
+            ?.putLong(KEY_EXPIRY_TIMESTAMP, -1L)
+            ?.remove(KEY_PAYMENT_ID)
+            ?.remove(KEY_PURCHASED_AT)
+            ?.apply()
+
+        val user = AuthManager.getCurrentUser()
+        if (user != null) {
+            syncExpiredToFirestore(user.uid, user.idToken, user.email)
+        }
+        mainHandler.post { callback?.invoke() }
+    }
+
+    /**
+     * Enforces that only accounts with a genuine Razorpay paymentId (pay_*) hold VIP status.
+     * Any unverified or legacy test status is revoked immediately.
+     */
+    fun enforceValidPaidStatus(callback: (() -> Unit)? = null) {
+        val p = prefs ?: return
+        val isVip = p.getBoolean(KEY_IS_VIP, false)
+        val paymentId = p.getString(KEY_PAYMENT_ID, null)
+
+        if (isVip && (paymentId.isNullOrEmpty() || !paymentId.startsWith("pay_"))) {
+            Log.w(TAG, "Unverified VIP detected without authentic Razorpay payment ID. Revoking to Free tier.")
+            revokeVip(callback)
+            return
+        }
+
+        val user = AuthManager.getCurrentUser()
+        if (user != null) {
+            fetchUserPlanFromFirestore(user.uid, user.idToken) { firestoreVip, _, pid ->
+                if (!firestoreVip || pid.isNullOrEmpty() || !pid.startsWith("pay_")) {
+                    if (isVip) {
+                        Log.i(TAG, "Firestore shows no verified paid VIP for user. Revoking.")
+                        revokeVip(callback)
+                    }
+                }
+            }
+        }
+    }
+
+    fun fetchUserPlanFromFirestore(uid: String, idToken: String, callback: (Boolean, PlanTier, String?) -> Unit) {
+        val url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/$uid"
+        val reqBuilder = Request.Builder().url(url).get()
+        if (idToken.isNotEmpty()) {
+            reqBuilder.addHeader("Authorization", "Bearer $idToken")
+        }
+        httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: IOException) {
+                // Keep local state on network error
+            }
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                val body = response.body?.string() ?: ""
+                try {
+                    if (response.isSuccessful) {
+                        val json = JSONObject(body)
+                        val fields = json.optJSONObject("fields")
+                        val isVip = fields?.optJSONObject("isVip")?.optBoolean("booleanValue") ?: false
+                        val planTypeStr = fields?.optJSONObject("planType")?.optString("stringValue") ?: PlanTier.FREE.id
+                        val paymentId = fields?.optJSONObject("paymentId")?.optString("stringValue")
+                        val tier = PlanTier.values().find { it.id == planTypeStr } ?: PlanTier.FREE
+                        mainHandler.post { callback(isVip, tier, paymentId) }
+                    }
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error parsing Firestore user plan: ${t.message}")
+                } finally {
+                    response.close()
+                }
+            }
+        })
     }
 
     /**

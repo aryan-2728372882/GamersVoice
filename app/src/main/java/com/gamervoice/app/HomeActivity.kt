@@ -109,6 +109,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         RoomPersistenceManager.init(this)
         Checkout.preload(applicationContext)
 
+        // Automatically revoke any unverified / unpaid VIP status on app launch
+        PlanManager.enforceValidPaidStatus {
+            runOnUiThread {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+            }
+        }
+
         if (!AuthManager.isLoggedIn()) {
             val intent = Intent(this, AuthActivity::class.java)
             startActivity(intent)
@@ -453,22 +461,22 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.llSponsorBannerAd.visibility = View.GONE
             binding.tvHomePlanBadge.text = "👑 VIP"
             binding.tvHomePlanBadge.setTextColor(Color.parseColor("#FFD700"))
-            binding.tvHomePlanBadge.setBackgroundColor(Color.parseColor("#26FFD700"))
+            binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
 
             val countdown = PlanManager.getExpiryCountdown()
             sliderBinding.tvDrawerPlanBadge.text = "👑 " + PlanManager.getPlanName() + "\n" + countdown
             sliderBinding.tvDrawerPlanBadge.setTextColor(Color.parseColor("#FFD700"))
-            sliderBinding.tvDrawerPlanBadge.setBackgroundColor(Color.parseColor("#26FFD700"))
+            sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
             sliderBinding.llDrawerVipBanner.visibility = View.GONE
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
             binding.tvHomePlanBadge.text = "FREE"
-            binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
-            binding.tvHomePlanBadge.setBackgroundColor(Color.parseColor("#1A00E676"))
+            binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+            binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
 
             sliderBinding.tvDrawerPlanBadge.text = "🟢 FREE PLAN (2 Rooms)"
-            sliderBinding.tvDrawerPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
-            sliderBinding.tvDrawerPlanBadge.setBackgroundColor(Color.parseColor("#1A00E676"))
+            sliderBinding.tvDrawerPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+            sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
             sliderBinding.llDrawerVipBanner.visibility = View.VISIBLE
         }
     }
@@ -498,9 +506,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         var selectedTier = PlanTier.MONTHLY
 
         fun updateCardSelection() {
-            vipBinding.llPlanWeekly.setBackgroundResource(if (selectedTier == PlanTier.WEEKLY) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
-            vipBinding.llPlanMonthly.setBackgroundResource(if (selectedTier == PlanTier.MONTHLY) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
-            vipBinding.llPlanLifetime.setBackgroundResource(if (selectedTier == PlanTier.LIFETIME) R.drawable.bg_terminal_box else R.drawable.bg_code_input)
+            vipBinding.llPlanWeekly.setBackgroundResource(if (selectedTier == PlanTier.WEEKLY) R.drawable.bg_vip_card_neon else R.drawable.bg_vip_card_unselected)
+            vipBinding.llPlanMonthly.setBackgroundResource(if (selectedTier == PlanTier.MONTHLY) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
+            vipBinding.llPlanLifetime.setBackgroundResource(if (selectedTier == PlanTier.LIFETIME) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
+
+            when (selectedTier) {
+                PlanTier.WEEKLY -> vipBinding.btnActivateVip.text = "⚡ UNLOCK 7 DAYS VIP — ₹29"
+                PlanTier.MONTHLY -> vipBinding.btnActivateVip.text = "⚡ UNLOCK 30 DAYS VIP — ₹89"
+                PlanTier.LIFETIME -> vipBinding.btnActivateVip.text = "⚡ UNLOCK LIFETIME VIP — ₹249"
+                else -> vipBinding.btnActivateVip.text = "⚡ UNLOCK VIP PASS"
+            }
         }
         updateCardSelection()
 
@@ -521,38 +536,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             startRazorpayCheckout(selectedTier, user)
         }
 
-        vipBinding.btnTestWeekly.setOnClickListener {
-            PlanManager.activateTestTier(PlanTier.WEEKLY) {
+        // Revoke VIP / Reset to Free Plan
+        vipBinding.btnResetToFree.setOnClickListener {
+            PlanManager.revokeVip {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "👑 7-Day Weekly Pass Activated! Expires in 7 days.", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-            }
-        }
-
-        vipBinding.btnTestMonthly.setOnClickListener {
-            PlanManager.activateTestTier(PlanTier.MONTHLY) {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "👑 30-Day Monthly Pass Activated! Expires in 30 days.", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-            }
-        }
-
-        vipBinding.btnTestLifetime.setOnClickListener {
-            PlanManager.activateTestTier(PlanTier.LIFETIME) {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "👑 Lifetime Legend Pass Activated! Never expires (N/A).", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-            }
-        }
-
-        vipBinding.btnTestExpire.setOnClickListener {
-            PlanManager.simulateExpiry {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "⏰ Expiration simulated! Reverted to Free Plan in Cloud Firestore.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "🔄 VIP status revoked! Account reset to Free Plan.", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
         }
@@ -727,6 +716,15 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         sliderBinding.btnDrawerLicenses.setOnClickListener {
             binding.drawerLayout.closeDrawer(GravityCompat.START)
             showLegalDialog("Open Source Licenses", LegalDocsHelper.OPEN_SOURCE_LICENSES, R.drawable.ic_open_source)
+        }
+
+        sliderBinding.btnDrawerResetPlan.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            PlanManager.revokeVip {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "🔄 Account Plan reset to Free tier successfully.", Toast.LENGTH_SHORT).show()
+            }
         }
 
         sliderBinding.btnDrawerLogout.setOnClickListener {

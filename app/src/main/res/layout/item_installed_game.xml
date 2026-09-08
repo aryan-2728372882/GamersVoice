@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="118dp"
+    android:layout_width="104dp"
     android:layout_height="wrap_content"
     android:layout_marginEnd="10dp"
-    android:background="@drawable/bg_terminal_box"
+    android:background="@drawable/bg_glass_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="10dp">
 
-    <!-- App Icon with rounded corners -->
+    <!-- App Icon with luxury rounded corners & border -->
     <androidx.cardview.widget.CardView
         android:layout_width="48dp"
         android:layout_height="48dp"
-        app:cardBackgroundColor="#1A202C"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp">
+        app:cardBackgroundColor="#0D121D"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="2dp">
 
         <ImageView
             android:id="@+id/ivGameIcon"
@@ -33,28 +36,28 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:ellipsize="end"
-        android:fontFamily="sans-serif-black"
+        android:fontFamily="sans-serif-bold"
         android:gravity="center"
         android:maxLines="1"
         android:text="Free Fire"
         android:textColor="@color/white"
         android:textSize="11sp" />
 
-    <!-- Launch Button -->
+    <!-- Launch / Boost Pill -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLaunchGame"
         style="@style/Widget.MaterialComponents.Button"
         android:layout_width="match_parent"
-        android:layout_height="32dp"
+        android:layout_height="28dp"
         android:layout_marginTop="6dp"
-        android:backgroundTint="@color/accent_green"
+        android:backgroundTint="@color/neon_green"
         android:fontFamily="sans-serif-black"
         android:insetTop="0dp"
         android:insetBottom="0dp"
         android:padding="0dp"
-        android:text="LAUNCH"
+        android:text="⚡ PLAY"
         android:textColor="@color/black"
-        android:textSize="10sp"
-        app:cornerRadius="6dp" />
+        android:textSize="9.5sp"
+        app:cornerRadius="8dp" />
 
 </LinearLayout>

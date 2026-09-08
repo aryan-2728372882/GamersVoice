@@ -17,27 +17,36 @@
         android:padding="16dp">
 
         <!-- Top User Profile Header Bar -->
+        <!-- Top User Profile Header Bar -->
         <LinearLayout
             android:id="@+id/llUserProfileHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_terminal_box"
+            android:background="@drawable/bg_glass_card"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp"
             app:layout_constraintTop_toTopOf="parent">
 
-            <ImageView
-                android:id="@+id/ivUserAvatar"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:contentDescription="My Avatar"
-                android:src="@drawable/ic_avatar_1" />
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_status_chip"
+                android:padding="2dp">
+
+                <ImageView
+                    android:id="@+id/ivUserAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="My Avatar"
+                    android:src="@drawable/ic_avatar_1" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -54,27 +63,28 @@
                         android:fontFamily="sans-serif-black"
                         android:text="Gamer"
                         android:textColor="@color/white"
-                        android:textSize="14sp" />
+                        android:textSize="15sp" />
 
                     <!-- Plan Status Pill -->
                     <TextView
                         android:id="@+id/tvHomePlanBadge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:background="#1A00E676"
-                        android:fontFamily="sans-serif-bold"
-                        android:paddingHorizontal="5dp"
-                        android:paddingVertical="1dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_plan_badge_free"
+                        android:fontFamily="sans-serif-black"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="2dp"
                         android:text="FREE"
-                        android:textColor="@color/accent_green"
-                        android:textSize="9sp" />
+                        android:textColor="@color/neon_green"
+                        android:textSize="9.5sp" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvUserEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
                     android:ellipsize="end"
                     android:fontFamily="sans-serif-medium"
                     android:maxLines="1"
@@ -87,48 +97,60 @@
                 android:id="@+id/btnOpenMenu"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/bg_status_chip"
                 android:contentDescription="Menu"
                 android:padding="8dp"
-                android:src="@drawable/ic_menu_hamburger" />
+                android:src="@drawable/ic_menu_hamburger"
+                app:tint="@color/white" />
         </LinearLayout>
 
-        <!-- Top App Logo and Header -->
-        <ImageView
-            android:id="@+id/ivHeaderLogo"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
-            android:layout_marginTop="6dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_app_logo_hero"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/llUserProfileHeader" />
-
-        <TextView
-            android:id="@+id/tvHeaderTitle"
+        <!-- Cyber Server Status Chip -->
+        <LinearLayout
+            android:id="@+id/llStatusContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/app_name"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_status_chip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ivHeaderLogo" />
+            app:layout_constraintTop_toBottomOf="@id/llUserProfileHeader">
 
-        <TextView
-            android:id="@+id/tvServerStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:text="@string/status_connecting_server"
-            android:textColor="@color/text_secondary"
-            android:textSize="11sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
+            <ImageView
+                android:id="@+id/ivHeaderLogo"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_app_logo_hero" />
+
+            <TextView
+                android:id="@+id/tvHeaderTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-black"
+                android:text="GamerVoice"
+                android:textColor="@color/white"
+                android:textSize="11.5sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="12dp"
+                android:layout_marginHorizontal="8dp"
+                android:background="#33FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvServerStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-bold"
+                android:text="@string/status_connecting_server"
+                android:textColor="@color/neon_green"
+                android:textSize="10.5sp" />
+        </LinearLayout>
 
         <!-- Scrollable Middle Section for Actions, Games & Rooms -->
         <androidx.core.widget.NestedScrollView
@@ -141,7 +163,7 @@
             app:layout_constraintBottom_toTopOf="@id/llConsoleContainer"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
+            app:layout_constraintTop_toBottomOf="@id/llStatusContainer">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -275,50 +297,58 @@
                                 android:id="@+id/tvHomeNoSavedRooms"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="@drawable/bg_terminal_box"
+                                android:background="@drawable/bg_glass_card"
                                 android:gravity="center"
-                                android:padding="12dp"
+                                android:padding="16dp"
                                 android:text="No squad rooms saved yet.\nCreate a room to save it permanently in Cloud Firestore!"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
+                                android:textSize="11.5sp" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- SECTION: Main Room Actions -->
+                    <!-- SECTION: Main Room Actions (Cyberpunk Style) -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCreateRoom"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/btn_create_room"
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_cyber_button_primary"
+                        android:elevation="4dp"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.03"
+                        android:text="⚡ CREATE SQUAD ROOM"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:textStyle="bold"
-                        app:backgroundTint="@color/accent_green"
-                        app:cornerRadius="12dp" />
+                        app:backgroundTint="@null"
+                        app:cornerRadius="14dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnJoinRoom"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginTop="10dp"
-                        android:text="@string/btn_join_room"
-                        android:textColor="@color/white"
+                        android:background="@drawable/bg_cyber_button_join"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.03"
+                        android:text="🎮 JOIN SQUAD ROOM"
+                        android:textColor="@color/neon_cyan"
                         android:textSize="14sp"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="@color/accent_green"
-                        app:strokeWidth="1dp" />
+                        app:backgroundTint="@null"
+                        app:cornerRadius="14dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnToggleFloatingHud"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginTop="6dp"
-                        android:text="🎮 FLOATING IN-GAME HUD"
-                        android:textColor="@color/accent_green"
-                        android:textSize="12sp" />
+                        android:layout_height="44dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_status_chip"
+                        android:fontFamily="sans-serif-bold"
+                        android:letterSpacing="0.02"
+                        android:text="🎯 FLOATING IN-GAME HUD OVERLAY"
+                        android:textColor="@color/neon_green"
+                        android:textSize="11.5sp"
+                        app:backgroundTint="@null"
+                        app:cornerRadius="20dp" />
 
                 </LinearLayout>
 
@@ -521,14 +551,15 @@
 
         </androidx.core.widget.NestedScrollView>
 
-        <!-- SECTION: Live In-App Debug Console (Docked at Bottom) -->
+        <!-- SECTION: Live In-App Debug Console (Sleek Collapsible Bottom Chip) -->
         <LinearLayout
             android:id="@+id/llConsoleContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_terminal_box"
+            android:background="@drawable/bg_status_chip"
             android:orientation="vertical"
-            android:padding="8dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
@@ -540,22 +571,22 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/ic_notification"
-                    android:backgroundTint="#00E676" />
+                <View
+                    android:layout_width="7dp"
+                    android:layout_height="7dp"
+                    android:background="@drawable/bg_popular_badge"
+                    android:backgroundTint="@color/neon_green" />
 
                 <TextView
                     android:id="@+id/tvConsoleTitle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="DIAGNOSTIC CONSOLE"
-                    android:textColor="#00E676"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-bold"
+                    android:text="🎧 AUDIO ENGINE DIAGNOSTICS"
+                    android:textColor="@color/neon_green"
+                    android:textSize="10.5sp" />
 
                 <TextView
                     android:id="@+id/btnCopyLogs"
@@ -564,12 +595,12 @@
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
+                    android:fontFamily="sans-serif-bold"
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="3dp"
                     android:text="Copy"
                     android:textColor="#FFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    android:textSize="10.5sp" />
 
                 <TextView
                     android:id="@+id/btnClearLogs"
@@ -579,11 +610,12 @@
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
+                    android:fontFamily="sans-serif-bold"
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="3dp"
                     android:text="Clear"
                     android:textColor="#A0AEC0"
-                    android:textSize="11sp" />
+                    android:textSize="10.5sp" />
 
                 <TextView
                     android:id="@+id/btnToggleConsole"
@@ -593,23 +625,24 @@
                     android:background="?attr/selectableItemBackground"
                     android:clickable="true"
                     android:focusable="true"
+                    android:fontFamily="sans-serif-bold"
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="3dp"
-                    android:text="Hide"
-                    android:textColor="#A0AEC0"
-                    android:textSize="11sp" />
+                    android:text="Show"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="10.5sp" />
 
             </LinearLayout>
 
-            <!-- Console Scrollable Log Output -->
+            <!-- Console Scrollable Log Output (Collapsed by default) -->
             <ScrollView
                 android:id="@+id/svConsoleLogs"
                 android:layout_width="match_parent"
                 android:layout_height="110dp"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:background="#05070A"
                 android:padding="6dp"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tvConsoleLogs"
