@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#28151A"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#FF1744"
+        android:strokeWidth="2"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Winged Helmet -->
+    <path
+        android:fillColor="#FF1744"
+        android:pathData="M24,12 L30,17 L30,29 L24,35 L18,29 L18,17 Z" />
+    <!-- Wings -->
+    <path
+        android:fillColor="#FF5252"
+        android:pathData="M16,14 L10,18 L16,24 Z M32,14 L38,18 L32,24 Z" />
+    <!-- Eye Slot -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M20,21 L28,21 L28,25 L20,25 Z" />
+</vector>

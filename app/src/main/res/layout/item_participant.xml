@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <!-- Avatar with active speaking border -->
+    <ImageView
+        android:id="@+id/ivParticipantAvatar"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:contentDescription="Participant Avatar"
+        android:src="@drawable/ic_avatar_1" />
+
+    <!-- Name & Details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvParticipantName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                tools:text="ShadowNinja" />
+
+            <TextView
+                android:id="@+id/tvYouBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_terminal_box"
+                android:fontFamily="sans-serif-black"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="1dp"
+                android:text="YOU"
+                android:textColor="@color/accent_green"
+                android:textSize="10sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvParticipantStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Connected"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Voice Indicator dot -->
+    <ImageView
+        android:id="@+id/ivSpeakingIndicator"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:contentDescription="Voice Status"
+        android:src="@drawable/ic_notification"
+        android:tint="@color/accent_green" />
+
+</LinearLayout>

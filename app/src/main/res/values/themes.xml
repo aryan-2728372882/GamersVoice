@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.GamerVoice" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.GamerVoice" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Status bar and window background -->
         <item name="android:statusBarColor">@color/primary_dark</item>
         <item name="android:windowBackground">@color/primary_dark</item>
+
+        <!-- Primary branding -->
+        <item name="colorPrimary">@color/accent_green</item>
+        <item name="colorPrimaryVariant">@color/accent_green</item>
+        <item name="colorOnPrimary">@color/black</item>
+
+        <!-- Secondary branding -->
+        <item name="colorSecondary">@color/accent_green</item>
+        <item name="colorSecondaryVariant">@color/accent_green</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <!-- Surface & Background -->
+        <item name="colorSurface">@color/card_background</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
     </style>
 </resources>

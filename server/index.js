@@ -66,11 +66,11 @@ wss.on('connection', (ws) => {
 
     switch (data.type) {
       case 'create-room':
-        handleCreateRoom(ws);
+        handleCreateRoom(ws, data);
         break;
 
       case 'join-room':
-        handleJoinRoom(ws, data.roomCode);
+        handleJoinRoom(ws, data);
         break;
 
       case 'offer':
@@ -81,6 +81,14 @@ wss.on('connection', (ws) => {
 
       case 'leave-room':
         handleLeaveRoom(ws);
+        break;
+
+      case 'ping':
+        sendJson(ws, { type: 'pong', timestamp: data.timestamp });
+        break;
+
+      case 'tactical-callout':
+        handleBroadcastRoom(ws, data);
         break;
 
       default:
@@ -116,43 +124,59 @@ wss.on('close', () => {
 
 // --- Message Handlers ---
 
-function handleCreateRoom(ws) {
+function handleCreateRoom(ws, data = {}) {
   // If client is already in a room, leave first
   handleLeaveRoom(ws);
 
   const roomCode = generateRoomCode();
   const peerId = randomUUID();
+  const name = data.name || 'Gamer';
+  const avatar = data.avatar || 'avatar_1';
 
   const room = {
     code: roomCode,
     peers: new Map()
   };
 
-  room.peers.set(peerId, { ws, peerId });
+  room.peers.set(peerId, { ws, peerId, name, avatar });
   rooms.set(roomCode, room);
-  clients.set(ws, { peerId, roomCode });
+  clients.set(ws, { peerId, roomCode, name, avatar });
 
   sendJson(ws, {
     type: 'room-created',
     roomCode,
-    peerId
+    peerId,
+    name,
+    avatar
   });
 
-  console.log(`[Create] Room ${roomCode} created by peer ${peerId}`);
+  console.log(`[Create] Room ${roomCode} created by ${name} (${peerId})`);
 }
 
-function handleJoinRoom(ws, requestedCode) {
+function handleJoinRoom(ws, data = {}) {
+  const requestedCode = typeof data === 'string' ? data : data.roomCode;
   if (!requestedCode || typeof requestedCode !== 'string') {
     sendError(ws, 'Invalid room code');
     return;
   }
 
   const roomCode = requestedCode.toUpperCase().trim();
-  const room = rooms.get(roomCode);
+  let room = rooms.get(roomCode);
 
   if (!room) {
-    sendError(ws, 'Room not found');
-    return;
+    // If it's a valid 5-character alphanumeric room code (e.g. persistent room saved in Firestore),
+    // re-create the room in memory on demand so returning squad members can rejoin anytime even with 0 members!
+    if (/^[A-Z0-9]{5}$/.test(roomCode)) {
+      room = {
+        code: roomCode,
+        peers: new Map()
+      };
+      rooms.set(roomCode, room);
+      console.log(`[Rejoin] Persistent room ${roomCode} re-opened in memory`);
+    } else {
+      sendError(ws, 'Room not found');
+      return;
+    }
   }
 
   if (room.peers.size >= 5) {
@@ -164,31 +188,42 @@ function handleJoinRoom(ws, requestedCode) {
   handleLeaveRoom(ws);
 
   const peerId = randomUUID();
+  const name = data.name || 'Gamer';
+  const avatar = data.avatar || 'avatar_1';
+
   const existingPeerIds = Array.from(room.peers.keys());
+  const existingMembers = Array.from(room.peers.values()).map(p => ({
+    peerId: p.peerId,
+    name: p.name || 'Gamer',
+    avatar: p.avatar || 'avatar_1'
+  }));
 
   // Notify existing members about the new peer
   for (const [existingId, peerObj] of room.peers.entries()) {
     if (peerObj.ws.readyState === WebSocket.OPEN) {
       sendJson(peerObj.ws, {
         type: 'peer-joined',
-        peerId
+        peerId,
+        name,
+        avatar
       });
     }
   }
 
   // Add new peer to room
-  room.peers.set(peerId, { ws, peerId });
-  clients.set(ws, { peerId, roomCode });
+  room.peers.set(peerId, { ws, peerId, name, avatar });
+  clients.set(ws, { peerId, roomCode, name, avatar });
 
-  // Send confirmation and list of existing peers to joiner
+  // Send confirmation, peer IDs, and rich member info to joiner
   sendJson(ws, {
     type: 'room-joined',
     roomCode,
     peerId,
-    peers: existingPeerIds
+    peers: existingPeerIds,
+    members: existingMembers
   });
 
-  console.log(`[Join] Peer ${peerId} joined room ${roomCode} (${room.peers.size}/5 members)`);
+  console.log(`[Join] ${name} (${peerId}) joined room ${roomCode} (${room.peers.size}/5 members)`);
 }
 
 function handleRelaySignal(ws, data) {
@@ -224,6 +259,28 @@ function handleRelaySignal(ws, data) {
       ...data,
       senderPeerId
     });
+  }
+}
+
+function handleBroadcastRoom(ws, data) {
+  const clientInfo = clients.get(ws);
+  if (!clientInfo) {
+    sendError(ws, 'You are not in a room');
+    return;
+  }
+
+  const { peerId: senderPeerId, roomCode, name: senderName } = clientInfo;
+  const room = rooms.get(roomCode);
+  if (!room) return;
+
+  for (const [memberId, peerObj] of room.peers.entries()) {
+    if (memberId !== senderPeerId && peerObj.ws.readyState === WebSocket.OPEN) {
+      sendJson(peerObj.ws, {
+        ...data,
+        senderPeerId,
+        senderName: senderName || 'Gamer'
+      });
+    }
   }
 }
 

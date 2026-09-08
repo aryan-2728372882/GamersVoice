@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamerVoice Web Client &amp; WebRTC Debugger</title>
+    <style>
+        :root {
+            --bg-primary: #0D0F12;
+            --bg-card: #161922;
+            --bg-card-hover: #1F2330;
+            --accent-green: #00E676;
+            --accent-green-hover: #00C853;
+            --text-primary: #FFFFFF;
+            --text-secondary: #90A4AE;
+            --text-muted: #546E7A;
+            --danger: #FF5252;
+            --warning: #FFD600;
+            --info: #00B0FF;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 820px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .logo-badge {
+            width: 64px;
+            height: 64px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 2px solid var(--accent-green);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .server-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--warning);
+            display: inline-block;
+        }
+
+        .status-dot.connected {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .status-dot.disconnected {
+            background-color: var(--danger);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-green-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--accent-green);
+            color: var(--text-primary);
+            margin-top: 12px;
+        }
+
+        .btn-outline:hover {
+            background: rgba(0, 230, 118, 0.08);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: #fff;
+            margin-top: 12px;
+        }
+
+        .btn-danger:hover {
+            background-color: #E53935;
+        }
+
+        .btn-text {
+            background: none;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .btn-text:hover {
+            color: var(--text-primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .input-group {
+            margin-top: 16px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--bg-primary);
+            border: 2px solid var(--accent-green);
+            border-radius: 12px;
+            color: #FFF;
+            font-size: 22px;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            outline: none;
+        }
+
+        .input-field:focus {
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.3);
+        }
+
+        .room-view {
+            text-align: center;
+        }
+
+        .room-code-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+        }
+
+        .room-code-display {
+            font-size: 46px;
+            font-weight: 900;
+            color: var(--accent-green);
+            letter-spacing: 6px;
+            margin: 4px 0 8px 0;
+            cursor: pointer;
+            user-select: all;
+        }
+
+        .member-count {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .ptt-box {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .ptt-indicator {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .ptt-indicator.muted {
+            color: #90A4AE;
+            background: rgba(144, 164, 174, 0.1);
+        }
+
+        .ptt-indicator.speaking {
+            color: var(--accent-green);
+            background: rgba(0, 230, 118, 0.15);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 4px rgba(0, 230, 118, 0.2); }
+            to { box-shadow: 0 0 16px rgba(0, 230, 118, 0.6); }
+        }
+
+        .ptt-hold-btn {
+            background-color: var(--bg-card-hover);
+            border: 2px dashed var(--accent-green);
+            color: #FFF;
+            padding: 20px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            margin-top: 12px;
+            width: 100%;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ptt-hold-btn:active, .ptt-hold-btn.active {
+            background-color: var(--accent-green);
+            color: #000;
+            border-style: solid;
+        }
+
+        .debug-card {
+            display: flex;
+            flex-direction: column;
+            height: 620px;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .debug-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .debug-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-mini {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .btn-mini:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFF;
+        }
+
+        .peer-stats {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .stat-item span {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .debug-logs {
+            flex: 1;
+            background-color: #080A0C;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            margin-right: 6px;
+        }
+
+        .log-tag {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 9px;
+            margin-right: 6px;
+        }
+
+        .tag-ws { background: #3949AB; color: #FFF; }
+        .tag-webrtc { background: #00897B; color: #FFF; }
+        .tag-ice { background: #FB8C00; color: #000; }
+        .tag-audio { background: #43A047; color: #FFF; }
+        .tag-error { background: #E53935; color: #FFF; }
+        .tag-info { background: #455A64; color: #FFF; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- LEFT COLUMN: GamerVoice Native UI Mirror -->
+    <div class="card">
+        <div class="header">
+            <div class="logo-badge">🎙️</div>
+            <h1>GamerVoice</h1>
+            <div class="server-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="serverStatusText">Status: Connecting to server...</span>
+            </div>
+        </div>
+
+        <!-- SECTION 1: Home View -->
+        <div id="homeSection">
+            <button class="btn btn-primary" id="btnCreateRoom" disabled>Create Room</button>
+            <button class="btn btn-outline" id="btnShowJoin" disabled>Join Room</button>
+        </div>
+
+        <!-- SECTION 2: Join Input View -->
+        <div id="joinSection" class="hidden">
+            <div class="input-group">
+                <input type="text" class="input-field" id="roomCodeInput" maxlength="5" placeholder="ROOM" autofocus>
+            </div>
+            <button class="btn btn-primary" id="btnSubmitJoin" style="margin-top: 14px;">Join Room</button>
+            <button class="btn btn-text" id="btnCancelJoin">Cancel</button>
+        </div>
+
+        <!-- SECTION 3: Connected Room View -->
+        <div id="roomSection" class="hidden">
+            <div class="room-view">
+                <div class="room-code-label">ROOM CODE</div>
+                <div class="room-code-display" id="displayRoomCode" title="Click to copy">-----</div>
+                <button class="btn-mini" id="btnCopyCode" style="margin: 0 auto 12px auto; display: block;">📋 Copy Room Code</button>
+
+                <div class="member-count" id="memberCountText">1/5 connected</div>
+
+                <!-- Live Participants List -->
+                <div id="participantsBox" style="margin: 12px 0; background: #161922; border-radius: 8px; padding: 10px; border: 1px solid #232733; text-align: left;">
+                    <div style="font-size: 11px; font-weight: bold; color: var(--text-secondary); margin-bottom: 6px;">ROOM PARTICIPANTS</div>
+                    <div id="participantsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                </div>
+
+                <div class="ptt-box">
+                    <button class="btn btn-outline" id="btnToggleMicMode" style="margin-top: 0; padding: 10px; font-size: 13px;">
+                        Mode: Push-To-Talk
+                    </button>
+
+                    <div class="ptt-indicator muted" id="pttIndicator">
+                        🔇 MUTED (Hold Space to Talk)
+                    </div>
+
+                    <button class="ptt-hold-btn" id="btnPttHold">
+                        🎙️ HOLD TO TALK (SPACEBAR)
+                    </button>
+                </div>
+
+                <button class="btn btn-danger" id="btnLeaveRoom">Leave Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: WebRTC Real-Time Debug Console -->
+    <div class="card debug-card">
+        <div class="debug-header">
+            <div class="debug-title">
+                <span>⚡ WebRTC &amp; Signaling Telemetry</span>
+            </div>
+            <div class="debug-actions">
+                <button class="btn-mini" id="btnTestMic">🎤 Test Mic</button>
+                <button class="btn-mini" id="btnClearLogs">Clear</button>
+                <button class="btn-mini" id="btnCopyLogs">Copy All Logs</button>
+            </div>
+        </div>
+
+        <div class="peer-stats">
+            <div class="stat-item">My Peer ID: <span id="statPeerId">None</span></div>
+            <div class="stat-item">Active Mesh: <span id="statPeersCount">0</span>/4</div>
+            <div class="stat-item">Mic Track: <span id="statMicStatus">Idle</span></div>
+        </div>
+
+        <div class="debug-logs" id="debugLogs"></div>
+    </div>
+</div>
+
+<div id="remoteAudios" style="display:none;"></div>
+
+<script>
+(() => {
+    'use strict';
+
+    const SIGNALING_URL = 'wss://gamervoice-signaling.onrender.com';
+
+    const RTC_CONFIG = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+        ],
+        sdpSemantics: 'unified-plan'
+    };
+
+    let ws = null;
+    let myPeerId = null;
+    let currentRoomCode = null;
+    let isPttMode = true;
+    let isTransmitting = false;
+    let localStream = null;
+    let localAudioTrack = null;
+
+    const peerConnections = new Map();
+    const pendingCandidates = new Map();
+
+    const statusDot = document.getElementById('statusDot');
+    const serverStatusText = document.getElementById('serverStatusText');
+    const homeSection = document.getElementById('homeSection');
+    const joinSection = document.getElementById('joinSection');
+    const roomSection = document.getElementById('roomSection');
+    const btnCreateRoom = document.getElementById('btnCreateRoom');
+    const btnShowJoin = document.getElementById('btnShowJoin');
+    const btnSubmitJoin = document.getElementById('btnSubmitJoin');
+    const btnCancelJoin = document.getElementById('btnCancelJoin');
+    const roomCodeInput = document.getElementById('roomCodeInput');
+    const displayRoomCode = document.getElementById('displayRoomCode');
+    const btnCopyCode = document.getElementById('btnCopyCode');
+    const memberCountText = document.getElementById('memberCountText');
+    const btnToggleMicMode = document.getElementById('btnToggleMicMode');
+    const pttIndicator = document.getElementById('pttIndicator');
+    const btnPttHold = document.getElementById('btnPttHold');
+    const btnLeaveRoom = document.getElementById('btnLeaveRoom');
+    const debugLogs = document.getElementById('debugLogs');
+    const btnTestMic = document.getElementById('btnTestMic');
+    const btnClearLogs = document.getElementById('btnClearLogs');
+    const btnCopyLogs = document.getElementById('btnCopyLogs');
+    const statPeerId = document.getElementById('statPeerId');
+    const statPeersCount = document.getElementById('statPeersCount');
+    const statMicStatus = document.getElementById('statMicStatus');
+    const remoteAudios = document.getElementById('remoteAudios');
+
+    function log(tag, message, data = null) {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+        const devtoolsPrefix = `[GamerVoice][${tag}]`;
+        if (tag === 'ERROR') {
+            console.error(devtoolsPrefix, message, data || '');
+        } else if (tag === 'ICE' || tag === 'WEBRTC') {
+            console.info(`%c${devtoolsPrefix} ${message}`, 'color: #00E676; font-weight: bold;', data || '');
+        } else if (tag === 'WS') {
+            console.log(`%c${devtoolsPrefix} ${message}`, 'color: #00B0FF;', data || '');
+        } else {
+            console.log(devtoolsPrefix, message, data || '');
+        }
+
+        const row = document.createElement('div');
+        row.className = 'log-entry';
+
+        const tagClass = `tag-${tag.toLowerCase()}`;
+        row.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-tag ${tagClass}">${tag}</span> <span>${escapeHtml(message)}</span>`;
+        if (data) {
+            const dataSpan = document.createElement('div');
+            dataSpan.style.color = '#80DEEA';
+            dataSpan.style.paddingLeft = '68px';
+            dataSpan.style.fontSize = '10px';
+            dataSpan.textContent = typeof data === 'string' ? data : JSON.stringify(data);
+            row.appendChild(dataSpan);
+        }
+
+        debugLogs.appendChild(row);
+        debugLogs.scrollTop = debugLogs.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    }
+
+    function connectSignaling() {
+        log('WS', `Connecting to signaling server at ${SIGNALING_URL}...`);
+        serverStatusText.textContent = 'Status: Connecting to server...';
+        statusDot.className = 'status-dot';
+
+        try {
+            ws = new WebSocket(SIGNALING_URL);
+
+            ws.onopen = () => {
+                log('WS', 'Connected to WebSocket Signaling Server! Ready for rooms.');
+                statusDot.className = 'status-dot connected';
+                serverStatusText.textContent = 'Status: Server Connected (Ready)';
+                btnCreateRoom.disabled = false;
+                btnShowJoin.disabled = false;
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    handleSignalingMessage(msg);
+                } catch (e) {
+                    log('ERROR', 'Failed to parse incoming WebSocket message', event.data);
+                }
+            };
+
+            ws.onclose = (e) => {
+                log('WS', `WebSocket closed (code: ${e.code}, reason: ${e.reason || 'None'})`);
+                statusDot.className = 'status-dot disconnected';
+                serverStatusText.textContent = 'Status: Disconnected. Reconnecting in 3s...';
+                btnCreateRoom.disabled = true;
+                btnShowJoin.disabled = true;
+                setTimeout(connectSignaling, 3000);
+            };
+
+            ws.onerror = (err) => {
+                log('ERROR', 'WebSocket encountered error', err);
+            };
+        } catch (e) {
+            log('ERROR', 'Exception initializing WebSocket', e);
+        }
+    }
+
+    function sendWs(payload) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            log('WS', `Sending: ${payload.type}`, payload);
+            ws.send(JSON.stringify(payload));
+        } else {
+            log('ERROR', `Cannot send ${payload.type}: WebSocket is not open.`);
+        }
+    }
+
+    async function handleSignalingMessage(msg) {
+        log('WS', `Received: ${msg.type}`, msg);
+
+        switch (msg.type) {
+            case 'room-created': {
+                myPeerId = msg.peerId;
+                currentRoomCode = msg.roomCode;
+                statPeerId.textContent = myPeerId.substring(0, 8) + '...';
+                log('INFO', `Room created successfully: ${msg.roomCode}, PeerID: ${myPeerId}`);
+                roomParticipants.clear();
+                roomParticipants.set(myPeerId, { peerId: myPeerId, name: 'You (Web)', avatar: 'avatar_1' });
+                await initLocalAudio();
+                showRoomView(msg.roomCode);
+                updateMemberCountUI();
+                break;
+            }
+
+            case 'room-joined': {
+                myPeerId = msg.peerId;
+                currentRoomCode = msg.roomCode;
+                statPeerId.textContent = myPeerId.substring(0, 8) + '...';
+                log('INFO', `Joined room ${msg.roomCode}. Existing peers: ${JSON.stringify(msg.peers)}`);
+                roomParticipants.clear();
+                roomParticipants.set(myPeerId, { peerId: myPeerId, name: 'You (Web)', avatar: 'avatar_1' });
+                if (msg.members) {
+                    msg.members.forEach(m => roomParticipants.set(m.peerId, m));
+                }
+                const existingPeers = msg.peers || [];
+                for (const p of existingPeers) {
+                    if (!roomParticipants.has(p)) {
+                        roomParticipants.set(p, { peerId: p, name: `Player ${p.substring(0, 5).toUpperCase()}`, avatar: 'avatar_1' });
+                    }
+                }
+                await initLocalAudio();
+                showRoomView(msg.roomCode);
+
+                for (const peerId of existingPeers) {
+                    initiatePeerOffer(peerId);
+                }
+                updateMemberCountUI();
+                break;
+            }
+
+            case 'peer-joined': {
+                const pName = msg.name || `Player ${msg.peerId.substring(0, 5).toUpperCase()}`;
+                log('INFO', `New peer joined room: ${pName} (${msg.peerId})`);
+                roomParticipants.set(msg.peerId, {
+                    peerId: msg.peerId,
+                    name: pName,
+                    avatar: msg.avatar || 'avatar_1'
+                });
+                updateMemberCountUI();
+                break;
+            }
+
+            case 'offer': {
+                log('WEBRTC', `Offer received from ${msg.senderPeerId}`);
+                if (!roomParticipants.has(msg.senderPeerId)) {
+                    roomParticipants.set(msg.senderPeerId, {
+                        peerId: msg.senderPeerId,
+                        name: `Player ${msg.senderPeerId.substring(0, 5).toUpperCase()}`,
+                        avatar: 'avatar_1'
+                    });
+                }
+                updateMemberCountUI();
+                await handleRemoteOffer(msg.senderPeerId, msg.sdp);
+                break;
+            }
+
+            case 'answer': {
+                log('WEBRTC', `Answer received from ${msg.senderPeerId}`);
+                await handleRemoteAnswer(msg.senderPeerId, msg.sdp);
+                break;
+            }
+
+            case 'ice-candidate': {
+                log('ICE', `Received ICE Candidate from ${msg.senderPeerId}`);
+                handleRemoteIceCandidate(msg.senderPeerId, msg.candidate, msg.sdpMid, msg.sdpMLineIndex);
+                break;
+            }
+
+            case 'peer-left': {
+                log('INFO', `Peer left room: ${msg.peerId}`);
+                removePeer(msg.peerId);
+                roomParticipants.delete(msg.peerId);
+                updateMemberCountUI();
+                break;
+            }
+
+            case 'tactical-callout': {
+                log('INFO', `🎯 SQUAD CALLOUT [${msg.senderName}]: ${msg.calloutText}`);
+                break;
+            }
+
+            case 'pong': {
+                const rtt = Date.now() - msg.timestamp;
+                log('INFO', `Latency: ${rtt}ms`);
+                break;
+            }
+
+            case 'error': {
+                log('ERROR', `Server Error: ${msg.message}`);
+                alert(`Error: ${msg.message}`);
+                break;
+            }
+
+            default:
+                log('INFO', `Unhandled message type: ${msg.type}`);
+        }
+    }
+
+    function tuneSdpFor3G(sdp) {
+        return sdp.replace(/a=fmtp:111 (.*)/, 'a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=20000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$1');
+    }
+
+    async function initLocalAudio() {
+        if (localStream) return;
+
+        try {
+            log('AUDIO', 'Requesting microphone access (echoCancellation, noiseSuppression, autoGainControl)...');
+            const rawStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    googEchoCancellation: true,
+                    googAutoGainControl: true,
+                    googNoiseSuppression: true,
+                    googHighpassFilter: true,
+                    googTypingNoiseDetection: true,
+                    channelCount: 1,
+                    sampleRate: 48000
+                },
+                video: false
+            });
+
+            // Web Audio API DSP: High-pass Filter (removes fan rumble) + Dynamic Noise Gate (zero noise)
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioCtx.createMediaStreamSource(rawStream);
+
+                // 120 Hz Highpass Filter: strips low-frequency fan drone, vibrations, and desk thumps
+                const hpFilter = audioCtx.createBiquadFilter();
+                hpFilter.type = 'highpass';
+                hpFilter.frequency.value = 120;
+
+                // 7.5 kHz Lowpass Filter: strips high-pitched hiss & air turbulence
+                const lpFilter = audioCtx.createBiquadFilter();
+                lpFilter.type = 'lowpass';
+                lpFilter.frequency.value = 7500;
+
+                // Noise Gate: mutes output to absolute 0 when audio level is below human speech
+                const scriptNode = audioCtx.createScriptProcessor(2048, 1, 1);
+                const destination = audioCtx.createMediaStreamDestination();
+
+                let gateOpen = false;
+                let silenceSamples = 0;
+                const OPEN_THRESHOLD = 0.012;  // Speech threshold
+                const CLOSE_THRESHOLD = 0.006; // Fan/room noise threshold
+                const HOLD_SAMPLES = 4800;     // ~100ms hold time to prevent cutting word endings
+
+                scriptNode.onaudioprocess = (e) => {
+                    const input = e.inputBuffer.getChannelData(0);
+                    const output = e.outputBuffer.getChannelData(0);
+
+                    let sum = 0;
+                    for (let i = 0; i < input.length; i++) {
+                        sum += input[i] * input[i];
+                    }
+                    const rms = Math.sqrt(sum / input.length);
+
+                    if (rms > OPEN_THRESHOLD) {
+                        gateOpen = true;
+                        silenceSamples = 0;
+                    } else if (rms < CLOSE_THRESHOLD) {
+                        silenceSamples += input.length;
+                        if (silenceSamples > HOLD_SAMPLES) {
+                            gateOpen = false;
+                        }
+                    }
+
+                    if (gateOpen) {
+                        for (let i = 0; i < input.length; i++) {
+                            output[i] = input[i];
+                        }
+                    } else {
+                        for (let i = 0; i < input.length; i++) {
+                            output[i] = 0.0; // Absolute 0 noise when not speaking!
+                        }
+                    }
+                };
+
+                source.connect(hpFilter);
+                hpFilter.connect(lpFilter);
+                lpFilter.connect(scriptNode);
+                scriptNode.connect(destination);
+
+                localStream = destination.stream;
+                log('AUDIO', 'DSP Highpass Filter (120Hz) & Noise Gate activated');
+            } catch (dspErr) {
+                log('WARN', 'Web Audio DSP init failed, falling back to raw stream: ' + dspErr.message);
+                localStream = rawStream;
+            }
+
+            localAudioTrack = localStream.getAudioTracks()[0];
+            localAudioTrack.enabled = !isPttMode;
+            statMicStatus.textContent = isPttMode ? 'Muted (PTT)' : 'Live (Always On)';
+            log('AUDIO', `Microphone stream acquired! Track: "${localAudioTrack.label}"`);
+        } catch (e) {
+            log('ERROR', `Microphone access denied: ${e.message}`, e);
+            alert(`Microphone Error: ${e.message}`);
+        }
+    }
+
+    function getOrCreatePeerConnection(targetPeerId) {
+        if (peerConnections.has(targetPeerId)) {
+            return peerConnections.get(targetPeerId);
+        }
+
+        log('WEBRTC', `Creating RTCPeerConnection for peer: ${targetPeerId}`);
+        const pc = new RTCPeerConnection(RTC_CONFIG);
+
+        if (localAudioTrack) {
+            log('WEBRTC', `Adding local audio track to PeerConnection [${targetPeerId}]`);
+            pc.addTrack(localAudioTrack, localStream);
+        }
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                log('ICE', `Generated Local ICE Candidate for ${targetPeerId}`);
+                sendWs({
+                    type: 'ice-candidate',
+                    targetPeerId: targetPeerId,
+                    candidate: event.candidate.candidate,
+                    sdpMid: event.candidate.sdpMid,
+                    sdpMLineIndex: event.candidate.sdpMLineIndex
+                });
+            } else {
+                log('ICE', `ICE candidate gathering finished for ${targetPeerId}`);
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            log('ICE', `ICE Connection State [${targetPeerId}]: ${pc.iceConnectionState}`);
+            if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                log('WEBRTC', `🎉 P2P Audio Mesh Connected with ${targetPeerId}!`);
+            } else if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+                log('ERROR', `Peer connection state changed to: ${pc.iceConnectionState}`);
+            }
+        };
+
+        pc.ontrack = (event) => {
+            log('AUDIO', `🔊 Remote Audio Track Received from ${targetPeerId}! Stream ID: ${event.streams[0]?.id}`);
+            let audioEl = document.getElementById(`audio_${targetPeerId}`);
+            if (!audioEl) {
+                audioEl = document.createElement('audio');
+                audioEl.id = `audio_${targetPeerId}`;
+                audioEl.autoplay = true;
+                remoteAudios.appendChild(audioEl);
+            }
+            audioEl.srcObject = event.streams[0];
+            audioEl.play().catch(err => log('ERROR', `Autoplay prevented: ${err.message}`));
+        };
+
+        peerConnections.set(targetPeerId, pc);
+        statPeersCount.textContent = peerConnections.size;
+        return pc;
+    }
+
+    async function initiatePeerOffer(targetPeerId) {
+        try {
+            log('WEBRTC', `Initiating Offer to peer: ${targetPeerId}`);
+            const pc = getOrCreatePeerConnection(targetPeerId);
+
+            const offer = await pc.createOffer();
+            const tunedOffer = new RTCSessionDescription({
+                type: offer.type,
+                sdp: tuneSdpFor3G(offer.sdp)
+            });
+            await pc.setLocalDescription(tunedOffer);
+            log('WEBRTC', `Local description set (Offer, 3G Opus Tuned) for ${targetPeerId}. Sending...`);
+
+            sendWs({
+                type: 'offer',
+                targetPeerId: targetPeerId,
+                sdp: tunedOffer.sdp
+            });
+        } catch (e) {
+            log('ERROR', `Failed to create/send offer to ${targetPeerId}: ${e.message}`, e);
+        }
+    }
+
+    async function handleRemoteOffer(senderPeerId, sdp) {
+        try {
+            const pc = getOrCreatePeerConnection(senderPeerId);
+            const offerDesc = new RTCSessionDescription({ type: 'offer', sdp: sdp });
+
+            await pc.setRemoteDescription(offerDesc);
+            log('WEBRTC', `Remote description (Offer) set for ${senderPeerId}`);
+
+            drainPendingIceCandidates(senderPeerId, pc);
+
+            const answer = await pc.createAnswer();
+            const tunedAnswer = new RTCSessionDescription({
+                type: answer.type,
+                sdp: tuneSdpFor3G(answer.sdp)
+            });
+            await pc.setLocalDescription(tunedAnswer);
+            log('WEBRTC', `Local description (Answer, 3G Opus Tuned) set for ${senderPeerId}. Sending answer...`);
+
+            sendWs({
+                type: 'answer',
+                targetPeerId: senderPeerId,
+                sdp: tunedAnswer.sdp
+            });
+        } catch (e) {
+            log('ERROR', `Failed to handle offer from ${senderPeerId}: ${e.message}`, e);
+        }
+    }
+
+    async function handleRemoteAnswer(senderPeerId, sdp) {
+        try {
+            const pc = peerConnections.get(senderPeerId);
+            if (!pc) {
+                log('ERROR', `Received answer for unknown peer: ${senderPeerId}`);
+                return;
+            }
+
+            const answerDesc = new RTCSessionDescription({ type: 'answer', sdp: sdp });
+            await pc.setRemoteDescription(answerDesc);
+            log('WEBRTC', `Remote description (Answer) set for ${senderPeerId}`);
+
+            drainPendingIceCandidates(senderPeerId, pc);
+        } catch (e) {
+            log('ERROR', `Failed to set remote answer: ${e.message}`, e);
+        }
+    }
+
+    function handleRemoteIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex) {
+        const iceCandidate = new RTCIceCandidate({
+            candidate: candidate,
+            sdpMid: sdpMid,
+            sdpMLineIndex: sdpMLineIndex
+        });
+
+        const pc = peerConnections.get(senderPeerId);
+        if (pc && pc.remoteDescription) {
+            pc.addIceCandidate(iceCandidate).catch(e => log('ERROR', `Error adding ICE candidate: ${e.message}`));
+        } else {
+            if (!pendingCandidates.has(senderPeerId)) {
+                pendingCandidates.set(senderPeerId, []);
+            }
+            pendingCandidates.get(senderPeerId).push(iceCandidate);
+            log('ICE', `Queued ICE candidate for ${senderPeerId} (waiting for remote description)`);
+        }
+    }
+
+    function drainPendingIceCandidates(peerId, pc) {
+        if (pendingCandidates.has(peerId)) {
+            const candidates = pendingCandidates.get(peerId);
+            log('ICE', `Draining ${candidates.length} queued ICE candidates for ${peerId}`);
+            for (const c of candidates) {
+                pc.addIceCandidate(c).catch(e => log('ERROR', `Error adding drained ICE candidate: ${e.message}`));
+            }
+            pendingCandidates.delete(peerId);
+        }
+    }
+
+    function removePeer(peerId) {
+        if (peerConnections.has(peerId)) {
+            log('WEBRTC', `Closing PeerConnection for ${peerId}`);
+            const pc = peerConnections.get(peerId);
+            pc.close();
+            peerConnections.delete(peerId);
+        }
+        pendingCandidates.delete(peerId);
+
+        const audioEl = document.getElementById(`audio_${peerId}`);
+        if (audioEl) audioEl.remove();
+
+        statPeersCount.textContent = peerConnections.size;
+    }
+
+    function closeAllPeers() {
+        for (const [peerId, pc] of peerConnections.entries()) {
+            pc.close();
+            const audioEl = document.getElementById(`audio_${peerId}`);
+            if (audioEl) audioEl.remove();
+        }
+        peerConnections.clear();
+        pendingCandidates.clear();
+        statPeersCount.textContent = '0';
+        log('WEBRTC', 'All peer connections closed.');
+    }
+
+    function setTransmitting(active) {
+        if (isTransmitting === active) return;
+        isTransmitting = active;
+
+        if (localAudioTrack) {
+            localAudioTrack.enabled = isPttMode ? active : true;
+        }
+
+        if (active) {
+            pttIndicator.className = 'ptt-indicator speaking';
+            pttIndicator.textContent = '🎙️ SPEAKING (Active)';
+            btnPttHold.classList.add('active');
+            statMicStatus.textContent = 'Transmitting';
+            log('AUDIO', 'Mic: ACTIVE');
+        } else {
+            pttIndicator.className = 'ptt-indicator muted';
+            pttIndicator.textContent = '🔇 MUTED (Hold Space to Talk)';
+            btnPttHold.classList.remove('active');
+            statMicStatus.textContent = isPttMode ? 'Muted (PTT)' : 'Live (Always On)';
+            log('AUDIO', 'Mic: MUTED');
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat && isPttMode && currentRoomCode && document.activeElement !== roomCodeInput) {
+            e.preventDefault();
+            setTransmitting(true);
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' && isPttMode && currentRoomCode) {
+            e.preventDefault();
+            setTransmitting(false);
+        }
+    });
+
+    btnPttHold.addEventListener('mousedown', () => isPttMode && setTransmitting(true));
+    window.addEventListener('mouseup', () => isPttMode && setTransmitting(false));
+    btnPttHold.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (isPttMode) setTransmitting(true);
+    });
+    btnPttHold.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (isPttMode) setTransmitting(false);
+    });
+
+    btnToggleMicMode.addEventListener('click', () => {
+        isPttMode = !isPttMode;
+        if (isPttMode) {
+            btnToggleMicMode.textContent = 'Mode: Push-To-Talk';
+            btnPttHold.style.display = 'block';
+            setTransmitting(false);
+        } else {
+            btnToggleMicMode.textContent = 'Mode: Always On (VAD)';
+            btnPttHold.style.display = 'none';
+            pttIndicator.className = 'ptt-indicator speaking';
+            pttIndicator.textContent = '🎙️ ALWAYS ON (VAD Active)';
+            if (localAudioTrack) localAudioTrack.enabled = true;
+            statMicStatus.textContent = 'Live (Always On)';
+            log('AUDIO', 'Switched to Always On mode');
+        }
+    });
+
+    function showHomeView() {
+        homeSection.classList.remove('hidden');
+        joinSection.classList.add('hidden');
+        roomSection.classList.add('hidden');
+        serverStatusText.textContent = 'Status: Server Connected (Ready)';
+    }
+
+    function showJoinInputView() {
+        homeSection.classList.add('hidden');
+        joinSection.classList.remove('hidden');
+        roomSection.classList.add('hidden');
+        roomCodeInput.value = '';
+        roomCodeInput.focus();
+    }
+
+    function showRoomView(roomCode) {
+        homeSection.classList.add('hidden');
+        joinSection.classList.add('hidden');
+        roomSection.classList.remove('hidden');
+        displayRoomCode.textContent = roomCode;
+        serverStatusText.textContent = `Status: Connected to Room ${roomCode}`;
+    }
+
+    const roomParticipants = new Map();
+
+    function updateMemberCountUI() {
+        const container = document.getElementById('participantsList');
+        if (container) {
+            container.innerHTML = '';
+            roomParticipants.forEach((info, peerId) => {
+                const isMe = (peerId === myPeerId);
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.justifyContent = 'space-between';
+                row.style.padding = '4px 0';
+
+                const left = document.createElement('div');
+                left.style.display = 'flex';
+                left.style.alignItems = 'center';
+                left.style.gap = '8px';
+
+                let avatar;
+                if (info.avatar && (info.avatar.startsWith('http://') || info.avatar.startsWith('https://'))) {
+                    avatar = document.createElement('img');
+                    avatar.src = info.avatar;
+                    avatar.style.width = '24px';
+                    avatar.style.height = '24px';
+                    avatar.style.borderRadius = '50%';
+                    avatar.style.objectFit = 'cover';
+                    avatar.style.border = '1px solid #00E676';
+                } else {
+                    avatar = document.createElement('span');
+                    avatar.textContent = '🎮';
+                    avatar.style.fontSize = '14px';
+                }
+
+                const dot = document.createElement('span');
+                dot.style.width = '8px';
+                dot.style.height = '8px';
+                dot.style.borderRadius = '50%';
+                dot.style.backgroundColor = '#00E676';
+                dot.style.display = 'inline-block';
+
+                const name = document.createElement('span');
+                const displayName = info.name || (isMe ? 'You (Web)' : `Player ${peerId.substring(0, 5).toUpperCase()}`);
+                name.textContent = isMe ? `${displayName} (YOU)` : displayName;
+                name.style.color = isMe ? '#00E676' : '#FFF';
+                name.style.fontSize = '13px';
+                if (isMe) name.style.fontWeight = 'bold';
+
+                left.appendChild(avatar);
+                left.appendChild(dot);
+                left.appendChild(name);
+
+                const badge = document.createElement('span');
+                badge.textContent = isMe ? 'You' : 'Gamer';
+                badge.style.fontSize = '11px';
+                badge.style.color = '#A0AEC0';
+
+                row.appendChild(left);
+                row.appendChild(badge);
+                container.appendChild(row);
+            });
+        }
+
+        const count = Math.max(roomParticipants.size, peerConnections.size + 1);
+        memberCountText.textContent = `${count}/5 connected`;
+    }
+
+    btnCreateRoom.addEventListener('click', () => {
+        log('INFO', 'User clicked Create Room');
+        sendWs({ type: 'create-room', name: 'Web Host', avatar: 'avatar_1' });
+    });
+
+    btnShowJoin.addEventListener('click', () => {
+        showJoinInputView();
+    });
+
+    btnCancelJoin.addEventListener('click', () => {
+        showHomeView();
+    });
+
+    btnSubmitJoin.addEventListener('click', () => {
+        const code = roomCodeInput.value.trim().toUpperCase();
+        if (code.length !== 5) {
+            alert('Room code must be exactly 5 characters');
+            return;
+        }
+        log('INFO', `User submitted Join Room for code: ${code}`);
+        sendWs({ type: 'join-room', roomCode: code, name: 'Web Gamer', avatar: 'avatar_1' });
+    });
+
+    btnLeaveRoom.addEventListener('click', () => {
+        log('INFO', 'User clicked Leave Room');
+        sendWs({ type: 'leave-room' });
+        closeAllPeers();
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+            localAudioTrack = null;
+            statMicStatus.textContent = 'Idle';
+        }
+        currentRoomCode = null;
+        myPeerId = null;
+        statPeerId.textContent = 'None';
+        showHomeView();
+    });
+
+    btnCopyCode.addEventListener('click', () => {
+        navigator.clipboard.writeText(displayRoomCode.textContent).then(() => {
+            btnCopyCode.textContent = '✅ Copied!';
+            setTimeout(() => btnCopyCode.textContent = '📋 Copy Room Code', 2000);
+        });
+    });
+
+    btnClearLogs.addEventListener('click', () => {
+        debugLogs.innerHTML = '';
+        log('INFO', 'Logs cleared by user');
+    });
+
+    btnCopyLogs.addEventListener('click', () => {
+        const text = debugLogs.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            btnCopyLogs.textContent = 'Copied!';
+            setTimeout(() => btnCopyLogs.textContent = 'Copy All Logs', 2000);
+        });
+    });
+
+    btnTestMic.addEventListener('click', async () => {
+        log('AUDIO', 'Running microphone hardware check...');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const track = stream.getAudioTracks()[0];
+            log('AUDIO', `✅ Mic Test PASSED: "${track.label}" is active and ready.`);
+            stream.getTracks().forEach(t => t.stop());
+        } catch (e) {
+            log('ERROR', `❌ Mic Test FAILED: ${e.message}`, e);
+        }
+    });
+
+    connectSignaling();
+})();
+</script>
+
+</body>
+</html>

@@ -1,12 +1,10 @@
 <resources>
     <string name="app_name">GamerVoice</string>
-    <string name="welcome_message">GamerVoice - In-Game Voice Chat</string>
     <string name="status_ready">Status: Ready</string>
     <string name="status_creating_room">Status: Creating room&#8230;</string>
     <string name="status_connecting_service">Voice service connecting, please wait&#8230;</string>
     <string name="permission_message">GamerVoice needs microphone access to work</string>
     <string name="btn_allow_continue">Allow &amp; Continue</string>
-    <string name="home_title">GamerVoice</string>
     <string name="create_room">Create Room</string>
     <string name="join_room">Join Room</string>
     <string name="copy_code">Copy Code</string>
@@ -18,4 +16,22 @@
     <string name="ptt_muted_hint">🔇 MUTED (Hold Vol-Down to Speak)</string>
     <string name="ptt_speaking_hint">🎙️ SPEAKING (PTT Active)</string>
     <string name="connected_count_fmt">%1$d/5 connected</string>
+    <string name="status_connecting_server">Status: Connecting to server&#8230;</string>
+    <string name="status_connected_room_fmt">Status: Connected to Room %1$s</string>
+    <string name="hint_room_code">Enter 5-Character Room Code</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="label_room_code">ROOM CODE</string>
+    <string name="default_room_code_placeholder">A3K9P</string>
+    <string name="crash_report_title">GamerVoice Error Report</string>
+    <string name="crash_report_desc">An error occurred. Please copy and share this details:</string>
+    <string name="btn_copy_error">Copy Error Log</string>
+
+    <!-- UI Action and Screen Strings -->
+    <string name="btn_create_room">CREATE SQUAD ROOM</string>
+    <string name="btn_join_room">JOIN SQUAD ROOM</string>
+    <string name="enter_room_code">ENTER SQUAD ROOM CODE</string>
+    <string name="btn_connect">CONNECT TO ROOM</string>
+    <string name="btn_back">Back to Home</string>
+    <string name="room_code_label">ACTIVE ROOM CODE</string>
+    <string name="cd_copy_room_code">Copy Room Code</string>
 </resources>

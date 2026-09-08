@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "331216339163",
+    "project_id": "gamersvoice-ea413",
+    "storage_bucket": "gamersvoice-ea413.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331216339163:android:4fe4b659351279be850cfe",
+        "android_client_info": {
+          "package_name": "com.gamervoice.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "331216339163-ecodqoucm74ffcfckhu8bv82pcgh0a1m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDe9FrTvbLXnTy2WgrvoZvZPHqXaHYXM3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "331216339163-ecodqoucm74ffcfckhu8bv82pcgh0a1m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

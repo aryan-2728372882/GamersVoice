@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/llHudRoot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_terminal_box"
+    android:elevation="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="6dp">
+
+    <!-- Mic Mute / Push-To-Talk Toggle -->
+    <FrameLayout
+        android:id="@+id/flHudMicButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/ivHudSpeakingGlow"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_notification"
+            app:tint="@color/accent_green"
+            android:visibility="invisible" />
+
+        <ImageView
+            android:id="@+id/ivHudMicIcon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:contentDescription="Toggle Mic"
+            android:src="@drawable/ic_mic_white"
+            app:tint="@color/accent_green" />
+    </FrameLayout>
+
+    <!-- App / Room status indicator -->
+    <TextView
+        android:id="@+id/tvHudStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="sans-serif-black"
+        android:text="VOICE ACTIVE"
+        android:textColor="@color/accent_green"
+        android:textSize="11sp" />
+
+    <!-- Close / Dismiss HUD Button -->
+    <ImageView
+        android:id="@+id/btnDismissHud"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="Close HUD"
+        android:focusable="true"
+        android:padding="3dp"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        app:tint="@color/text_secondary" />
+
+</LinearLayout>

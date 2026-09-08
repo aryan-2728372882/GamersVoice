@@ -1,261 +1,635 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary_dark"
-    android:padding="24dp"
     tools:context=".HomeActivity">
 
-    <!-- Top App Logo and Header -->
-    <ImageView
-        android:id="@+id/ivHeaderLogo"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/ic_app_logo_hero"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- Main Screen Content -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainContentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tvHeaderTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/app_name"
-        android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivHeaderLogo" />
-
-    <TextView
-        android:id="@+id/tvServerStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Status: Connecting to server..."
-        android:textColor="@color/text_secondary"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
-
-    <!-- SECTION 1: Initial State (Create Room & Join Room Buttons) -->
-    <LinearLayout
-        android:id="@+id/llHomeActions"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCreateRoom"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="@string/create_room"
-            android:textColor="@color/black"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/accent_green"
-            app:cornerRadius="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnJoinRoom"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/join_room"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:cornerRadius="12dp"
-            app:strokeColor="@color/accent_green"
-            app:strokeWidth="2dp" />
-
-    </LinearLayout>
-
-    <!-- SECTION 2: Join Input Section (Shown when Join Room is tapped) -->
-    <LinearLayout
-        android:id="@+id/llJoinInputSection"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilJoinRoomCode"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter 5-Character Room Code"
-            android:textColorHint="@color/text_secondary"
-            app:boxStrokeColor="@color/accent_green"
-            app:hintTextColor="@color/accent_green">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etJoinRoomCode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:inputType="textCapCharacters"
-                android:maxLength="5"
-                android:textColor="@color/white"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <ProgressBar
-            android:id="@+id/pbConnecting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="12dp"
-            android:indeterminateTint="@color/accent_green"
-            android:visibility="gone" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSubmitJoin"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
-            android:text="Join Room"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/accent_green"
-            app:cornerRadius="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBackToHome"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Cancel"
-            android:textColor="@color/text_secondary" />
-
-    </LinearLayout>
-
-    <!-- SECTION 3: Connected Room View (Shown after creating or joining a room) -->
-    <LinearLayout
-        android:id="@+id/llConnectedRoomSection"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ROOM CODE"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <!-- Large 48sp+ Room Code with Copy Button -->
+        <!-- Top User Profile Header Bar -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/llUserProfileHeader"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_terminal_box"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="8dp"
+            app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/tvDisplayRoomCode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="A3K9P"
-                android:textColor="@color/accent_green"
-                android:textSize="48sp"
-                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/ivUserAvatar"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="My Avatar"
+                android:src="@drawable/ic_avatar_1" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCopyCode"
-                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/copy_code"
-                android:textColor="@color/white"
-                app:icon="@android:drawable/ic_menu_share"
-                app:iconTint="@color/accent_green" />
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Gamer"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+
+                    <!-- Plan Status Pill -->
+                    <TextView
+                        android:id="@+id/tvHomePlanBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:background="#1A00E676"
+                        android:fontFamily="sans-serif-bold"
+                        android:paddingHorizontal="5dp"
+                        android:paddingVertical="1dp"
+                        android:text="FREE"
+                        android:textColor="@color/accent_green"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvUserEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:text="gamer@example.com"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/btnOpenMenu"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Menu"
+                android:padding="8dp"
+                android:src="@drawable/ic_menu_hamburger" />
         </LinearLayout>
 
-        <!-- Live Member Count -->
-        <TextView
-            android:id="@+id/tvMemberCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="1/5 connected"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <!-- Mic Mode & PTT Status -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnToggleMicMode"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/mode_ptt"
-            android:textColor="@color/white"
-            android:textSize="13sp"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/accent_green" />
+        <!-- Top App Logo and Header -->
+        <ImageView
+            android:id="@+id/ivHeaderLogo"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="6dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_app_logo_hero"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/llUserProfileHeader" />
 
         <TextView
-            android:id="@+id/tvPttStatus"
+            android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/ptt_muted_hint"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <!-- Continue / Go to Game Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnContinue"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/continue_go_to_game"
-            android:textColor="@color/black"
-            android:textSize="16sp"
+            android:layout_marginTop="2dp"
+            android:text="@string/app_name"
+            android:textColor="@color/white"
+            android:textSize="18sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/accent_green"
-            app:cornerRadius="12dp" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivHeaderLogo" />
 
-        <!-- Leave Room Option -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLeaveRoom"
-            style="@style/Widget.Material3.Button.TextButton"
+        <TextView
+            android:id="@+id/tvServerStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="@string/status_connecting_server"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvHeaderTitle" />
+
+        <!-- Scrollable Middle Section for Actions, Games & Rooms -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nsvContent"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:layout_marginTop="8dp"
-            android:text="@string/leave_room"
-            android:textColor="#FF5252" />
+            android:layout_marginBottom="8dp"
+            android:fillViewport="true"
+            app:layout_constraintBottom_toTopOf="@id/llConsoleContainer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvServerStatus">
 
-    </LinearLayout>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                <!-- MAIN HOME DASHBOARD (When not inside an active room) -->
+                <LinearLayout
+                    android:id="@+id/llHomeActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <!-- Gamer Sponsor Banner Ad (Visible only on Free plan) -->
+                    <LinearLayout
+                        android:id="@+id/llSponsorBannerAd"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_code_input"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#26FFFFFF"
+                            android:fontFamily="sans-serif-bold"
+                            android:paddingHorizontal="4dp"
+                            android:paddingVertical="1dp"
+                            android:text="AD"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Play Free Fire with 0 Lag • GamerVoice VIP"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/btnBannerRemoveAds"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="sans-serif-black"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="NO ADS ›"
+                            android:textColor="#FFD700"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <!-- SECTION: Installed Games On Device (1-Tap Launch) -->
+                    <LinearLayout
+                        android:id="@+id/llInstalledGamesSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:text="🎮 GAMES DETECTED ON DEVICE"
+                            android:textColor="@color/accent_green"
+                            android:textSize="11sp" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:id="@+id/llInstalledGamesContainer"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
+
+                    <!-- SECTION: My Saved Squad Rooms (Persistent in Firestore) -->
+                    <LinearLayout
+                        android:id="@+id/llSavedRoomsSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-black"
+                                android:text="⚡ MY SAVED SQUAD ROOMS"
+                                android:textColor="@color/accent_green"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvHomeRoomQuota"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="0/2 Saved (Free)"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/llHomeSavedRoomsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvHomeNoSavedRooms"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_terminal_box"
+                                android:gravity="center"
+                                android:padding="12dp"
+                                android:text="No squad rooms saved yet.\nCreate a room to save it permanently in Cloud Firestore!"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- SECTION: Main Room Actions -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCreateRoom"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/btn_create_room"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/accent_green"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnJoinRoom"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/btn_join_room"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/accent_green"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnToggleFloatingHud"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="6dp"
+                        android:text="🎮 FLOATING IN-GAME HUD"
+                        android:textColor="@color/accent_green"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- SECTION: Join Room Code Input View -->
+                <LinearLayout
+                    android:id="@+id/llJoinInputSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/enter_room_code"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etJoinRoomCode"
+                        android:layout_width="200dp"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_code_input"
+                        android:gravity="center"
+                        android:hint="IA3R9"
+                        android:importantForAutofill="no"
+                        android:inputType="textCapCharacters"
+                        android:maxLength="5"
+                        android:textColor="@color/accent_green"
+                        android:textColorHint="@color/text_secondary"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSubmitJoin"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/btn_connect"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/accent_green"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBackToHome"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/btn_back"
+                        android:textColor="@color/text_secondary" />
+
+                    <ProgressBar
+                        android:id="@+id/pbConnecting"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:indeterminateTint="@color/accent_green"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <!-- SECTION: Connected Room View -->
+                <LinearLayout
+                    android:id="@+id/llConnectedRoomSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/room_code_label"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvDisplayRoomCode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.2"
+                            android:textColor="@color/accent_green"
+                            android:textSize="32sp"
+                            android:textStyle="bold"
+                            tools:text="IA3R9" />
+
+                        <ImageView
+                            android:id="@+id/btnCopyCode"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="12dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/cd_copy_room_code"
+                            android:padding="6dp"
+                            android:src="@android:drawable/ic_menu_share"
+                            app:tint="@color/accent_green" />
+                    </LinearLayout>
+
+                    <!-- Save Room Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveCurrentRoom"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginTop="4dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="💾 SAVE PERMANENT SQUAD ROOM"
+                        android:textColor="@color/accent_green"
+                        android:textSize="10sp"
+                        app:cornerRadius="6dp"
+                        app:strokeColor="#6600E676"
+                        app:strokeWidth="1dp" />
+
+                    <!-- Connected Members Counter -->
+                    <TextView
+                        android:id="@+id/tvMemberCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        tools:text="1 of 5 squad members connected" />
+
+                    <!-- Room Participants Container -->
+                    <LinearLayout
+                        android:id="@+id/llParticipantsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_terminal_box"
+                        android:orientation="vertical"
+                        android:padding="12dp" />
+
+                    <!-- Mic Mode Toggle -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnToggleMicMode"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/mode_always_on"
+                        android:textColor="@color/white"
+                        android:textSize="13sp"
+                        app:cornerRadius="10dp"
+                        app:strokeColor="@color/text_secondary"
+                        app:strokeWidth="1dp" />
+
+                    <TextView
+                        android:id="@+id/tvPttStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/ptt_muted_hint"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:visibility="gone" />
+
+                    <!-- Continue / Go to Game Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnContinue"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/continue_go_to_game"
+                        android:textColor="@color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/accent_green"
+                        app:cornerRadius="12dp" />
+
+                    <!-- Leave Room Option -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLeaveRoom"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/leave_room"
+                        android:textColor="#FF5252" />
+
+                </LinearLayout>
+
+            </FrameLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- SECTION: Live In-App Debug Console (Docked at Bottom) -->
+        <LinearLayout
+            android:id="@+id/llConsoleContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_terminal_box"
+            android:orientation="vertical"
+            android:padding="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <!-- Console Header Bar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/ic_notification"
+                    android:backgroundTint="#00E676" />
+
+                <TextView
+                    android:id="@+id/tvConsoleTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="DIAGNOSTIC CONSOLE"
+                    android:textColor="#00E676"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnCopyLogs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="3dp"
+                    android:text="Copy"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnClearLogs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="3dp"
+                    android:text="Clear"
+                    android:textColor="#A0AEC0"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/btnToggleConsole"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="3dp"
+                    android:text="Hide"
+                    android:textColor="#A0AEC0"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+
+            <!-- Console Scrollable Log Output -->
+            <ScrollView
+                android:id="@+id/svConsoleLogs"
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:layout_marginTop="4dp"
+                android:background="#05070A"
+                android:padding="6dp"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tvConsoleLogs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="Initializing GamerVoice debug console...\n"
+                    android:textColor="#D1D5DB"
+                    android:textIsSelectable="true"
+                    android:textSize="10sp" />
+
+            </ScrollView>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Side Slider Navigation Drawer -->
+    <include
+        android:id="@+id/navSlider"
+        layout="@layout/layout_navigation_slider" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

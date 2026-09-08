@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.gamervoice.app.databinding.ActivityPermissionBinding
 
 class PermissionActivity : AppCompatActivity() {
@@ -69,7 +70,7 @@ class PermissionActivity : AppCompatActivity() {
         if (!isBatteryOptimizationIgnored()) {
             try {
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:$packageName")
+                    data = "package:$packageName".toUri()
                 }
                 batteryOptimizationLauncher.launch(intent)
             } catch (_: Exception) {
@@ -93,7 +94,13 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun navigateToHome() {
-        val intent = Intent(this, HomeActivity::class.java)
+        com.gamervoice.app.auth.AuthManager.init(this)
+        val targetClass = if (com.gamervoice.app.auth.AuthManager.isLoggedIn()) {
+            HomeActivity::class.java
+        } else {
+            AuthActivity::class.java
+        }
+        val intent = Intent(this, targetClass)
         startActivity(intent)
         finish()
     }

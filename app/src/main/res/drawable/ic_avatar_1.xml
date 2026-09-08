@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#1E2A22"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#00E676"
+        android:strokeWidth="2"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Cyber Visor Head -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M16,16 L32,16 L34,26 L28,34 L20,34 L14,26 Z" />
+    <!-- Visor Eye Glow -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M18,21 L30,21 L29,25 L19,25 Z" />
+    <!-- Digital Antennas -->
+    <path
+        android:strokeColor="#00E676"
+        android:strokeWidth="1.5"
+        android:pathData="M24,16 L24,10 M19,16 L17,12 M29,16 L31,12" />
+</vector>

@@ -21,6 +21,7 @@ import com.gamervoice.app.HomeActivity
 import com.gamervoice.app.R
 import com.gamervoice.app.webrtc.PeerConnectionManager
 import com.gamervoice.app.webrtc.SignalingClient
+import com.gamervoice.app.util.AppLogger
 import org.webrtc.PeerConnection
 import java.util.concurrent.Executors
 
@@ -48,8 +49,11 @@ class VoiceService : Service(),
         fun onRoomCreated(roomCode: String, myPeerId: String)
         fun onRoomJoined(roomCode: String, myPeerId: String, existingPeers: List<String>)
         fun onMemberCountUpdated(count: Int)
+        fun onParticipantsUpdated(participants: List<com.gamervoice.app.model.RoomParticipant>)
         fun onMicModeChanged(isPtt: Boolean)
         fun onError(message: String)
+        fun onTacticalCalloutReceived(senderId: String, senderName: String, calloutId: String, calloutText: String) {}
+        fun onLatencyUpdated(latencyMs: Long) {}
     }
 
     inner class LocalBinder : Binder() {
@@ -62,6 +66,8 @@ class VoiceService : Service(),
 
     var listener: VoiceServiceListener? = null
 
+    val participants = java.util.concurrent.ConcurrentHashMap<String, com.gamervoice.app.model.RoomParticipant>()
+
     lateinit var signalingClient: SignalingClient
         private set
     lateinit var peerConnectionManager: PeerConnectionManager
@@ -73,6 +79,29 @@ class VoiceService : Service(),
     private var isCallActive = false
     private lateinit var prefs: SharedPreferences
 
+    var currentLatencyMs: Long = 0L
+        private set
+
+    private val pingRunnable = object : Runnable {
+        override fun run() {
+            if (currentRoomCode != null && signalingClient.isConnected) {
+                signalingClient.sendPing()
+            }
+            mainHandler.postDelayed(this, 10000)
+        }
+    }
+
+    fun sendTacticalCallout(calloutId: String, calloutText: String) {
+        signalingClient.sendTacticalCallout(calloutId, calloutText)
+        com.gamervoice.app.util.TacticalCalloutHelper.playCalloutTone(calloutId)
+    }
+
+    fun measurePing() {
+        if (signalingClient.isConnected) {
+            signalingClient.sendPing()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -83,6 +112,7 @@ class VoiceService : Service(),
 
         // Connect signaling server in background
         signalingClient.connect()
+        mainHandler.postDelayed(pingRunnable, 5000)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -138,41 +168,51 @@ class VoiceService : Service(),
     override fun onBind(intent: Intent?): IBinder = binder
 
     fun createRoom() {
+        AppLogger.log("SERVICE", "createRoom() called on VoiceService")
         executor.execute {
             try {
-                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-                peerConnectionManager.init(isPtt = isPttDefault)
-                signalingClient.createRoom()
+                val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+                val myName = user?.name ?: "Gamer"
+                val myAvatar = user?.avatar ?: "avatar_1"
+                AppLogger.log("SERVICE", "Sending create-room to signaling server ($myName, $myAvatar)...")
+                signalingClient.createRoom(name = myName, avatar = myAvatar)
             } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error in createRoom: ${t.message}", Log.getStackTraceString(t))
                 Log.e(TAG, "Error in createRoom background task", t)
                 mainHandler.post {
-                    listener?.onError("Failed to initialize audio call: ${t.message}")
+                    listener?.onError("Failed to create room: ${t.message}")
                 }
             }
         }
     }
 
     fun joinRoom(code: String) {
+        AppLogger.log("SERVICE", "joinRoom(code=$code) called on VoiceService")
         executor.execute {
             try {
-                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
-                peerConnectionManager.init(isPtt = isPttDefault)
-                signalingClient.joinRoom(code)
+                val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+                val myName = user?.name ?: "Gamer"
+                val myAvatar = user?.avatar ?: "avatar_1"
+                AppLogger.log("SERVICE", "Sending join-room ($code, $myName, $myAvatar) to signaling server...")
+                signalingClient.joinRoom(roomCode = code, name = myName, avatar = myAvatar)
             } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error in joinRoom: ${t.message}", Log.getStackTraceString(t))
                 Log.e(TAG, "Error in joinRoom background task", t)
                 mainHandler.post {
-                    listener?.onError("Failed to initialize audio call: ${t.message}")
+                    listener?.onError("Failed to join room: ${t.message}")
                 }
             }
         }
     }
 
     fun leaveRoom() {
+        AppLogger.log("SERVICE", "leaveRoom() called on VoiceService")
         executor.execute {
             try {
                 signalingClient.leaveRoom()
                 peerConnectionManager.closeAll()
             } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error in leaveRoom: ${t.message}", Log.getStackTraceString(t))
                 Log.e(TAG, "Error leaving room", t)
             }
             mainHandler.post {
@@ -184,14 +224,14 @@ class VoiceService : Service(),
     }
 
     fun getMemberCount(): Int {
-        return peerConnectionManager.getActivePeerCount() + 1
+        return participants.size.coerceAtLeast(1)
     }
 
     fun startForegroundNotification() {
         mainHandler.post {
             try {
                 val notification = buildNotification()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     val hasMicPermission = ContextCompat.checkSelfPermission(
                         this,
                         android.Manifest.permission.RECORD_AUDIO
@@ -204,19 +244,32 @@ class VoiceService : Service(),
                                 notification,
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
                             )
-                        } catch (se: SecurityException) {
-                            Log.w(TAG, "SecurityException starting microphone foreground service, fallback", se)
-                            startForeground(NOTIFICATION_ID, notification)
+                            isCallActive = true
+                            AppLogger.log("SERVICE", "Foreground service started with MICROPHONE type")
+                        } catch (t: Throwable) {
+                            AppLogger.log("ERROR", "startForeground(MICROPHONE) failed: ${t.message}, trying fallback")
+                            Log.e(TAG, "Error starting microphone foreground service", t)
+                            try {
+                                startForeground(NOTIFICATION_ID, notification)
+                                isCallActive = true
+                            } catch (e: Throwable) {
+                                AppLogger.log("ERROR", "Fallback startForeground failed: ${e.message}")
+                            }
                         }
                     } else {
-                        Log.w(TAG, "RECORD_AUDIO not granted when starting foreground service")
-                        startForeground(NOTIFICATION_ID, notification)
+                        AppLogger.log("WARN", "RECORD_AUDIO not granted when starting foreground service")
+                        try {
+                            startForeground(NOTIFICATION_ID, notification)
+                            isCallActive = true
+                        } catch (_: Throwable) {}
                     }
                 } else {
                     startForeground(NOTIFICATION_ID, notification)
+                    isCallActive = true
+                    AppLogger.log("SERVICE", "Foreground service started")
                 }
-                isCallActive = true
             } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Failed to start foreground service: ${t.message}")
                 Log.e(TAG, "Failed to start foreground service", t)
             }
         }
@@ -333,43 +386,109 @@ class VoiceService : Service(),
     }
 
     override fun onRoomCreated(roomCode: String, myPeerId: String) {
+        AppLogger.log("SERVICE", "onRoomCreated: room=$roomCode, peerId=$myPeerId")
+        currentRoomCode = roomCode
+        val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+        val myName = user?.name ?: "Gamer"
+        val myAvatar = user?.avatar ?: "avatar_1"
+        participants.clear()
+        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true)
+        startForegroundNotification()
+        executor.execute {
+            try {
+                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+                peerConnectionManager.init(isPtt = isPttDefault)
+            } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error initializing WebRTC after room created: ${t.message}")
+                Log.e(TAG, "Error initializing WebRTC after room created", t)
+            }
+        }
         mainHandler.post {
-            currentRoomCode = roomCode
-            startForegroundService()
             listener?.onRoomCreated(roomCode, myPeerId)
+            listener?.onParticipantsUpdated(participants.values.toList())
         }
     }
 
-    override fun onRoomJoined(roomCode: String, myPeerId: String, existingPeers: List<String>) {
-        mainHandler.post {
-            currentRoomCode = roomCode
-            startForegroundService()
-            listener?.onRoomJoined(roomCode, myPeerId, existingPeers)
-
-            executor.execute {
+    override fun onRoomJoined(
+        roomCode: String,
+        myPeerId: String,
+        existingPeers: List<String>,
+        existingMembers: List<SignalingClient.PeerMetadata>
+    ) {
+        AppLogger.log("SERVICE", "onRoomJoined: room=$roomCode, peerId=$myPeerId, peers=$existingPeers, members=${existingMembers.size}")
+        currentRoomCode = roomCode
+        val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+        val myName = user?.name ?: "Gamer"
+        val myAvatar = user?.avatar ?: "avatar_1"
+        participants.clear()
+        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true)
+        for (m in existingMembers) {
+            participants[m.peerId] = com.gamervoice.app.model.RoomParticipant(m.peerId, m.name, m.avatar, isMe = false)
+        }
+        for (peer in existingPeers) {
+            if (!participants.containsKey(peer)) {
+                participants[peer] = com.gamervoice.app.model.RoomParticipant(peer, "Gamer", "avatar_1", isMe = false)
+            }
+        }
+        startForegroundNotification()
+        executor.execute {
+            try {
+                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+                peerConnectionManager.init(isPtt = isPttDefault)
                 for (peerId in existingPeers) {
                     peerConnectionManager.connectToPeer(peerId)
                 }
+            } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error connecting to peers after joining: ${t.message}")
+                Log.e(TAG, "Error connecting to peers after joining", t)
             }
+        }
+        mainHandler.post {
+            listener?.onRoomJoined(roomCode, myPeerId, existingPeers)
+            listener?.onParticipantsUpdated(participants.values.toList())
         }
     }
 
-    override fun onPeerJoined(peerId: String) {
+    override fun onPeerJoined(peerId: String, name: String, avatar: String) {
+        AppLogger.log("SERVICE", "Peer joined room: $name ($peerId)")
+        participants[peerId] = com.gamervoice.app.model.RoomParticipant(peerId, name, avatar, isMe = false)
         mainHandler.post {
             updateNotification()
             listener?.onMemberCountUpdated(getMemberCount())
+            listener?.onParticipantsUpdated(participants.values.toList())
         }
     }
 
     override fun onOfferReceived(senderPeerId: String, sdp: String) {
+        AppLogger.log("SERVICE", "Offer received from: $senderPeerId")
+        if (!participants.containsKey(senderPeerId)) {
+            participants[senderPeerId] = com.gamervoice.app.model.RoomParticipant(senderPeerId, "Gamer", "avatar_1", isMe = false)
+            mainHandler.post {
+                listener?.onParticipantsUpdated(participants.values.toList())
+            }
+        }
+        startForegroundNotification()
         executor.execute {
-            peerConnectionManager.handleOffer(senderPeerId, sdp)
+            try {
+                val isPttDefault = prefs.getBoolean(PREF_PTT_ENABLED, true)
+                peerConnectionManager.init(isPtt = isPttDefault)
+                peerConnectionManager.handleOffer(senderPeerId, sdp)
+            } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error handling offer from $senderPeerId: ${t.message}")
+                Log.e(TAG, "Error handling offer from $senderPeerId", t)
+            }
         }
     }
 
     override fun onAnswerReceived(senderPeerId: String, sdp: String) {
+        AppLogger.log("SERVICE", "onAnswerReceived from $senderPeerId")
         executor.execute {
-            peerConnectionManager.handleAnswer(senderPeerId, sdp)
+            try {
+                peerConnectionManager.handleAnswer(senderPeerId, sdp)
+            } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error handling answer from $senderPeerId: ${t.message}")
+                Log.e(TAG, "Error handling answer from $senderPeerId", t)
+            }
         }
     }
 
@@ -379,18 +498,50 @@ class VoiceService : Service(),
         sdpMid: String,
         sdpMLineIndex: Int,
     ) {
+        AppLogger.log("SERVICE", "onIceCandidateReceived from $senderPeerId: mid=$sdpMid, idx=$sdpMLineIndex")
         executor.execute {
-            peerConnectionManager.handleIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex)
+            try {
+                peerConnectionManager.handleIceCandidate(senderPeerId, candidate, sdpMid, sdpMLineIndex)
+            } catch (t: Throwable) {
+                AppLogger.log("ERROR", "Error handling ICE candidate from $senderPeerId: ${t.message}")
+                Log.e(TAG, "Error handling ICE candidate from $senderPeerId", t)
+            }
         }
     }
 
     override fun onPeerLeft(peerId: String) {
+        participants.remove(peerId)
         executor.execute {
-            peerConnectionManager.removePeer(peerId)
-            mainHandler.post {
-                updateNotification()
-                listener?.onMemberCountUpdated(getMemberCount())
+            try {
+                peerConnectionManager.removePeer(peerId)
+                mainHandler.post {
+                    updateNotification()
+                    listener?.onMemberCountUpdated(getMemberCount())
+                    listener?.onParticipantsUpdated(participants.values.toList())
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "Error handling peer left for $peerId", t)
             }
+        }
+    }
+
+    override fun onTacticalCalloutReceived(
+        senderPeerId: String,
+        senderName: String,
+        calloutId: String,
+        calloutText: String
+    ) {
+        AppLogger.log("CALLOUT", "[$senderName]: $calloutText")
+        com.gamervoice.app.util.TacticalCalloutHelper.playCalloutTone(calloutId)
+        mainHandler.post {
+            listener?.onTacticalCalloutReceived(senderPeerId, senderName, calloutId, calloutText)
+        }
+    }
+
+    override fun onPongReceived(latencyMs: Long) {
+        currentLatencyMs = latencyMs
+        mainHandler.post {
+            listener?.onLatencyUpdated(latencyMs)
         }
     }
 
@@ -409,10 +560,13 @@ class VoiceService : Service(),
         }
     }
 
-    override fun onLog(message: String) {}
+    override fun onLog(message: String) {
+        AppLogger.log("WEBRTC", message)
+    }
 
     override fun onDestroy() {
         super.onDestroy()
+        mainHandler.removeCallbacks(pingRunnable)
         executor.execute {
             peerConnectionManager.closeAll()
             signalingClient.disconnect()

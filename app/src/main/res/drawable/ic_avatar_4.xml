@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#2A2016"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#FFAB00"
+        android:strokeWidth="2"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Spartan / Warrior Helmet -->
+    <path
+        android:fillColor="#FFAB00"
+        android:pathData="M24,10 L31,16 L31,28 L28,34 L24,36 L20,34 L17,28 L17,16 Z" />
+    <!-- T-Shaped Eye Slit -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M19,20 L29,20 L29,23 L25,23 L25,32 L23,32 L23,23 L19,23 Z" />
+</vector>

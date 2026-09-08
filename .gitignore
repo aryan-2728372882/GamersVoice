@@ -10,3 +10,4 @@ local.properties
 .externalNativeBuild
 .cxx
 node_modules/
+*.pdf

@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#221A2A"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#BB86FC"
+        android:strokeWidth="2"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Ninja Hood -->
+    <path
+        android:fillColor="#BB86FC"
+        android:pathData="M15,14 C18,10 30,10 33,14 C36,19 35,32 32,36 L16,36 C13,32 12,19 15,14 Z" />
+    <!-- Face Mask Slot -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M18,20 L30,20 L28,26 L20,26 Z" />
+    <!-- Glowing Eyes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,22 L23,23 L20,24 Z M28,22 L25,23 L28,24 Z" />
+</vector>

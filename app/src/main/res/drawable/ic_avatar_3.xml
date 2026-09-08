@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#15242B"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Mecha Helmet -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M16,14 L32,14 L35,22 L31,34 L17,34 L13,22 Z" />
+    <!-- Center Optics -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M20,20 L28,20 L28,28 L20,28 Z" />
+    <!-- Eye Core Glow -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M24,24m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+</vector>
