@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.webrtc)
     implementation(libs.okhttp)
     implementation(libs.play.services.auth)
+    implementation("com.razorpay:checkout:1.6.41")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

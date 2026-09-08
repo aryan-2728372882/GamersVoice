@@ -39,7 +39,9 @@ object PlanManager {
     private const val KEY_EXPIRY_LABEL = "key_vip_expiry_label"
     private const val KEY_PURCHASED_AT = "key_purchased_at"
     private const val KEY_USER_EMAIL = "key_user_email"
+    private const val KEY_PAYMENT_ID = "key_payment_id"
 
+    const val RAZORPAY_KEY_ID = "rzp_live_SWhlEskNokZ9rR"
     const val FREE_SAVED_ROOM_LIMIT = 2
 
     private var prefs: SharedPreferences? = null
@@ -152,10 +154,14 @@ object PlanManager {
         return false
     }
 
+    fun getPaymentId(): String? {
+        return prefs?.getString(KEY_PAYMENT_ID, null)
+    }
+
     /**
-     * Purchases a plan tier and persists details (email, timestamps, 7d/30d/N/A) to Cloud Firestore.
+     * Purchases a plan tier and persists details (email, timestamps, 7d/30d/N/A, paymentId) to Cloud Firestore.
      */
-    fun purchasePlan(tier: PlanTier, callback: (Boolean) -> Unit) {
+    fun purchasePlan(tier: PlanTier, paymentId: String? = null, callback: (Boolean) -> Unit) {
         val user = AuthManager.getCurrentUser()
         if (user == null) {
             Log.e(TAG, "User must be logged in to purchase VIP")
@@ -186,6 +192,11 @@ object PlanManager {
             ?.putString(KEY_EXPIRY_LABEL, expiryLabel)
             ?.putString(KEY_PURCHASED_AT, purchasedAtLabel)
             ?.putString(KEY_USER_EMAIL, user.email)
+            ?.apply {
+                if (paymentId != null) {
+                    putString(KEY_PAYMENT_ID, paymentId)
+                }
+            }
             ?.apply()
 
         // Sync with Cloud Firestore
@@ -194,6 +205,7 @@ object PlanManager {
             idToken = user.idToken,
             email = user.email,
             tier = tier,
+            paymentId = paymentId,
             purchasedAt = purchasedAtLabel,
             expiresAt = expiryLabel,
             expiryTimestamp = expiryTime,
@@ -218,7 +230,7 @@ object PlanManager {
      * For testing/demo: activates a tier locally and in Firestore.
      */
     fun activateTestTier(tier: PlanTier, callback: (Boolean) -> Unit) {
-        purchasePlan(tier, callback)
+        purchasePlan(tier, null, callback)
     }
 
     private fun syncPurchaseToFirestore(
@@ -226,13 +238,17 @@ object PlanManager {
         idToken: String,
         email: String,
         tier: PlanTier,
+        paymentId: String?,
         purchasedAt: String,
         expiresAt: String,
         expiryTimestamp: Long,
         callback: (Boolean) -> Unit
     ) {
         try {
-            val url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/$uid?updateMask.fieldPaths=isVip&updateMask.fieldPaths=planType&updateMask.fieldPaths=userEmail&updateMask.fieldPaths=purchasedAt&updateMask.fieldPaths=expiresAt&updateMask.fieldPaths=expiryTimestamp"
+            var url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/$uid?updateMask.fieldPaths=isVip&updateMask.fieldPaths=planType&updateMask.fieldPaths=userEmail&updateMask.fieldPaths=purchasedAt&updateMask.fieldPaths=expiresAt&updateMask.fieldPaths=expiryTimestamp"
+            if (!paymentId.isNullOrEmpty()) {
+                url += "&updateMask.fieldPaths=paymentId"
+            }
             val fields = JSONObject().apply {
                 put("isVip", JSONObject().put("booleanValue", true))
                 put("planType", JSONObject().put("stringValue", tier.id))
@@ -240,6 +256,9 @@ object PlanManager {
                 put("purchasedAt", JSONObject().put("stringValue", purchasedAt))
                 put("expiresAt", JSONObject().put("stringValue", expiresAt))
                 put("expiryTimestamp", JSONObject().put("integerValue", expiryTimestamp.toString()))
+                if (!paymentId.isNullOrEmpty()) {
+                    put("paymentId", JSONObject().put("stringValue", paymentId))
+                }
             }
             val body = JSONObject().apply {
                 put("fields", fields)

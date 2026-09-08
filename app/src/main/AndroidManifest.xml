@@ -25,6 +25,11 @@
         <package android:name="com.mobile.legends" />
         <package android:name="com.supercell.clashofclans" />
         <package android:name="com.supercell.brawlstars" />
+        <!-- Popular UPI Apps for Razorpay Intent Pay -->
+        <package android:name="com.google.android.apps.nbu.paisa.user" />
+        <package android:name="com.phonepe.app" />
+        <package android:name="net.one97.paytm" />
+        <package android:name="in.org.npci.upiapp" />
         <!-- Generic query for all launcher applications -->
         <intent>
             <action android:name="android.intent.action.MAIN" />

@@ -42,8 +42,12 @@ import com.gamervoice.app.util.AppLogger
 import com.gamervoice.app.util.GameLauncherHelper
 import com.gamervoice.app.util.ImageLoader
 import com.gamervoice.app.util.LegalDocsHelper
+import com.razorpay.Checkout
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultWithDataListener
+import org.json.JSONObject
 
-class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
+class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, PaymentResultWithDataListener {
 
     private lateinit var binding: ActivityHomeBinding
     private lateinit var sliderBinding: LayoutNavigationSliderBinding
@@ -53,6 +57,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
 
     private var isSpeakerphone = true
     private var noiseFilterLevel = 2 // 0: Standard, 1: High, 2: Aggressive
+    private var pendingPurchaseTier: PlanTier? = null
+    private var vipUpgradeDialog: Dialog? = null
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
         runOnUiThread {
@@ -101,6 +107,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         AuthManager.init(this)
         PlanManager.init(this)
         RoomPersistenceManager.init(this)
+        Checkout.preload(applicationContext)
 
         if (!AuthManager.isLoggedIn()) {
             val intent = Intent(this, AuthActivity::class.java)
@@ -475,6 +482,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         }
 
         val dialog = Dialog(this)
+        vipUpgradeDialog = dialog
         val vipBinding = DialogVipUpgradeBinding.inflate(layoutInflater)
         dialog.setContentView(vipBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -510,12 +518,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         }
 
         vipBinding.btnActivateVip.setOnClickListener {
-            PlanManager.purchasePlan(selectedTier) {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "👑 Purchased ${selectedTier.title}! Saved to Firestore under ${user.email}.", Toast.LENGTH_LONG).show()
-                dialog.dismiss()
-            }
+            startRazorpayCheckout(selectedTier, user)
         }
 
         vipBinding.btnTestWeekly.setOnClickListener {
@@ -555,6 +558,78 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener {
         }
 
         dialog.show()
+    }
+
+    private fun startRazorpayCheckout(tier: PlanTier, user: UserProfile) {
+        pendingPurchaseTier = tier
+        val checkout = Checkout()
+        checkout.setKeyID(PlanManager.RAZORPAY_KEY_ID)
+
+        try {
+            val options = JSONObject()
+            options.put("name", "GamersVoice VIP")
+            options.put("description", tier.title)
+            options.put("currency", "INR")
+            // Amount in paise (1 INR = 100 paise)
+            val amountPaise = tier.priceInr * 100
+            options.put("amount", amountPaise)
+
+            val theme = JSONObject()
+            theme.put("color", "#00FF88")
+            options.put("theme", theme)
+
+            val prefill = JSONObject()
+            prefill.put("email", user.email)
+            if (user.name.isNotEmpty() && user.name != "Gamer") {
+                prefill.put("name", user.name)
+            }
+            if (user.phone.isNotEmpty()) {
+                prefill.put("contact", user.phone)
+            }
+            options.put("prefill", prefill)
+
+            val retryObj = JSONObject()
+            retryObj.put("enabled", true)
+            retryObj.put("max_count", 2)
+            options.put("retry", retryObj)
+
+            checkout.open(this, options)
+        } catch (e: Exception) {
+            Log.e("HomeActivity", "Error initiating Razorpay checkout: ${e.message}", e)
+            Toast.makeText(this, "Error initializing payment: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onPaymentSuccess(razorpayPaymentID: String?, paymentData: PaymentData?) {
+        val tier = pendingPurchaseTier ?: PlanTier.WEEKLY
+        val paymentId = razorpayPaymentID ?: paymentData?.paymentId ?: "pay_${System.currentTimeMillis()}"
+        val user = AuthManager.getCurrentUser()
+        val email = user?.email ?: "gamer"
+
+        PlanManager.purchasePlan(tier, paymentId) {
+            updatePlanUI()
+            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+            vipUpgradeDialog?.dismiss()
+            Toast.makeText(this, "👑 Payment Successful ($paymentId)! Activated ${tier.title} for $email.", Toast.LENGTH_LONG).show()
+        }
+        pendingPurchaseTier = null
+    }
+
+    override fun onPaymentError(code: Int, response: String?, paymentData: PaymentData?) {
+        Log.w("HomeActivity", "Razorpay payment failed ($code): $response")
+        val errorMsg = try {
+            if (!response.isNullOrEmpty()) {
+                val json = JSONObject(response)
+                val errorObj = json.optJSONObject("error")
+                errorObj?.optString("description") ?: response
+            } else {
+                "Payment was cancelled or failed."
+            }
+        } catch (e: Exception) {
+            response ?: "Payment cancelled."
+        }
+        Toast.makeText(this, "❌ Payment Failed: $errorMsg", Toast.LENGTH_LONG).show()
+        pendingPurchaseTier = null
     }
 
     // --- Navigation Slider Drawer & Settings ---
