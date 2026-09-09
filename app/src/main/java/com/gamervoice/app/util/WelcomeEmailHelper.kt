@@ -1,5 +1,6 @@
 package com.gamervoice.app.util
 
+import android.content.Context
 import android.util.Base64
 import android.util.Log
 import java.io.BufferedReader
@@ -13,10 +14,55 @@ import javax.net.ssl.SSLSocketFactory
 object WelcomeEmailHelper {
 
     private const val TAG = "WelcomeEmailHelper"
+    private const val PREFS_NAME = "gamervoice_auth_prefs"
+    private const val KEY_SENT_PREFIX = "welcome_sent_"
+
     private val executor = Executors.newSingleThreadExecutor()
 
-    fun sendWelcomeEmail(recipientEmail: String, recipientName: String) {
-        if (recipientEmail.isBlank() || !recipientEmail.contains("@")) return
+    /**
+     * Checks whether a welcome email has already been dispatched to this email address.
+     */
+    fun hasWelcomeBeenSent(context: Context, email: String): Boolean {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank()) return true
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SENT_PREFIX + cleanEmail, false)
+    }
+
+    /**
+     * Persistently marks that a welcome email has been dispatched to this email.
+     */
+    fun markWelcomeAsSent(context: Context, email: String) {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank()) return
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_SENT_PREFIX + cleanEmail, true).apply()
+    }
+
+    /**
+     * Strict Rule: Sends the heartfelt welcome email ONLY ONCE upon new account creation (sign up).
+     * If the email was already sent previously or if called during regular sign-in, it will be skipped.
+     */
+    fun sendWelcomeEmailOnce(
+        context: Context,
+        recipientEmail: String,
+        recipientName: String,
+        uid: String? = null
+    ) {
+        val cleanEmail = recipientEmail.trim().lowercase()
+        if (cleanEmail.isBlank() || !cleanEmail.contains("@")) {
+            Log.w(TAG, "Cannot send welcome email: Invalid address '$recipientEmail'")
+            return
+        }
+
+        // Strict Check: Has this email address EVER received the welcome email on this device?
+        if (hasWelcomeBeenSent(context, cleanEmail)) {
+            Log.i(TAG, "Strict Rule Enforced: Welcome email already sent to $cleanEmail previously. Skipping dispatch.")
+            return
+        }
+
+        // Mark immediately to prevent race conditions or repeated clicks
+        markWelcomeAsSent(context, cleanEmail)
 
         executor.execute {
             try {
@@ -24,13 +70,42 @@ object WelcomeEmailHelper {
                 val subject = "Welcome to the GamerVoice squad! (A personal note from the team)"
                 val messageContent = buildWelcomeLetter(displayName)
 
-                Log.d(TAG, "Preparing welcome email for $recipientEmail...")
+                Log.d(TAG, "Preparing first-time welcome email for $cleanEmail...")
 
-                if (SmtpConfig.SMTP_USERNAME.isNotBlank() && SmtpConfig.SMTP_PASSWORD.isNotBlank()) {
-                    deliverViaSmtp(recipientEmail, subject, messageContent)
-                    Log.i(TAG, "Welcome email successfully dispatched to $recipientEmail via SMTP!")
+                val cleanUser = SmtpConfig.SMTP_USERNAME.trim()
+                val cleanPass = SmtpConfig.SMTP_PASSWORD.replace(" ", "").trim()
+
+                if (cleanUser.isNotBlank() && cleanPass.isNotBlank()) {
+                    deliverViaSmtp(cleanEmail, subject, messageContent, cleanUser, cleanPass)
+                    Log.i(TAG, "Welcome email successfully dispatched to $cleanEmail via SMTP!")
                 } else {
-                    Log.i(TAG, "SMTP credentials pending in SmtpConfig.kt. Welcome email prepared:\n$messageContent")
+                    Log.i(TAG, "SMTP credentials pending in SmtpConfig.kt. Welcome email letter prepared:\n$messageContent")
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Notice: Could not send welcome email: ${t.localizedMessage}")
+            }
+        }
+    }
+
+    /**
+     * Legacy wrapper; delegates to strict one-time send if context is available.
+     */
+    fun sendWelcomeEmail(recipientEmail: String, recipientName: String) {
+        val cleanEmail = recipientEmail.trim().lowercase()
+        if (cleanEmail.isBlank() || !cleanEmail.contains("@")) return
+
+        executor.execute {
+            try {
+                val displayName = if (recipientName.isNotBlank()) recipientName else "Gamer"
+                val subject = "Welcome to the GamerVoice squad! (A personal note from the team)"
+                val messageContent = buildWelcomeLetter(displayName)
+
+                val cleanUser = SmtpConfig.SMTP_USERNAME.trim()
+                val cleanPass = SmtpConfig.SMTP_PASSWORD.replace(" ", "").trim()
+
+                if (cleanUser.isNotBlank() && cleanPass.isNotBlank()) {
+                    deliverViaSmtp(cleanEmail, subject, messageContent, cleanUser, cleanPass)
+                    Log.i(TAG, "Welcome email successfully dispatched to $cleanEmail via SMTP!")
                 }
             } catch (t: Throwable) {
                 Log.w(TAG, "Notice: Could not send welcome email: ${t.localizedMessage}")
@@ -62,7 +137,7 @@ GamerVoice Core Engineering
         """.trimIndent()
     }
 
-    private fun deliverViaSmtp(toEmail: String, subject: String, body: String) {
+    private fun deliverViaSmtp(toEmail: String, subject: String, body: String, username: String, pass: String) {
         val socketFactory = SSLSocketFactory.getDefault()
         val socket = socketFactory.createSocket(SmtpConfig.SMTP_HOST, SmtpConfig.SMTP_PORT) as SSLSocket
         socket.soTimeout = 15000
@@ -70,9 +145,17 @@ GamerVoice Core Engineering
         val reader = BufferedReader(InputStreamReader(socket.inputStream))
         val writer = PrintWriter(OutputStreamWriter(socket.outputStream), true)
 
-        fun readResponse(): String {
-            val line = reader.readLine() ?: ""
-            return line
+        fun readSmtpResponse(): String {
+            var lastLine = ""
+            while (true) {
+                val line = reader.readLine() ?: break
+                lastLine = line
+                if (line.length >= 4 && line[3] == '-') {
+                    continue // Multi-line response continuation
+                }
+                break
+            }
+            return lastLine
         }
 
         fun sendCommand(cmd: String) {
@@ -80,35 +163,32 @@ GamerVoice Core Engineering
             writer.flush()
         }
 
-        readResponse() // Greeting 220
+        readSmtpResponse() // Greeting 220
 
         sendCommand("EHLO localhost")
-        while (true) {
-            val l = readResponse()
-            if (l.length >= 4 && l[3] == ' ') break
-        }
+        readSmtpResponse() // 250
 
         sendCommand("AUTH LOGIN")
-        readResponse() // 334
+        readSmtpResponse() // 334
 
-        sendCommand(Base64.encodeToString(SmtpConfig.SMTP_USERNAME.toByteArray(), Base64.NO_WRAP))
-        readResponse() // 334
+        sendCommand(Base64.encodeToString(username.toByteArray(), Base64.NO_WRAP))
+        readSmtpResponse() // 334
 
-        sendCommand(Base64.encodeToString(SmtpConfig.SMTP_PASSWORD.toByteArray(), Base64.NO_WRAP))
-        val authResult = readResponse()
+        sendCommand(Base64.encodeToString(pass.toByteArray(), Base64.NO_WRAP))
+        val authResult = readSmtpResponse()
         if (!authResult.startsWith("235")) {
             throw RuntimeException("SMTP Authentication failed: $authResult")
         }
 
-        val sender = if (SmtpConfig.SENDER_EMAIL.isNotBlank()) SmtpConfig.SENDER_EMAIL else SmtpConfig.SMTP_USERNAME
+        val sender = if (SmtpConfig.SENDER_EMAIL.isNotBlank()) SmtpConfig.SENDER_EMAIL.trim() else username
         sendCommand("MAIL FROM:<$sender>")
-        readResponse()
+        readSmtpResponse()
 
         sendCommand("RCPT TO:<$toEmail>")
-        readResponse()
+        readSmtpResponse()
 
         sendCommand("DATA")
-        readResponse()
+        readSmtpResponse()
 
         val mimeMessage = """
 From: "${SmtpConfig.SENDER_NAME}" <$sender>
@@ -122,7 +202,7 @@ $body
         """.trimIndent()
 
         sendCommand(mimeMessage)
-        readResponse()
+        readSmtpResponse()
 
         sendCommand("QUIT")
         socket.close()

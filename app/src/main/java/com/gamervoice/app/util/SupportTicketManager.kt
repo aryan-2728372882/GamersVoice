@@ -19,7 +19,7 @@ object SupportTicketManager {
     // Replace with your Telegram Bot Token (from @BotFather) and Chat ID (or channel/group ID)
     var TELEGRAM_BOT_TOKEN = ""
     var TELEGRAM_CHAT_ID = ""
-    var FALLBACK_SUPPORT_EMAIL = "support@gamervoice.app"
+    var FALLBACK_SUPPORT_EMAIL = "supportgamersvoice@gmail.com"
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

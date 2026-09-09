@@ -35,10 +35,17 @@ class AuthActivity : AppCompatActivity() {
                 setLoading(true)
                 AuthManager.signInWithGoogle(account) { res ->
                     setLoading(false)
-                    res.onSuccess {
-                        val gEmail = account.email.orEmpty()
-                        val gName = account.displayName.orEmpty()
-                        com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmail(gEmail, gName)
+                    res.onSuccess { user ->
+                        val gEmail = user.email.ifBlank { account.email.orEmpty() }
+                        val gName = user.name.ifBlank { account.displayName.orEmpty() }
+
+                        // Strict Rule: ONLY send welcome email if this is a newly created account (sign-up)
+                        // AND welcome email has NOT been sent previously. Sign-in must NEVER send welcome email.
+                        if (user.isNewUser) {
+                            com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, gEmail, gName, user.uid)
+                        } else {
+                            android.util.Log.i("AuthActivity", "Existing Google user sign-in: welcome email skipped.")
+                        }
                         navigateToHome()
                     }.onFailure { err ->
                         showError(err.message ?: "Google sign-in failed")
@@ -193,8 +200,9 @@ class AuthActivity : AppCompatActivity() {
                 setLoading(true)
                 AuthManager.signUp(email, password, name, phone, selectedAvatar) { result ->
                     setLoading(false)
-                    result.onSuccess {
-                        com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmail(email, name)
+                    result.onSuccess { user ->
+                        // Strict Rule: Sends welcome email strictly ONCE for new account creation
+                        com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, email, name, user.uid)
                         navigateToHome()
                     }.onFailure { err ->
                         showError(err.message ?: "Failed to create account")

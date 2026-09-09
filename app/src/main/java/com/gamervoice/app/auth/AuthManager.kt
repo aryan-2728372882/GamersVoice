@@ -19,7 +19,8 @@ data class UserProfile(
     val email: String,
     val phone: String,
     val avatar: String,
-    val idToken: String
+    val idToken: String,
+    val isNewUser: Boolean = false
 )
 
 object AuthManager {
@@ -47,8 +48,10 @@ object AuthManager {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var prefs: SharedPreferences? = null
     private var currentUser: UserProfile? = null
+    private var appContext: Context? = null
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         if (prefs == null) {
             prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             loadCachedUser()
@@ -126,7 +129,7 @@ object AuthManager {
                     // 3. Save User Profile in Firestore database
                     saveFirestoreProfile(uid, name, email, phone, avatar, idToken)
 
-                    val user = UserProfile(uid, name, email, phone, avatar, idToken)
+                    val user = UserProfile(uid, name, email, phone, avatar, idToken, isNewUser = true)
                     saveUserToCache(user)
                     postResult(callback, Result.success(user))
                 } catch (t: Throwable) {
@@ -183,7 +186,8 @@ object AuthManager {
                         val phone = firestoreResult?.phone ?: ""
                         val avatar = if (!firestoreResult?.avatar.isNullOrEmpty()) firestoreResult!!.avatar else authAvatar
 
-                        val user = UserProfile(uid, name, email, phone, avatar, idToken)
+                        // Sign in is strictly NOT a new user (isNewUser = false)
+                        val user = UserProfile(uid, name, email, phone, avatar, idToken, isNewUser = false)
                         saveUserToCache(user)
                         postResult(callback, Result.success(user))
                     }
@@ -221,8 +225,9 @@ object AuthManager {
 
             httpClient.newCall(request).enqueue(object : okhttp3.Callback {
                 override fun onFailure(call: okhttp3.Call, e: IOException) {
-                    // Fall back to local google profile if network fails
-                    val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "")
+                    val cleanEmail = googleEmail.trim().lowercase()
+                    val alreadySent = appContext?.let { com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(it, cleanEmail) } ?: false
+                    val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "", isNewUser = !alreadySent)
                     saveUserToCache(user)
                     saveFirestoreProfile(user.uid, user.name, user.email, "", user.avatar, "")
                     postResult(callback, Result.success(user))
@@ -237,11 +242,12 @@ object AuthManager {
                             val fbToken = json.getString("idToken")
                             val fbName = json.optString("displayName", googleName)
                             val fbAvatar = json.optString("photoUrl", googleAvatar)
+                            val isNewUser = json.optBoolean("isNewUser", false)
 
                             val finalName = if (fbName.isNotEmpty()) fbName else googleName
                             val finalAvatar = if (fbAvatar.isNotEmpty()) fbAvatar else googleAvatar
 
-                            val user = UserProfile(fbUid, finalName, googleEmail, "", finalAvatar, fbToken)
+                            val user = UserProfile(fbUid, finalName, googleEmail, "", finalAvatar, fbToken, isNewUser = isNewUser)
                             saveUserToCache(user)
                             saveFirestoreProfile(fbUid, finalName, googleEmail, "", finalAvatar, fbToken)
                             postResult(callback, Result.success(user))
@@ -249,16 +255,18 @@ object AuthManager {
                         }
                     } catch (_: Exception) {}
 
-                    // Fallback if IDP exchange failed in console (e.g. SHA-1 pending in Firebase console)
-                    val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "")
+                    val cleanEmail = googleEmail.trim().lowercase()
+                    val alreadySent = appContext?.let { com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(it, cleanEmail) } ?: false
+                    val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "", isNewUser = !alreadySent)
                     saveUserToCache(user)
                     saveFirestoreProfile(user.uid, user.name, user.email, "", user.avatar, "")
                     postResult(callback, Result.success(user))
                 }
             })
         } else {
-            // Direct sign-in using Google Play Services account profile
-            val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "")
+            val cleanEmail = googleEmail.trim().lowercase()
+            val alreadySent = appContext?.let { com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(it, cleanEmail) } ?: false
+            val user = UserProfile("google_$googleId", googleName, googleEmail, "", googleAvatar, "", isNewUser = !alreadySent)
             saveUserToCache(user)
             saveFirestoreProfile(user.uid, user.name, user.email, "", user.avatar, "")
             postResult(callback, Result.success(user))
@@ -300,6 +308,7 @@ object AuthManager {
                 put("email", JSONObject().put("stringValue", email))
                 put("phone", JSONObject().put("stringValue", phone))
                 put("avatar", JSONObject().put("stringValue", avatar))
+                put("welcomeEmailSent", JSONObject().put("booleanValue", true))
                 put("updatedAt", JSONObject().put("stringValue", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).format(java.util.Date())))
             }
             val body = JSONObject().apply {
@@ -355,8 +364,13 @@ object AuthManager {
                         val email = fields.optJSONObject("email")?.optString("stringValue", "") ?: ""
                         val phone = fields.optJSONObject("phone")?.optString("stringValue", "") ?: ""
                         val avatar = fields.optJSONObject("avatar")?.optString("stringValue", "avatar_1") ?: "avatar_1"
+                        val welcomeSent = fields.optJSONObject("welcomeEmailSent")?.optBoolean("booleanValue", false) ?: false
 
-                        onComplete(UserProfile(uid, name, email, phone, avatar, idToken))
+                        if (welcomeSent && appContext != null && email.isNotBlank()) {
+                            com.gamervoice.app.util.WelcomeEmailHelper.markWelcomeAsSent(appContext!!, email)
+                        }
+
+                        onComplete(UserProfile(uid, name, email, phone, avatar, idToken, isNewUser = false))
                     } catch (_: Exception) {
                         onComplete(null)
                     }
