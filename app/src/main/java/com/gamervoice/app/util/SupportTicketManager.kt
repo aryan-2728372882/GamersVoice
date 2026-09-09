@@ -16,9 +16,8 @@ object SupportTicketManager {
     private const val TAG = "SupportTicketManager"
 
     // Telegram Bot Configuration
-    // Replace with your Telegram Bot Token (from @BotFather) and Chat ID (or channel/group ID)
-    var TELEGRAM_BOT_TOKEN = ""
-    var TELEGRAM_CHAT_ID = ""
+    var TELEGRAM_BOT_TOKEN = "8769801969:AAHdwQj7CMN_RA7ZD46mlkjw4S6bt0NOsqs"
+    var TELEGRAM_CHAT_ID = "-5550413473"
     var FALLBACK_SUPPORT_EMAIL = "supportgamersvoice@gmail.com"
 
     private val httpClient = OkHttpClient.Builder()
@@ -34,6 +33,12 @@ object SupportTicketManager {
         val isVip: Boolean
     )
 
+    private fun escapeHtml(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+    }
+
     fun submitTicket(
         context: Context,
         submission: TicketSubmission,
@@ -45,20 +50,20 @@ object SupportTicketManager {
         val vipBadge = if (submission.isVip) "👑 VIP SUBSCRIBER" else "🟢 FREE USER"
 
         val formattedMessage = """
-🚨 *NEW GAMERVOICE SUPPORT TICKET*
+🚨 <b>NEW GAMERVOICE SUPPORT TICKET</b>
 ━━━━━━━━━━━━━━━━━━━━━━
-👤 *User:* `${submission.userEmail}` ($vipBadge)
-📂 *Category:* *${submission.category}*
-📝 *Subject:* ${submission.subject}
+👤 <b>User:</b> <code>${escapeHtml(submission.userEmail)}</code> ($vipBadge)
+📂 <b>Category:</b> <b>${escapeHtml(submission.category)}</b>
+📝 <b>Subject:</b> ${escapeHtml(submission.subject)}
 
-💬 *Details:*
-${submission.description}
+💬 <b>Details:</b>
+${escapeHtml(submission.description)}
 
-📱 *Device Info:*
-• Model: `$deviceModel`
-• OS: `$androidVer`
-• App Build: `$appVer`
-🕒 *Time:* ${Date()}
+📱 <b>Device Info:</b>
+• Model: <code>${escapeHtml(deviceModel)}</code>
+• OS: <code>${escapeHtml(androidVer)}</code>
+• App Build: <code>${escapeHtml(appVer)}</code>
+🕒 <b>Time:</b> ${Date()}
 ━━━━━━━━━━━━━━━━━━━━━━
         """.trimIndent()
 
@@ -69,7 +74,7 @@ ${submission.description}
             val payload = JSONObject().apply {
                 put("chat_id", TELEGRAM_CHAT_ID)
                 put("text", formattedMessage)
-                put("parse_mode", "Markdown")
+                put("parse_mode", "HTML")
             }
 
             val body = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
