@@ -22,6 +22,8 @@ object GameLauncherHelper {
 
     // Recognized competitive gaming titles
     private val KNOWN_GAMES = listOf(
+        "com.kiloo.subwaysurf" to "Subway Surf",
+        "com.ludo.king" to "Ludo King",
         "com.dts.freefireth" to "Free Fire",
         "com.dts.freefiremax" to "Free Fire MAX",
         "com.pubg.imobile" to "BGMI",
