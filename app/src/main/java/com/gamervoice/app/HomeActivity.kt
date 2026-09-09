@@ -125,6 +125,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             return
         }
 
+        val loggedInUser = AuthManager.getCurrentUser()
+        if (loggedInUser != null && loggedInUser.email.isNotBlank()) {
+            if (!com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(this, loggedInUser.email)) {
+                com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, loggedInUser.email, loggedInUser.name, loggedInUser.uid)
+            }
+        }
+
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

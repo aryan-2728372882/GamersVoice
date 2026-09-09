@@ -39,12 +39,12 @@ class AuthActivity : AppCompatActivity() {
                         val gEmail = user.email.ifBlank { account.email.orEmpty() }
                         val gName = user.name.ifBlank { account.displayName.orEmpty() }
 
-                        // Strict Rule: ONLY send welcome email if this is a newly created account (sign-up)
-                        // AND welcome email has NOT been sent previously. Sign-in must NEVER send welcome email.
-                        if (user.isNewUser) {
+                        // Strict Rule: If welcome email has NOT been sent to this user yet (e.g. SMTP was pending or new user),
+                        // send it now. Once delivered, it will never send again.
+                        if (!com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(this, gEmail)) {
                             com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, gEmail, gName, user.uid)
                         } else {
-                            android.util.Log.i("AuthActivity", "Existing Google user sign-in: welcome email skipped.")
+                            android.util.Log.i("AuthActivity", "Welcome email already delivered to $gEmail previously. Suppressed.")
                         }
                         navigateToHome()
                     }.onFailure { err ->
@@ -125,27 +125,28 @@ class AuthActivity : AppCompatActivity() {
         val colorGreen = ContextCompat.getColor(this, R.color.accent_green)
         val colorDark = ContextCompat.getColor(this, R.color.black)
         val colorMuted = ContextCompat.getColor(this, R.color.text_secondary)
+        val colorTransparent = ContextCompat.getColor(this, android.R.color.transparent)
 
         if (signUp) {
             binding.tabSignUp.backgroundTintList = ColorStateList.valueOf(colorGreen)
             binding.tabSignUp.setTextColor(colorDark)
-            binding.tabSignIn.backgroundTintList = null
+            binding.tabSignIn.backgroundTintList = ColorStateList.valueOf(colorTransparent)
             binding.tabSignIn.setTextColor(colorMuted)
 
             binding.tilName.visibility = View.VISIBLE
             binding.tilPhone.visibility = View.VISIBLE
             binding.llAvatarSection.visibility = View.VISIBLE
-            binding.btnSubmitAuth.text = "CREATE ACCOUNT"
+            binding.btnSubmitAuth.text = "CREATE ACCOUNT ⚡"
         } else {
             binding.tabSignIn.backgroundTintList = ColorStateList.valueOf(colorGreen)
             binding.tabSignIn.setTextColor(colorDark)
-            binding.tabSignUp.backgroundTintList = null
+            binding.tabSignUp.backgroundTintList = ColorStateList.valueOf(colorTransparent)
             binding.tabSignUp.setTextColor(colorMuted)
 
             binding.tilName.visibility = View.GONE
             binding.tilPhone.visibility = View.GONE
             binding.llAvatarSection.visibility = View.GONE
-            binding.btnSubmitAuth.text = "SIGN IN"
+            binding.btnSubmitAuth.text = "SIGN IN ⚡"
         }
     }
 
@@ -212,7 +213,10 @@ class AuthActivity : AppCompatActivity() {
                 setLoading(true)
                 AuthManager.signIn(email, password) { result ->
                     setLoading(false)
-                    result.onSuccess {
+                    result.onSuccess { user ->
+                        if (!com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(this, user.email)) {
+                            com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, user.email, user.name, user.uid)
+                        }
                         navigateToHome()
                     }.onFailure { err ->
                         showError(err.message ?: "Sign in failed")

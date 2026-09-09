@@ -116,7 +116,16 @@ object RoomPersistenceManager {
 
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
                 val body = response.body?.string() ?: ""
+                val isSuccess = response.isSuccessful
+                val responseCode = response.code
                 response.close()
+
+                if (!isSuccess) {
+                    Log.w(TAG, "Firestore fetch returned HTTP $responseCode: $body. Preserving local cached rooms.")
+                    mainHandler.post { callback(getCachedRooms()) }
+                    return
+                }
+
                 val list = mutableListOf<SavedRoom>()
                 try {
                     val root = JSONObject(body)
@@ -136,8 +145,10 @@ object RoomPersistenceManager {
                             }
                         }
                     }
-                    updateLocalCache(list)
-                    mainHandler.post { callback(list) }
+                    if (list.isNotEmpty() || getCachedRooms().isEmpty()) {
+                        updateLocalCache(list)
+                    }
+                    mainHandler.post { callback(if (list.isNotEmpty()) list else getCachedRooms()) }
                 } catch (e: Exception) {
                     Log.w(TAG, "Error parsing Firestore rooms", e)
                     mainHandler.post { callback(getCachedRooms()) }
