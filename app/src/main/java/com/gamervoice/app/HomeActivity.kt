@@ -340,6 +340,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.cardLegalRefund.setOnClickListener {
             showLegalDialog("Payment & Refund Policy", LegalDocsHelper.REFUND_POLICY, R.drawable.ic_shield_privacy)
         }
+        binding.cardLegalIndianCompliance.setOnClickListener {
+            showLegalDialog("India Statutory Compliance", LegalDocsHelper.INDIAN_GOVT_COMPLIANCE, R.drawable.ic_shield_check)
+        }
         binding.cardSupportContact.setOnClickListener {
             showContactSupportDialog()
         }
@@ -888,7 +891,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         dialog.show()
     }
 
-    private fun showContactSupportDialog() {
+    private fun showContactSupportDialog(preselectedCategory: String? = null) {
         val user = AuthManager.getCurrentUser()
         val dialog = Dialog(this)
         val dialogBinding = DialogContactUsBinding.inflate(layoutInflater)
@@ -897,15 +900,27 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val width = (resources.displayMetrics.widthPixels * 0.94).toInt()
         dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
 
+        val deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        val androidVer = "Android ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})"
+        dialogBinding.tvContactTelemetryBanner.text = "Attached: $deviceModel • $androidVer • Build 1.0.0-beta"
+
         val categories = arrayOf(
             "VIP / Payment Trouble",
             "Audio / Mic / Echo Issue",
             "Room Connection Trouble",
             "Bug Report / Crash",
-            "Feedback & Feature Idea"
+            "Feedback & Feature Idea",
+            "Legal & Statutory Grievance (IT Rules 2021 & DPDP)"
         )
         val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
         dialogBinding.spnContactCategory.adapter = adapter
+
+        if (!preselectedCategory.isNullOrBlank()) {
+            val idx = categories.indexOfFirst { it.contains(preselectedCategory, ignoreCase = true) }
+            if (idx >= 0) {
+                dialogBinding.spnContactCategory.setSelection(idx)
+            }
+        }
 
         dialogBinding.ivCloseContactDialog.setOnClickListener {
             dialog.dismiss()

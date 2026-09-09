@@ -1,149 +1,262 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_glass_card"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:fadeScrollbars="false"
+    android:fillViewport="true">
 
-    <!-- Header Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:background="@drawable/bg_glass_card"
+        android:orientation="vertical"
+        android:padding="20dp">
 
+        <!-- Glowing Neon Top Strip -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="3.5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_plan_badge_free" />
+
+        <!-- Header Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Telegram / Support Icon with Ring -->
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_avatar_ring"
+                android:padding="2dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="🛠️"
+                    android:textSize="20sp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.04"
+                        android:text="DEVELOPER HOTLINE"
+                        android:textColor="@color/white"
+                        android:textSize="15.5sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_plan_badge_free"
+                        android:fontFamily="sans-serif-black"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="1.5dp"
+                        android:text="24/7 LIVE"
+                        android:textColor="@color/neon_green"
+                        android:textSize="8sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif"
+                    android:text="Direct Serverless Telegram Pipeline • @Gamersvoice_bot"
+                    android:textColor="#94A3B8"
+                    android:textSize="9.5sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/ivCloseContactDialog"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close"
+                android:padding="6dp"
+                android:src="@drawable/ic_call_end_white"
+                app:tint="#64748B" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="14dp"
+            android:background="#1FFFFFFF" />
+
+        <!-- Status & Telemetry Strip -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_terminal_box"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🟢"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/tvContactTelemetryBanner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="System diagnostics &amp; device telemetry will be auto-attached."
+                android:textColor="#38BDF8"
+                android:textSize="9.5sp" />
+        </LinearLayout>
+
+        <!-- Category Selector -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🛠️"
-            android:textSize="20sp" />
+            android:layout_marginBottom="5dp"
+            android:fontFamily="sans-serif-bold"
+            android:letterSpacing="0.05"
+            android:text="SELECT ISSUE CLASSIFICATION"
+            android:textColor="#94A3B8"
+            android:textSize="10sp" />
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <Spinner
+            android:id="@+id/spnContactCategory"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_terminal_box"
+            android:paddingHorizontal="12dp"
+            android:popupBackground="#0A0F1A" />
+
+        <!-- Subject Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilContactSubject"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_marginBottom="12dp"
+            android:hint="Subject / Summary of Issue"
+            android:textColorHint="#64748B"
+            app:boxBackgroundColor="#0B0F19"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxStrokeColor="@color/neon_green"
+            app:hintTextColor="@color/neon_green">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etContactSubject"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
-                android:letterSpacing="0.06"
-                android:text="CONTACT SUPPORT"
+                android:fontFamily="sans-serif-medium"
+                android:inputType="text"
                 android:textColor="@color/white"
-                android:textSize="15sp" />
+                android:textSize="13.5sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Description Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilContactDescription"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Detailed description of what occurred..."
+            android:textColorHint="#64748B"
+            app:boxBackgroundColor="#0B0F19"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxStrokeColor="@color/neon_green"
+            app:hintTextColor="@color/neon_green">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etContactDescription"
+                android:layout_width="match_parent"
+                android:layout_height="96dp"
+                android:fontFamily="sans-serif"
+                android:gravity="top|start"
+                android:inputType="textMultiLine"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Statutory Legal & Grievance Notice Strip -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_terminal_box"
+            android:orientation="vertical"
+            android:padding="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-bold"
+                android:text="⚖️ Legal Grievance &amp; Indian IT Compliance Notice:"
+                android:textColor="#CBD5E1"
+                android:textSize="9sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
                 android:fontFamily="sans-serif"
-                android:text="Direct Developer Response • Instant Telegram Dispatch"
-                android:textColor="#94A3B8"
-                android:textSize="10sp" />
+                android:text="Statutory legal notices or DPDP Act 2023 queries can also be dispatched directly to supportgamersvoice@gmail.com (Grievance Officer response: &lt; 24h)."
+                android:textColor="#64748B"
+                android:textSize="8.5sp" />
         </LinearLayout>
 
-        <ImageView
-            android:id="@+id/ivCloseContactDialog"
+        <!-- Dispatch to Telegram Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitContactTicket"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:backgroundTint="@color/neon_green"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.04"
+            android:text="TRANSMIT TO DEV TEAM 🚀"
+            android:textColor="@color/black"
+            android:textSize="13.5sp"
+            app:cornerRadius="10dp" />
+
+        <ProgressBar
+            android:id="@+id/pbContactLoading"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Close"
-            android:padding="4dp"
-            android:src="@drawable/ic_call_end_white"
-            app:tint="#64748B" />
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:indeterminateTint="@color/neon_green"
+            android:visibility="gone" />
+
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginVertical="12dp"
-        android:background="#1FFFFFFF" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:fontFamily="sans-serif-bold"
-        android:text="ISSUE CATEGORY"
-        android:textColor="#64748B"
-        android:textSize="10.5sp" />
-
-    <Spinner
-        android:id="@+id/spnContactCategory"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/bg_terminal_box"
-        android:paddingHorizontal="10dp"
-        android:popupBackground="#0F141C" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilContactSubject"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:hint="Subject / Summary"
-        android:textColorHint="#64748B"
-        app:boxStrokeColor="@color/neon_green"
-        app:hintTextColor="@color/neon_green">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etContactSubject"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:inputType="text"
-            android:textColor="@color/white"
-            android:textSize="13.5sp" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilContactDescription"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="14dp"
-        android:hint="Describe what happened..."
-        android:textColorHint="#64748B"
-        app:boxStrokeColor="@color/neon_green"
-        app:hintTextColor="@color/neon_green">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etContactDescription"
-            android:layout_width="match_parent"
-            android:layout_height="90dp"
-            android:fontFamily="sans-serif"
-            android:gravity="top|start"
-            android:inputType="textMultiLine"
-            android:textColor="@color/white"
-            android:textSize="13sp" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Dispatch to Telegram Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSubmitContactTicket"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:backgroundTint="@color/neon_green"
-        android:fontFamily="sans-serif-black"
-        android:letterSpacing="0.04"
-        android:text="TRANSMIT TO DEV TEAM 🚀"
-        android:textColor="@color/black"
-        android:textSize="13sp"
-        app:cornerRadius="10dp" />
-
-    <ProgressBar
-        android:id="@+id/pbContactLoading"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:layout_gravity="center"
-        android:layout_marginTop="8dp"
-        android:indeterminateTint="@color/neon_green"
-        android:visibility="gone" />
-
-</LinearLayout>
+</ScrollView>

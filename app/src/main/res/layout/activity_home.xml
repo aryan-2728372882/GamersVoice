@@ -1147,64 +1147,103 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- SUPPORT & REFUND POLICY ROW -->
+                    <!-- NEXT-LEVEL HERO PRIORITY SUPPORT DESK -->
                     <LinearLayout
+                        android:id="@+id/cardSupportContact"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_top_profile_bar"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
 
-                        <!-- Contact Support Card -->
-                        <LinearLayout
-                            android:id="@+id/cardSupportContact"
-                            android:layout_width="0dp"
-                            android:layout_height="46dp"
-                            android:layout_marginEnd="5dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_grid_setting_card"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="12dp">
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_avatar_ring"
+                            android:padding="2dp">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
                                 android:text="🛠️"
-                                android:textSize="16sp" />
+                                android:textSize="18sp" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:orientation="vertical">
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Priority Support Desk"
+                                    android:textColor="@color/white"
+                                    android:textSize="12.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:background="@drawable/bg_plan_badge_free"
                                     android:fontFamily="sans-serif-bold"
-                                    android:text="Contact Us"
+                                    android:paddingHorizontal="5dp"
+                                    android:paddingVertical="1dp"
+                                    android:text="TELEGRAM BOT"
                                     android:textColor="@color/neon_green"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif"
-                                    android:text="Direct Telegram Help"
-                                    android:textColor="#94A3B8"
                                     android:textSize="8sp" />
                             </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Serverless Telegram hotline to core developers • Avg &lt; 2h"
+                                android:textColor="#94A3B8"
+                                android:textSize="9sp" />
                         </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_plan_badge_free"
+                            android:fontFamily="sans-serif-black"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="4dp"
+                            android:text="OPEN 🚀"
+                            android:textColor="@color/neon_green"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <!-- LEGAL SUB-ROW: REFUND POLICY & INDIAN GOVT COMPLIANCE -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
 
                         <!-- Refund Policy Card -->
                         <LinearLayout
                             android:id="@+id/cardLegalRefund"
                             android:layout_width="0dp"
-                            android:layout_height="46dp"
-                            android:layout_marginStart="5dp"
+                            android:layout_height="52dp"
+                            android:layout_marginEnd="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_grid_setting_card"
                             android:clickable="true"
@@ -1212,7 +1251,7 @@
                             android:foreground="?attr/selectableItemBackground"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
-                            android:paddingHorizontal="12dp">
+                            android:paddingHorizontal="10dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -1232,13 +1271,58 @@
                                     android:fontFamily="sans-serif-bold"
                                     android:text="Refund Policy"
                                     android:textColor="@color/white"
-                                    android:textSize="11sp" />
+                                    android:textSize="10.5sp" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:fontFamily="sans-serif"
                                     android:text="Strict No-Refund Terms"
+                                    android:textColor="#94A3B8"
+                                    android:textSize="8sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- India Govt Compliance & Grievance Card -->
+                        <LinearLayout
+                            android:id="@+id/cardLegalIndianCompliance"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_grid_setting_card"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚖️"
+                                android:textSize="16sp" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="India Compliance"
+                                    android:textColor="@color/neon_cyan"
+                                    android:textSize="10.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif"
+                                    android:text="IT Rules 2021 &amp; DPDP"
                                     android:textColor="#94A3B8"
                                     android:textSize="8sp" />
                             </LinearLayout>
