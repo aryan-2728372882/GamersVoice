@@ -31,7 +31,27 @@ object LegalDocsHelper {
         GamerVoice complies with global privacy regulations. We do not knowingly collect personal information from individuals under the minimum age required by applicable local law without parental consent.
 
         7. CONTACT & DATA DELETION
-        To delete your stored profile data, you may log out or contact our support team at support@gamervoice.app.
+        To delete your stored profile data or reach our team, submit a ticket through the in-app Contact Support form or email support@gamervoice.app.
+    """.trimIndent()
+
+    val REFUND_POLICY = """
+        GAMERVOICE PAYMENT & REFUND POLICY
+        Last Updated: September 2026
+        Version: 1.0.0-beta
+
+        1. STRICT NO-REFUND POLICY
+        All payments made for GamerVoice VIP memberships (Weekly, Monthly, or Lifetime Pass) are final and NON-REFUNDABLE once processed. Because VIP access unlocks digital privileges immediately (including AI Ultra-Silent Noise Filter, Unlimited Cloud Squad Rooms, and Autonomous Background RAM Purging), transactions cannot be reversed or refunded after activation.
+
+        2. TECHNICAL TROUBLESHOOTING & SUPPORT
+        If you experience any difficulties, including:
+        - Payment processed but VIP status not showing as active
+        - Double charge by payment provider
+        - Voice connection or audio issues
+        
+        DO NOT dispute through third parties without contacting us first. You can submit your issue directly through the in-app "Contact Us & Support" form. Our engineering team resolves all verified account discrepancies within 24–48 hours.
+
+        3. CANCELLATION
+        VIP passes are prepaid digital access licenses. You will retain access until the exact expiration date displayed on your Profile dashboard.
     """.trimIndent()
 
     val TERMS_OF_SERVICE = """
@@ -40,27 +60,30 @@ object LegalDocsHelper {
         Version: 1.0.0-beta
 
         1. ACCEPTANCE OF TERMS
-        By downloading, installing, or using GamerVoice, you agree to be bound by these Terms of Service. If you do not agree, do not use the application.
+        By downloading, installing, or using GamerVoice, you agree to be bound by these Terms of Service and our strict Payment & Refund Policy. If you do not agree, do not use the application.
 
         2. LICENSE GRANT
         GamerVoice grants you a personal, non-exclusive, non-transferable, revocable license to use the app for non-commercial personal squad voice communication.
 
-        3. SQUAD CODE OF CONDUCT
+        3. VIP PURCHASES & STRICT NO-REFUND POLICY
+        VIP privileges are digital goods delivered instantly upon payment verification via Razorpay. All purchases are strictly non-refundable. Any technical discrepancy or billing concern must be reported via our in-app Support ticket system.
+
+        4. SQUAD CODE OF CONDUCT
         You agree to use GamerVoice responsibly. Prohibited behaviors include:
         - Harassment, hate speech, threats, or severe toxicity towards squad teammates.
         - Transmitting intentionally disruptive noises, audio blasts, or audio spam.
         - Attempting to reverse engineer, disrupt, overload, or compromise the signaling servers or peer connections.
         - Impersonating other players or entities.
 
-        4. SERVICE AVAILABILITY & DISCLAIMER
+        5. SERVICE AVAILABILITY & DISCLAIMER
         - The service is provided on an "AS IS" and "AS AVAILABLE" basis. While we optimize for 3G networks and weak devices, connection quality depends on your cellular network and internet service provider.
         - GamerVoice does not warrant that the service will be 100% error-free or uninterrupted.
 
-        5. LIMITATION OF LIABILITY
+        6. LIMITATION OF LIABILITY
         To the maximum extent permitted by applicable law, GamerVoice and its developers shall not be liable for any indirect, incidental, or consequential damages arising from the use or inability to use the service.
 
-        6. MODIFICATIONS
-        We reserve the right to update these terms to reflect feature upgrades or regulatory requirements.
+        7. DISPUTES & CONTACT
+        Any complaints or disputes must be submitted through our in-app Contact Support form for prompt resolution.
     """.trimIndent()
 
     val COMMUNITY_GUIDELINES = """

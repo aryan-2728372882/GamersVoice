@@ -84,10 +84,10 @@ class VoiceService : Service(),
 
     private val pingRunnable = object : Runnable {
         override fun run() {
-            if (currentRoomCode != null && signalingClient.isConnected) {
+            if (signalingClient.isConnected) {
                 signalingClient.sendPing()
             }
-            mainHandler.postDelayed(this, 10000)
+            mainHandler.postDelayed(this, 3000)
         }
     }
 
@@ -394,12 +394,16 @@ class VoiceService : Service(),
     override fun onConnected() {
         mainHandler.post {
             listener?.onConnectedStateChanged("Status: Server Connected")
+            if (signalingClient.isConnected) {
+                signalingClient.sendPing()
+            }
         }
     }
 
     override fun onDisconnected() {
         mainHandler.post {
             listener?.onConnectedStateChanged("Status: Server Disconnected")
+            listener?.onLatencyUpdated(-1L)
         }
     }
 

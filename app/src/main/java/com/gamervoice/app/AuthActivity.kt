@@ -36,6 +36,9 @@ class AuthActivity : AppCompatActivity() {
                 AuthManager.signInWithGoogle(account) { res ->
                     setLoading(false)
                     res.onSuccess {
+                        val gEmail = account.email.orEmpty()
+                        val gName = account.displayName.orEmpty()
+                        com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmail(gEmail, gName)
                         navigateToHome()
                     }.onFailure { err ->
                         showError(err.message ?: "Google sign-in failed")
@@ -191,6 +194,7 @@ class AuthActivity : AppCompatActivity() {
                 AuthManager.signUp(email, password, name, phone, selectedAvatar) { result ->
                     setLoading(false)
                     result.onSuccess {
+                        com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmail(email, name)
                         navigateToHome()
                     }.onFailure { err ->
                         showError(err.message ?: "Failed to create account")

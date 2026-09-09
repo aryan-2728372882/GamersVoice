@@ -26,8 +26,10 @@ import com.gamervoice.app.auth.PlanManager
 import com.gamervoice.app.auth.PlanTier
 import com.gamervoice.app.auth.UserProfile
 import com.gamervoice.app.databinding.ActivityHomeBinding
+import com.gamervoice.app.databinding.DialogContactUsBinding
 import com.gamervoice.app.databinding.DialogLegalDocBinding
 import com.gamervoice.app.databinding.DialogVipUpgradeBinding
+import com.gamervoice.app.util.SupportTicketManager
 import com.gamervoice.app.databinding.ItemInstalledGameBinding
 import com.gamervoice.app.databinding.ItemParticipantBinding
 import com.gamervoice.app.databinding.ItemSavedRoomBinding
@@ -205,9 +207,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             ImageLoader.loadAvatar(binding.ivUserAvatar, user.avatar)
         }
 
-        binding.btnOpenMenu.setOnClickListener {
-            updateActiveNavTab(2) // Jump to Settings Tab
-        }
         binding.llUserProfileHeader.setOnClickListener {
             updateActiveNavTab(3) // Jump to Profile Tab
         }
@@ -337,6 +336,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         binding.cardLegalLicenses.setOnClickListener {
             showLegalDialog("Open Source Licenses", LegalDocsHelper.OPEN_SOURCE_LICENSES, R.drawable.ic_code_brackets)
+        }
+        binding.cardLegalRefund.setOnClickListener {
+            showLegalDialog("Payment & Refund Policy", LegalDocsHelper.REFUND_POLICY, R.drawable.ic_shield_privacy)
+        }
+        binding.cardSupportContact.setOnClickListener {
+            showContactSupportDialog()
         }
 
         // --- Footer & Logout Squad ---
@@ -883,6 +888,69 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         dialog.show()
     }
 
+    private fun showContactSupportDialog() {
+        val user = AuthManager.getCurrentUser()
+        val dialog = Dialog(this)
+        val dialogBinding = DialogContactUsBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val width = (resources.displayMetrics.widthPixels * 0.94).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val categories = arrayOf(
+            "VIP / Payment Trouble",
+            "Audio / Mic / Echo Issue",
+            "Room Connection Trouble",
+            "Bug Report / Crash",
+            "Feedback & Feature Idea"
+        )
+        val adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+        dialogBinding.spnContactCategory.adapter = adapter
+
+        dialogBinding.ivCloseContactDialog.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnSubmitContactTicket.setOnClickListener {
+            val category = dialogBinding.spnContactCategory.selectedItem?.toString() ?: "General"
+            val subject = dialogBinding.etContactSubject.text?.toString()?.trim().orEmpty()
+            val description = dialogBinding.etContactDescription.text?.toString()?.trim().orEmpty()
+
+            if (subject.isEmpty()) {
+                Toast.makeText(this, "Please enter a subject summary", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (description.isEmpty()) {
+                Toast.makeText(this, "Please describe the issue in detail", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            dialogBinding.btnSubmitContactTicket.isEnabled = false
+            dialogBinding.pbContactLoading.visibility = View.VISIBLE
+
+            val submission = SupportTicketManager.TicketSubmission(
+                userEmail = user?.email ?: "guest@gamervoice.app",
+                category = category,
+                subject = subject,
+                description = description,
+                isVip = PlanManager.isVip()
+            )
+
+            SupportTicketManager.submitTicket(this, submission) { success, message ->
+                runOnUiThread {
+                    dialogBinding.pbContactLoading.visibility = View.GONE
+                    dialogBinding.btnSubmitContactTicket.isEnabled = true
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    if (success) {
+                        dialog.dismiss()
+                    }
+                }
+            }
+        }
+
+        dialog.show()
+    }
+
     private fun toggleFloatingHud() {
         val svc = voiceService
         if (svc == null || svc.currentRoomCode == null) {
@@ -1147,7 +1215,21 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     override fun onLatencyUpdated(latencyMs: Long) {
-        // Latency ping UI suppressed per user instruction
+        runOnUiThread {
+            try {
+                if (latencyMs < 0) {
+                    binding.tvTelemetryPing.text = "-- ms"
+                    binding.tvTelemetryPing.setTextColor(Color.parseColor("#94A3B8"))
+                } else {
+                    binding.tvTelemetryPing.text = "${latencyMs}ms"
+                    when {
+                        latencyMs < 60 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
+                        latencyMs < 120 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FFD700"))
+                        else -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FF5252"))
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
     }
 
     override fun onError(message: String) {

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass_card"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Header Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛠️"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.06"
+                android:text="CONTACT SUPPORT"
+                android:textColor="@color/white"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:text="Direct Developer Response • Instant Telegram Dispatch"
+                android:textColor="#94A3B8"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ivCloseContactDialog"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close"
+            android:padding="4dp"
+            android:src="@drawable/ic_call_end_white"
+            app:tint="#64748B" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="12dp"
+        android:background="#1FFFFFFF" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:fontFamily="sans-serif-bold"
+        android:text="ISSUE CATEGORY"
+        android:textColor="#64748B"
+        android:textSize="10.5sp" />
+
+    <Spinner
+        android:id="@+id/spnContactCategory"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_terminal_box"
+        android:paddingHorizontal="10dp"
+        android:popupBackground="#0F141C" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilContactSubject"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:hint="Subject / Summary"
+        android:textColorHint="#64748B"
+        app:boxStrokeColor="@color/neon_green"
+        app:hintTextColor="@color/neon_green">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etContactSubject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textSize="13.5sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilContactDescription"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp"
+        android:hint="Describe what happened..."
+        android:textColorHint="#64748B"
+        app:boxStrokeColor="@color/neon_green"
+        app:hintTextColor="@color/neon_green">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etContactDescription"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            android:fontFamily="sans-serif"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:textColor="@color/white"
+            android:textSize="13sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Dispatch to Telegram Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSubmitContactTicket"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:backgroundTint="@color/neon_green"
+        android:fontFamily="sans-serif-black"
+        android:letterSpacing="0.04"
+        android:text="TRANSMIT TO DEV TEAM 🚀"
+        android:textColor="@color/black"
+        android:textSize="13sp"
+        app:cornerRadius="10dp" />
+
+    <ProgressBar
+        android:id="@+id/pbContactLoading"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:indeterminateTint="@color/neon_green"
+        android:visibility="gone" />
+
+</LinearLayout>
