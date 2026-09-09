@@ -189,7 +189,7 @@
         </LinearLayout>
 
         <!-- ================================================================= -->
-        <!-- 2. SCROLLABLE MIDDLE DASHBOARD                                    -->
+        <!-- 2. SCROLLABLE MIDDLE SECTION WITH DEDICATED TABS                 -->
         <!-- ================================================================= -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/nsvContent"
@@ -208,536 +208,643 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <!-- MAIN DASHBOARD CONTENT (When not inside an active room) -->
+                <!-- MAIN DASHBOARD CONTENT HOLDER -->
                 <LinearLayout
                     android:id="@+id/llHomeActions"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="14dp">
+                    android:orientation="vertical">
 
-                    <!-- Gamer Sponsor Banner Ad (Visible only on Free plan) -->
+                    <!-- ===================================================== -->
+                    <!-- TAB 1: HOME TAB CONTAINER (Default Visible)           -->
+                    <!-- ===================================================== -->
                     <LinearLayout
-                        android:id="@+id/llSponsorBannerAd"
+                        android:id="@+id/tabContainerHome"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_code_input"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="8dp"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="#26FFFFFF"
-                            android:fontFamily="sans-serif-bold"
-                            android:paddingHorizontal="4dp"
-                            android:paddingVertical="1dp"
-                            android:text="AD"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="9sp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Play Games with 0 Lag • GamerVoice VIP"
-                            android:textColor="#E2E8F0"
-                            android:textSize="11sp" />
-
-                        <TextView
-                            android:id="@+id/btnBannerRemoveAds"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:fontFamily="sans-serif-black"
-                            android:paddingHorizontal="6dp"
-                            android:paddingVertical="2dp"
-                            android:text="NO ADS ›"
-                            android:textColor="#FFD700"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-
-                    <!-- SECTION A: CYBER HERO BANNER -->
-                    <LinearLayout
-                        android:id="@+id/llCyberHeroBanner"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_hero_card"
                         android:orientation="vertical"
                         android:paddingHorizontal="14dp"
-                        android:paddingVertical="12dp">
+                        android:visibility="visible">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Gamer Sponsor Banner Ad (Visible only on Free plan) -->
+                        <LinearLayout
+                            android:id="@+id/llSponsorBannerAd"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.08"
-                            android:lineSpacingExtra="2dp"
-                            android:text="SQUAD. VOICE. GAMES.\nNO LIMITS."
-                            android:textColor="#A0B0C4"
-                            android:textSize="10.5sp" />
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_code_input"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="8dp"
+                            android:visibility="gone">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="#26FFFFFF"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:text="AD"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="9sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Play Games with 0 Lag • GamerVoice VIP"
+                                android:textColor="#E2E8F0"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/btnBannerRemoveAds"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="?attr/selectableItemBackground"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:fontFamily="sans-serif-black"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="2dp"
+                                android:text="NO ADS ›"
+                                android:textColor="#FFD700"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- CYBER HERO BANNER -->
+                        <LinearLayout
+                            android:id="@+id/llCyberHeroBanner"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.02"
-                            android:text="GamerVoice"
-                            android:textColor="@color/white"
-                            android:textSize="32sp" />
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_hero_card"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="14dp"
+                            android:paddingVertical="12dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.08"
+                                android:lineSpacingExtra="2dp"
+                                android:text="SQUAD. VOICE. GAMES.\nNO LIMITS."
+                                android:textColor="#A0B0C4"
+                                android:textSize="10.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.02"
+                                android:text="GamerVoice"
+                                android:textColor="@color/white"
+                                android:textSize="32sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.06"
+                                android:text="PLAY TOGETHER. TALK FREELY."
+                                android:textColor="#66B3FF"
+                                android:textSize="10sp" />
+
+                            <!-- 4 Cyan Quick Feature Pills -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_feature_pill"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="5dp">
+
+                                    <ImageView
+                                        android:layout_width="13dp"
+                                        android:layout_height="13dp"
+                                        android:contentDescription="Low Latency"
+                                        android:src="@drawable/ic_lightning_bolt"
+                                        app:tint="@color/neon_cyan" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:text="LOW LATENCY"
+                                        android:textColor="#D1E8FF"
+                                        android:textSize="7sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginHorizontal="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_feature_pill"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="5dp">
+
+                                    <ImageView
+                                        android:layout_width="13dp"
+                                        android:layout_height="13dp"
+                                        android:contentDescription="Crystal Clear"
+                                        android:src="@drawable/ic_waveform" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:text="CRYSTAL CLEAR"
+                                        android:textColor="#D1E8FF"
+                                        android:textSize="7sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginHorizontal="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_feature_pill"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="5dp">
+
+                                    <ImageView
+                                        android:layout_width="13dp"
+                                        android:layout_height="13dp"
+                                        android:contentDescription="For Gamers"
+                                        android:src="@drawable/ic_gamers_squad" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:text="FOR GAMERS"
+                                        android:textColor="#D1E8FF"
+                                        android:textSize="7sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_feature_pill"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="5dp">
+
+                                    <ImageView
+                                        android:layout_width="13dp"
+                                        android:layout_height="13dp"
+                                        android:contentDescription="Always On"
+                                        android:src="@drawable/ic_infinity" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:text="ALWAYS ON"
+                                        android:textColor="#D1E8FF"
+                                        android:textSize="7sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- GAMES DETECTED ON DEVICE -->
+                        <LinearLayout
+                            android:id="@+id/llInstalledGamesSection"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="1dp"
-                            android:fontFamily="sans-serif-black"
-                            android:letterSpacing="0.06"
-                            android:text="PLAY TOGETHER. TALK FREELY."
-                            android:textColor="#66B3FF"
-                            android:textSize="10sp" />
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_top_profile_bar"
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
-                        <!-- 4 Cyan Quick Feature Pills -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="Gamepad"
+                                    android:src="@drawable/ic_gamepad" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:layout_weight="1"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Games Detected on Device"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+
+                                <TextView
+                                    android:id="@+id/tvGamesFoundCount"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="2 games found ›"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+
+                            <HorizontalScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:scrollbars="none">
+
+                                <LinearLayout
+                                    android:id="@+id/llInstalledGamesContainer"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal" />
+                            </HorizontalScrollView>
+                        </LinearLayout>
+
+                        <!-- DUAL SIDE-BY-SIDE ACTION CARDS -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:gravity="center"
                             android:orientation="horizontal">
 
-                            <!-- Pill 1: Low Latency -->
+                            <!-- Left: CREATE SQUAD ROOM -->
                             <LinearLayout
+                                android:id="@+id/btnCreateRoomCard"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="3dp"
+                                android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
-                                android:background="@drawable/bg_feature_pill"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:paddingVertical="5dp">
+                                android:background="@drawable/bg_card_cyber_green"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="12dp">
+
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_action_circle_green">
+
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Create"
+                                        android:src="@drawable/ic_action_add" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-black"
+                                        android:text="CREATE SQUAD ROOM"
+                                        android:textColor="@color/white"
+                                        android:textSize="10.5sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="1dp"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="Start a new voice room"
+                                        android:textColor="#A0B2C6"
+                                        android:textSize="9sp" />
+                                </LinearLayout>
 
                                 <ImageView
-                                    android:layout_width="13dp"
-                                    android:layout_height="13dp"
-                                    android:contentDescription="Low Latency"
-                                    android:src="@drawable/ic_lightning_bolt"
-                                    app:tint="@color/neon_cyan" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="LOW LATENCY"
-                                    android:textColor="#D1E8FF"
-                                    android:textSize="7sp" />
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:contentDescription="Go"
+                                    android:src="@drawable/ic_chevron_right_subtle"
+                                    app:tint="@color/neon_green" />
                             </LinearLayout>
 
-                            <!-- Pill 2: Crystal Clear -->
+                            <!-- Right: JOIN SQUAD ROOM -->
                             <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginHorizontal="3dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_feature_pill"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:paddingVertical="5dp">
-
-                                <ImageView
-                                    android:layout_width="13dp"
-                                    android:layout_height="13dp"
-                                    android:contentDescription="Crystal Clear"
-                                    android:src="@drawable/ic_waveform" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="CRYSTAL CLEAR"
-                                    android:textColor="#D1E8FF"
-                                    android:textSize="7sp" />
-                            </LinearLayout>
-
-                            <!-- Pill 3: For Gamers -->
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginHorizontal="3dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_feature_pill"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:paddingVertical="5dp">
-
-                                <ImageView
-                                    android:layout_width="13dp"
-                                    android:layout_height="13dp"
-                                    android:contentDescription="For Gamers"
-                                    android:src="@drawable/ic_gamers_squad" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="FOR GAMERS"
-                                    android:textColor="#D1E8FF"
-                                    android:textSize="7sp" />
-                            </LinearLayout>
-
-                            <!-- Pill 4: Always On -->
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="3dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_feature_pill"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:paddingVertical="5dp">
-
-                                <ImageView
-                                    android:layout_width="13dp"
-                                    android:layout_height="13dp"
-                                    android:contentDescription="Always On"
-                                    android:src="@drawable/ic_infinity" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="ALWAYS ON"
-                                    android:textColor="#D1E8FF"
-                                    android:textSize="7sp" />
-                            </LinearLayout>
-
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- SECTION B: GAMES DETECTED ON DEVICE -->
-                    <LinearLayout
-                        android:id="@+id/llInstalledGamesSection"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:background="@drawable/bg_top_profile_bar"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:contentDescription="Gamepad"
-                                android:src="@drawable/ic_gamepad" />
-
-                            <TextView
+                                android:id="@+id/btnJoinRoomCard"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
                                 android:layout_weight="1"
-                                android:fontFamily="sans-serif-black"
-                                android:text="Games Detected on Device"
-                                android:textColor="@color/white"
-                                android:textSize="12sp" />
+                                android:background="@drawable/bg_card_cyber_purple"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="12dp">
 
-                            <TextView
-                                android:id="@+id/tvGamesFoundCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-bold"
-                                android:text="2 games found ›"
-                                android:textColor="#A0AEC0"
-                                android:textSize="10sp" />
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_action_circle_purple">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Join"
+                                        android:src="@drawable/ic_action_enter"
+                                        app:tint="@color/neon_purple" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-black"
+                                        android:text="JOIN SQUAD ROOM"
+                                        android:textColor="@color/white"
+                                        android:textSize="10.5sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="1dp"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="Enter with a room code"
+                                        android:textColor="#BBA5D6"
+                                        android:textSize="9sp" />
+                                </LinearLayout>
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:contentDescription="Go"
+                                    android:src="@drawable/ic_chevron_right_subtle"
+                                    app:tint="@color/neon_purple" />
+                            </LinearLayout>
                         </LinearLayout>
 
-                        <HorizontalScrollView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:scrollbars="none">
-
-                            <LinearLayout
-                                android:id="@+id/llInstalledGamesContainer"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal" />
-                        </HorizontalScrollView>
+                        <!-- Legacy invisible anchors -->
+                        <View android:id="@+id/btnCreateRoom" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+                        <View android:id="@+id/btnJoinRoom" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+                        <View android:id="@+id/btnToggleFloatingHud" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
                     </LinearLayout>
 
-                    <!-- SECTION C: MY SAVED SQUAD ROOMS -->
+                    <!-- ===================================================== -->
+                    <!-- TAB 2: ROOMS TAB CONTAINER                            -->
+                    <!-- ===================================================== -->
                     <LinearLayout
-                        android:id="@+id/llSavedRoomsSection"
+                        android:id="@+id/tabContainerRooms"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:background="@drawable/bg_top_profile_bar"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:paddingHorizontal="14dp"
+                        android:visibility="gone">
 
+                        <!-- Rooms Tab Header -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
                                 android:contentDescription="Rooms"
                                 android:src="@drawable/ic_gamers_squad"
                                 app:tint="@color/neon_cyan" />
 
                             <TextView
-                                android:layout_width="0dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
                                 android:fontFamily="sans-serif-black"
-                                android:text="My Saved Squad Rooms"
+                                android:letterSpacing="0.04"
+                                android:text="SQUAD ROOMS &amp; CLOUD LOBBY"
+                                android:textColor="@color/white"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- MY SAVED SQUAD ROOMS SECTION -->
+                        <LinearLayout
+                            android:id="@+id/llSavedRoomsSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_top_profile_bar"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="Rooms"
+                                    android:src="@drawable/ic_gamers_squad"
+                                    app:tint="@color/neon_cyan" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:layout_weight="1"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="My Saved Squad Rooms"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+
+                                <TextView
+                                    android:id="@+id/tvHomeRoomQuota"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="0 Saved (VIP Unlimited) ›"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/llHomeSavedRoomsContainer"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="vertical">
+
+                                <!-- Empty Saved Rooms Card -->
+                                <LinearLayout
+                                    android:id="@+id/tvHomeNoSavedRooms"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_game_card"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:padding="16dp">
+
+                                    <ImageView
+                                        android:layout_width="26dp"
+                                        android:layout_height="26dp"
+                                        android:contentDescription="Cloud Empty"
+                                        android:src="@drawable/ic_cloud_outline" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="No squad rooms saved yet."
+                                        android:textColor="#C0D0E0"
+                                        android:textSize="11.5sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif"
+                                        android:text="Create a room to save it permanently in Cloud Firestore!"
+                                        android:textColor="#7A8CA0"
+                                        android:textSize="10sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Dedicated Join Room Section in Rooms Tab -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_card_cyber_purple"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:text="ENTER SQUAD ROOM CODE"
                                 android:textColor="@color/white"
                                 android:textSize="12sp" />
 
                             <TextView
-                                android:id="@+id/tvHomeRoomQuota"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-bold"
-                                android:text="0 Saved (VIP Unlimited) ›"
-                                android:textColor="#A0AEC0"
-                                android:textSize="10sp" />
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Join an active squad room using a 5-letter code"
+                                android:textColor="#BBA5D6"
+                                android:textSize="9.5sp" />
+
+                            <EditText
+                                android:id="@+id/etRoomsTabCode"
+                                android:layout_width="180dp"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_code_input"
+                                android:gravity="center"
+                                android:hint="IA3R9"
+                                android:importantForAutofill="no"
+                                android:inputType="textCapCharacters"
+                                android:maxLength="5"
+                                android:textColor="@color/accent_green"
+                                android:textColorHint="@color/text_secondary"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRoomsTabJoin"
+                                android:layout_width="match_parent"
+                                android:layout_height="46dp"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_cyber_button_join"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.02"
+                                android:text="🎮 CONNECT TO ROOM"
+                                android:textColor="@color/neon_cyan"
+                                android:textSize="13sp"
+                                app:backgroundTint="@null"
+                                app:cornerRadius="12dp" />
                         </LinearLayout>
 
+                        <!-- Direct Create Room in Rooms Tab -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRoomsTabCreate"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_cyber_button_primary"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.02"
+                            android:text="⚡ START NEW VOICE ROOM"
+                            android:textColor="@color/black"
+                            android:textSize="13sp"
+                            app:backgroundTint="@null"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+
+                    <!-- ===================================================== -->
+                    <!-- TAB 3: SETTINGS TAB CONTAINER                         -->
+                    <!-- ===================================================== -->
+                    <LinearLayout
+                        android:id="@+id/tabContainerSettings"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:visibility="gone">
+
+                        <!-- Settings Tab Header -->
                         <LinearLayout
-                            android:id="@+id/llHomeSavedRoomsContainer"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:orientation="vertical">
-
-                            <!-- Empty Saved Rooms Card -->
-                            <LinearLayout
-                                android:id="@+id/tvHomeNoSavedRooms"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_game_card"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="16dp">
-
-                                <ImageView
-                                    android:layout_width="26dp"
-                                    android:layout_height="26dp"
-                                    android:contentDescription="Cloud Empty"
-                                    android:src="@drawable/ic_cloud_outline" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="6dp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="No squad rooms saved yet."
-                                    android:textColor="#C0D0E0"
-                                    android:textSize="11.5sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif"
-                                    android:text="Create a room to save it permanently in Cloud Firestore!"
-                                    android:textColor="#7A8CA0"
-                                    android:textSize="10sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- SECTION D: DUAL SIDE-BY-SIDE ACTION CARDS (CREATE & JOIN) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <!-- Left: CREATE SQUAD ROOM (Green Card) -->
-                        <LinearLayout
-                            android:id="@+id/btnCreateRoomCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="6dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_card_cyber_green"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="12dp">
-
-                            <FrameLayout
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:background="@drawable/bg_action_circle_green">
-
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:layout_gravity="center"
-                                    android:contentDescription="Create"
-                                    android:src="@drawable/ic_action_add" />
-                            </FrameLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif-black"
-                                    android:text="CREATE SQUAD ROOM"
-                                    android:textColor="@color/white"
-                                    android:textSize="10.5sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="Start a new voice room"
-                                    android:textColor="#A0B2C6"
-                                    android:textSize="9sp" />
-                            </LinearLayout>
-
-                            <ImageView
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:contentDescription="Go"
-                                android:src="@drawable/ic_chevron_right_subtle"
-                                app:tint="@color/neon_green" />
-                        </LinearLayout>
-
-                        <!-- Right: JOIN SQUAD ROOM (Purple Card) -->
-                        <LinearLayout
-                            android:id="@+id/btnJoinRoomCard"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_card_cyber_purple"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="12dp">
-
-                            <FrameLayout
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:background="@drawable/bg_action_circle_purple">
-
-                                <ImageView
-                                    android:layout_width="18dp"
-                                    android:layout_height="18dp"
-                                    android:layout_gravity="center"
-                                    android:contentDescription="Join"
-                                    android:src="@drawable/ic_action_enter"
-                                    app:tint="@color/neon_purple" />
-                            </FrameLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif-black"
-                                    android:text="JOIN SQUAD ROOM"
-                                    android:textColor="@color/white"
-                                    android:textSize="10.5sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="Enter with a room code"
-                                    android:textColor="#BBA5D6"
-                                    android:textSize="9sp" />
-                            </LinearLayout>
-
-                            <ImageView
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:contentDescription="Go"
-                                android:src="@drawable/ic_chevron_right_subtle"
-                                app:tint="@color/neon_purple" />
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <!-- Keep invisible button anchors for backwards compatibility -->
-                    <View
-                        android:id="@+id/btnCreateRoom"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:visibility="gone" />
-
-                    <View
-                        android:id="@+id/btnJoinRoom"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:visibility="gone" />
-
-                    <View
-                        android:id="@+id/btnToggleFloatingHud"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:visibility="gone" />
-
-                    <!-- SECTION E: APP & AUDIO SETTINGS (4-CARD GRID ROW) -->
-                    <LinearLayout
-                        android:id="@+id/llSettingsSection"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
                                 android:contentDescription="Settings"
                                 android:src="@drawable/ic_nav_settings"
                                 app:tint="@color/neon_cyan" />
@@ -745,18 +852,20 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
+                                android:layout_marginStart="8dp"
                                 android:fontFamily="sans-serif-black"
-                                android:text="App &amp; Audio Settings"
+                                android:letterSpacing="0.04"
+                                android:text="APP &amp; AUDIO SETTINGS"
                                 android:textColor="@color/white"
-                                android:textSize="12sp" />
+                                android:textSize="13sp" />
                         </LinearLayout>
 
                         <!-- 4 Settings Cards in 1 Row -->
                         <LinearLayout
+                            android:id="@+id/llSettingsSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="10dp"
                             android:orientation="horizontal">
 
                             <!-- 1. Floating HUD -->
@@ -923,67 +1032,114 @@
                                     app:thumbTint="@color/neon_green"
                                     app:trackTint="#6600FF88" />
                             </LinearLayout>
-
                         </LinearLayout>
-                    </LinearLayout>
 
-                    <!-- SECTION F: LEGAL & POLICIES (4-CARD GRID ROW) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="vertical">
-
+                        <!-- RAM & Cache Optimizer Card -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_top_profile_bar"
                             android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:padding="12dp">
 
                             <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:contentDescription="Legal"
-                                android:src="@drawable/ic_shield_check"
-                                app:tint="@color/neon_cyan" />
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="RAM"
+                                android:src="@drawable/ic_lightning_bolt"
+                                app:tint="@color/neon_green" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:fontFamily="sans-serif-black"
-                                android:text="Legal &amp; Policies"
-                                android:textColor="@color/white"
-                                android:textSize="12sp" />
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Cache &amp; RAM Optimizer"
+                                    android:textColor="@color/white"
+                                    android:textSize="11.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="Evict cached memory to guarantee &lt; 10MB footprint"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="9.5sp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnClearMemoryCache"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="34dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="PURGE"
+                                android:textColor="@color/neon_green"
+                                android:textSize="10sp"
+                                app:cornerRadius="8dp"
+                                app:strokeColor="@color/stroke_glow_green" />
                         </LinearLayout>
 
-                        <!-- 4 Legal Cards in 1 Row -->
+                        <!-- LEGAL & POLICIES (4-CARD GRID ROW) -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="horizontal">
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical">
 
-                            <!-- 1. Privacy Policy -->
                             <LinearLayout
-                                android:id="@+id/cardLegalPrivacy"
-                                android:layout_width="0dp"
-                                android:layout_height="78dp"
-                                android:layout_marginEnd="4dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_grid_setting_card"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="6dp">
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="Legal"
+                                    android:src="@drawable/ic_shield_check"
+                                    app:tint="@color/neon_cyan" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Legal &amp; Policies"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <!-- 4 Legal Cards in 1 Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="horizontal">
 
                                 <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:orientation="horizontal">
+                                    android:id="@+id/cardLegalPrivacy"
+                                    android:layout_width="0dp"
+                                    android:layout_height="78dp"
+                                    android:layout_marginEnd="4dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_grid_setting_card"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:padding="6dp">
 
                                     <ImageView
                                         android:layout_width="16dp"
@@ -992,49 +1148,30 @@
                                         android:src="@drawable/ic_shield_privacy"
                                         app:tint="@color/neon_cyan" />
 
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="0dp"
-                                        android:layout_weight="1" />
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:contentDescription="Open"
-                                        android:src="@drawable/ic_chevron_right"
-                                        app:tint="#5500E5FF" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:gravity="center"
+                                        android:text="Privacy\nPolicy"
+                                        android:textColor="@color/white"
+                                        android:textSize="8.5sp" />
                                 </LinearLayout>
 
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="Privacy Policy"
-                                    android:textColor="@color/white"
-                                    android:textSize="9sp" />
-                            </LinearLayout>
-
-                            <!-- 2. Terms & EULA -->
-                            <LinearLayout
-                                android:id="@+id/cardLegalTerms"
-                                android:layout_width="0dp"
-                                android:layout_height="78dp"
-                                android:layout_marginHorizontal="3dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_grid_setting_card"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="6dp">
-
                                 <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:orientation="horizontal">
+                                    android:id="@+id/cardLegalTerms"
+                                    android:layout_width="0dp"
+                                    android:layout_height="78dp"
+                                    android:layout_marginHorizontal="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_grid_setting_card"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:padding="6dp">
 
                                     <ImageView
                                         android:layout_width="16dp"
@@ -1043,49 +1180,30 @@
                                         android:src="@drawable/ic_document_terms"
                                         app:tint="@color/neon_cyan" />
 
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="0dp"
-                                        android:layout_weight="1" />
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:contentDescription="Open"
-                                        android:src="@drawable/ic_chevron_right"
-                                        app:tint="#5500E5FF" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:gravity="center"
+                                        android:text="Terms &amp;\nEULA"
+                                        android:textColor="@color/white"
+                                        android:textSize="8.5sp" />
                                 </LinearLayout>
 
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="Terms &amp; EULA"
-                                    android:textColor="@color/white"
-                                    android:textSize="9sp" />
-                            </LinearLayout>
-
-                            <!-- 3. Community & Fair Play -->
-                            <LinearLayout
-                                android:id="@+id/cardLegalGuidelines"
-                                android:layout_width="0dp"
-                                android:layout_height="78dp"
-                                android:layout_marginHorizontal="3dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_grid_setting_card"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="6dp">
-
                                 <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:orientation="horizontal">
+                                    android:id="@+id/cardLegalGuidelines"
+                                    android:layout_width="0dp"
+                                    android:layout_height="78dp"
+                                    android:layout_marginHorizontal="3dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_grid_setting_card"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:padding="6dp">
 
                                     <ImageView
                                         android:layout_width="16dp"
@@ -1094,49 +1212,30 @@
                                         android:src="@drawable/ic_gamers_squad"
                                         app:tint="@color/neon_cyan" />
 
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="0dp"
-                                        android:layout_weight="1" />
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:contentDescription="Open"
-                                        android:src="@drawable/ic_chevron_right"
-                                        app:tint="#5500E5FF" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:gravity="center"
+                                        android:text="Community\nGuidelines"
+                                        android:textColor="@color/white"
+                                        android:textSize="8.5sp" />
                                 </LinearLayout>
 
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="Community &amp;\nFair Play"
-                                    android:textColor="@color/white"
-                                    android:textSize="8.5sp" />
-                            </LinearLayout>
-
-                            <!-- 4. Open Source Licenses -->
-                            <LinearLayout
-                                android:id="@+id/cardLegalLicenses"
-                                android:layout_width="0dp"
-                                android:layout_height="78dp"
-                                android:layout_marginStart="4dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/bg_grid_setting_card"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="6dp">
-
                                 <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:orientation="horizontal">
+                                    android:id="@+id/cardLegalLicenses"
+                                    android:layout_width="0dp"
+                                    android:layout_height="78dp"
+                                    android:layout_marginStart="4dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/bg_grid_setting_card"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:padding="6dp">
 
                                     <ImageView
                                         android:layout_width="16dp"
@@ -1144,75 +1243,101 @@
                                         android:contentDescription="Licenses"
                                         android:src="@drawable/ic_code_brackets" />
 
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="0dp"
-                                        android:layout_weight="1" />
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:contentDescription="Open"
-                                        android:src="@drawable/ic_chevron_right"
-                                        app:tint="#5500E5FF" />
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:gravity="center"
+                                        android:text="Open Source\nLicenses"
+                                        android:textColor="@color/white"
+                                        android:textSize="8.5sp" />
                                 </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- FOOTER & LOGOUT -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif"
+                                android:text="GamerVoice v1.0.0-beta • Universal Release"
+                                android:textColor="#5A6E85"
+                                android:textSize="9.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Built for Gamers. By Gamers. ❤️"
+                                android:textColor="#7A8CA0"
+                                android:textSize="10sp" />
+
+                            <!-- Red Neon Logout Button -->
+                            <LinearLayout
+                                android:id="@+id/btnLogoutSquad"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_logout_button"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="Logout"
+                                    android:src="@drawable/ic_logout_arrow" />
 
                                 <TextView
-                                    android:layout_width="match_parent"
+                                    android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:fontFamily="sans-serif-bold"
-                                    android:text="Open Source\nLicenses"
-                                    android:textColor="@color/white"
-                                    android:textSize="8.5sp" />
+                                    android:layout_marginStart="8dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:letterSpacing="0.04"
+                                    android:text="LOGOUT SQUAD"
+                                    android:textColor="@color/neon_red"
+                                    android:textSize="12sp" />
                             </LinearLayout>
-
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- SECTION G: FOOTER & LOGOUT SQUAD -->
+                    <!-- ===================================================== -->
+                    <!-- TAB 4: PROFILE TAB CONTAINER                          -->
+                    <!-- ===================================================== -->
                     <LinearLayout
+                        android:id="@+id/tabContainerProfile"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:visibility="gone">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:text="GamerVoice v1.0.0-beta • Universal Release"
-                            android:textColor="#5A6E85"
-                            android:textSize="9.5sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Built for Gamers. By Gamers. ❤️"
-                            android:textColor="#7A8CA0"
-                            android:textSize="10sp" />
-
-                        <!-- Red Neon Outline LOGOUT Button -->
+                        <!-- Profile Tab Header -->
                         <LinearLayout
-                            android:id="@+id/btnLogoutSquad"
                             android:layout_width="match_parent"
-                            android:layout_height="44dp"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_logout_button"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:gravity="center"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:contentDescription="Logout"
-                                android:src="@drawable/ic_logout_arrow" />
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="Profile"
+                                android:src="@drawable/ic_vip_crown"
+                                app:tint="@color/neon_gold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -1220,10 +1345,319 @@
                                 android:layout_marginStart="8dp"
                                 android:fontFamily="sans-serif-black"
                                 android:letterSpacing="0.04"
-                                android:text="LOGOUT SQUAD"
-                                android:textColor="@color/neon_red"
-                                android:textSize="12sp" />
+                                android:text="GAMER PROFILE &amp; VIP PASS"
+                                android:textColor="@color/white"
+                                android:textSize="13sp" />
                         </LinearLayout>
+
+                        <!-- Profile Card Overview -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_top_profile_bar"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="52dp"
+                                android:layout_height="52dp"
+                                android:background="@drawable/bg_avatar_ring"
+                                android:padding="3dp">
+
+                                <ImageView
+                                    android:id="@+id/ivProfileTabAvatar"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:contentDescription="Avatar"
+                                    android:scaleType="centerCrop"
+                                    android:src="@drawable/ic_avatar_1" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvProfileTabName"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Aryan Prabhakar"
+                                    android:textColor="@color/white"
+                                    android:textSize="14.5sp" />
+
+                                <TextView
+                                    android:id="@+id/tvProfileTabEmail"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="prabhakararyan2007@gmail.com"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvProfileTabTagline"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="Gamer • Creator • Always Online"
+                                    android:textColor="#66B3FF"
+                                    android:textSize="9.5sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Membership Plan Badge Card -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_card_cyber_green"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="MEMBERSHIP STATUS"
+                                    android:textColor="@color/white"
+                                    android:textSize="11.5sp" />
+
+                                <TextView
+                                    android:id="@+id/tvProfileTabPlanBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_plan_badge_vip"
+                                    android:fontFamily="sans-serif-black"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="2dp"
+                                    android:text="👑 VIP PASS ACTIVE"
+                                    android:textColor="@color/neon_gold"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvProfileTabCountdown"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Expires in: Unlimited (Lifetime Pass)"
+                                android:textColor="#E2E8F0"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- VIP Plan Selection Cards (3 Cards) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <!-- Weekly -->
+                            <LinearLayout
+                                android:id="@+id/llProfilePlanWeekly"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_vip_card_unselected"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="7 DAYS"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="₹29"
+                                    android:textColor="@color/neon_cyan"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="Weekly Pass"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+
+                            <!-- Monthly (Popular) -->
+                            <LinearLayout
+                                android:id="@+id/llProfilePlanMonthly"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="3dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_vip_card_gold"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_fomo_badge"
+                                    android:fontFamily="sans-serif-black"
+                                    android:paddingHorizontal="4dp"
+                                    android:paddingVertical="1dp"
+                                    android:text="BEST VALUE"
+                                    android:textColor="@color/black"
+                                    android:textSize="7sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="30 DAYS"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="₹89"
+                                    android:textColor="@color/neon_gold"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="Monthly Pass"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+
+                            <!-- Lifetime -->
+                            <LinearLayout
+                                android:id="@+id/llProfilePlanLifetime"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_vip_card_unselected"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="LIFETIME"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="₹249"
+                                    android:textColor="@color/neon_green"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="Forever VIP"
+                                    android:textColor="#A0AEC0"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Activate VIP Button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnProfileActivateVip"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_cyber_button_gold"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.02"
+                            android:text="⚡ UNLOCK 30 DAYS VIP — ₹89"
+                            android:textColor="@color/black"
+                            android:textSize="13sp"
+                            app:backgroundTint="@null"
+                            app:cornerRadius="12dp" />
+
+                        <!-- VIP Perks Checklist -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_top_profile_bar"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:text="👑 VIP EXCLUSIVE PERKS"
+                                android:textColor="@color/neon_gold"
+                                android:textSize="11.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:fontFamily="sans-serif"
+                                android:text="✔ Save Unlimited Squad Rooms in Cloud Firestore\n✔ Aggressive Noise Cancellation (&lt; 10% Noise)\n✔ 0 Latency Priority Routing\n✔ Floating In-Game HUD overlay for all games\n✔ 100% Ad-Free Experience"
+                                android:textColor="#CBD5E0"
+                                android:textSize="10.5sp" />
+                        </LinearLayout>
+
+                        <!-- Reset to Free Plan Option -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnProfileResetToFree"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="6dp"
+                            android:text="🔄 Reset Account to Free Plan"
+                            android:textColor="#A0AEC0"
+                            android:textSize="10.5sp" />
+
                     </LinearLayout>
 
                 </LinearLayout>
@@ -1430,9 +1864,7 @@
             </FrameLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <!-- ================================================================= -->
-        <!-- 3. LIVE IN-APP DEBUG CONSOLE (COLLAPSIBLE, GONE BY DEFAULT)       -->
-        <!-- ================================================================= -->
+        <!-- Live In-App Debug Console (Collapsed/hidden by default) -->
         <LinearLayout
             android:id="@+id/llConsoleContainer"
             android:layout_width="0dp"
@@ -1517,7 +1949,7 @@
         </LinearLayout>
 
         <!-- ================================================================= -->
-        <!-- 4. FLOATING GLASS BOTTOM NAVIGATION BAR (FIXED AT BOTTOM)         -->
+        <!-- 3. FLOATING GLASS BOTTOM NAVIGATION BAR (FIXED AT BOTTOM)         -->
         <!-- ================================================================= -->
         <LinearLayout
             android:id="@+id/llBottomNav"
@@ -1688,7 +2120,6 @@
                     android:background="@drawable/bg_nav_active_indicator"
                     android:visibility="invisible" />
             </LinearLayout>
-
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

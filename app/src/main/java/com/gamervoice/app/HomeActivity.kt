@@ -351,22 +351,78 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             performLogout()
         }
 
-        // --- Bottom Navigation Bar ---
+        // --- Bottom Navigation Bar Tabs (True Dedicated Multi-Tab Switching) ---
         binding.navTabHome.setOnClickListener {
             updateActiveNavTab(0)
-            binding.nsvContent.smoothScrollTo(0, 0)
         }
         binding.navTabRooms.setOnClickListener {
             updateActiveNavTab(1)
-            binding.nsvContent.smoothScrollTo(0, binding.llSavedRoomsSection.top)
         }
         binding.navTabSettings.setOnClickListener {
             updateActiveNavTab(2)
-            binding.nsvContent.smoothScrollTo(0, binding.llSettingsSection.top)
         }
         binding.navTabProfile.setOnClickListener {
             updateActiveNavTab(3)
-            showVipUpgradeDialog()
+        }
+
+        // --- Rooms Tab Controls ---
+        binding.btnRoomsTabJoin.setOnClickListener {
+            val code = binding.etRoomsTabCode.text.toString().trim().uppercase()
+            joinRoomWithCode(code)
+        }
+        binding.btnRoomsTabCreate.setOnClickListener(createRoomAction)
+
+        // --- Settings Tab Controls ---
+        binding.btnClearMemoryCache.setOnClickListener {
+            ImageLoader.clearMemoryCache()
+            System.gc()
+            val runtime = Runtime.getRuntime()
+            val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+            Toast.makeText(this, "🧹 Memory cleared! Active heap: ~${usedMemMb}MB (< 10MB safe)", Toast.LENGTH_SHORT).show()
+        }
+
+        // --- Profile Tab Controls ---
+        var profileSelectedTier = PlanTier.MONTHLY
+        fun updateProfileCardSelection() {
+            binding.llProfilePlanWeekly.setBackgroundResource(if (profileSelectedTier == PlanTier.WEEKLY) R.drawable.bg_vip_card_neon else R.drawable.bg_vip_card_unselected)
+            binding.llProfilePlanMonthly.setBackgroundResource(if (profileSelectedTier == PlanTier.MONTHLY) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
+            binding.llProfilePlanLifetime.setBackgroundResource(if (profileSelectedTier == PlanTier.LIFETIME) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
+
+            when (profileSelectedTier) {
+                PlanTier.WEEKLY -> binding.btnProfileActivateVip.text = "⚡ UNLOCK 7 DAYS VIP — ₹29"
+                PlanTier.MONTHLY -> binding.btnProfileActivateVip.text = "⚡ UNLOCK 30 DAYS VIP — ₹89"
+                PlanTier.LIFETIME -> binding.btnProfileActivateVip.text = "⚡ UNLOCK LIFETIME VIP — ₹249"
+                else -> binding.btnProfileActivateVip.text = "⚡ UNLOCK VIP PASS"
+            }
+        }
+        updateProfileCardSelection()
+
+        binding.llProfilePlanWeekly.setOnClickListener {
+            profileSelectedTier = PlanTier.WEEKLY
+            updateProfileCardSelection()
+        }
+        binding.llProfilePlanMonthly.setOnClickListener {
+            profileSelectedTier = PlanTier.MONTHLY
+            updateProfileCardSelection()
+        }
+        binding.llProfilePlanLifetime.setOnClickListener {
+            profileSelectedTier = PlanTier.LIFETIME
+            updateProfileCardSelection()
+        }
+        binding.btnProfileActivateVip.setOnClickListener {
+            val u = AuthManager.getCurrentUser()
+            if (u != null) {
+                startRazorpayCheckout(profileSelectedTier, u)
+            } else {
+                Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show()
+            }
+        }
+        binding.btnProfileResetToFree.setOnClickListener {
+            PlanManager.revokeVip {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                Toast.makeText(this, "🔄 Account Plan reset to Free tier successfully.", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.btnContinue.setOnClickListener {
@@ -401,6 +457,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.ivNavProfile.setColorFilter(if (activeTab == 3) activeColor else inactiveColor)
         binding.tvNavProfile.setTextColor(if (activeTab == 3) activeColor else inactiveColor)
         binding.navIndicatorProfile.visibility = if (activeTab == 3) View.VISIBLE else View.INVISIBLE
+
+        // Show ONLY the dedicated view container for the selected tab
+        binding.tabContainerHome.visibility = if (activeTab == 0) View.VISIBLE else View.GONE
+        binding.tabContainerRooms.visibility = if (activeTab == 1) View.VISIBLE else View.GONE
+        binding.tabContainerSettings.visibility = if (activeTab == 2) View.VISIBLE else View.GONE
+        binding.tabContainerProfile.visibility = if (activeTab == 3) View.VISIBLE else View.GONE
+
+        binding.nsvContent.smoothScrollTo(0, 0)
     }
 
     private fun cycleNoiseFilter() {
@@ -617,6 +681,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun updatePlanUI() {
         val isVip = PlanManager.isVip()
+        val user = AuthManager.getCurrentUser()
+        if (user != null) {
+            binding.tvProfileTabName.text = user.name
+            binding.tvProfileTabEmail.text = user.email
+            ImageLoader.loadAvatar(binding.ivProfileTabAvatar, user.avatar)
+        }
+
         if (isVip) {
             binding.llSponsorBannerAd.visibility = View.GONE
             binding.tvHomePlanBadge.text = "👑 VIP"
@@ -628,6 +699,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             sliderBinding.tvDrawerPlanBadge.setTextColor(Color.parseColor("#FFD700"))
             sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
             sliderBinding.llDrawerVipBanner.visibility = View.GONE
+
+            binding.tvProfileTabPlanBadge.text = "👑 " + PlanManager.getPlanName() + " ACTIVE"
+            binding.tvProfileTabPlanBadge.setTextColor(Color.parseColor("#FFD700"))
+            binding.tvProfileTabPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
+            binding.tvProfileTabCountdown.text = "Expires in: " + countdown
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
             binding.tvHomePlanBadge.text = "FREE"
@@ -638,6 +714,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             sliderBinding.tvDrawerPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
             sliderBinding.llDrawerVipBanner.visibility = View.VISIBLE
+
+            binding.tvProfileTabPlanBadge.text = "🟢 FREE PLAN"
+            binding.tvProfileTabPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+            binding.tvProfileTabPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
+            binding.tvProfileTabCountdown.text = "2 Cloud Rooms Quota • Standard Filter"
         }
     }
 
