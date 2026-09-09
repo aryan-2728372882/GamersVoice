@@ -4,37 +4,69 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary_dark"
+    android:background="#07090E"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp"
+        android:padding="20dp"
         tools:context=".PermissionActivity">
+
+        <!-- Top Tactical Status Chip -->
+        <LinearLayout
+            android:id="@+id/llTopBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_top_profile_bar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:background="@drawable/bg_status_chip"
+                android:backgroundTint="@color/neon_green" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:text="TACTICAL VOICE PROTOCOL"
+                android:textColor="@color/neon_green"
+                android:textSize="9.5sp" />
+        </LinearLayout>
 
         <!-- Glowing Hero Logo -->
         <ImageView
             android:id="@+id/ivLogo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_marginTop="32dp"
+            android:layout_width="86dp"
+            android:layout_height="86dp"
+            android:layout_marginTop="18dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_app_logo_hero"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/llTopBadge" />
 
         <TextView
             android:id="@+id/tvBrandName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.08"
+            android:letterSpacing="0.1"
             android:text="GAMERVOICE"
-            android:textColor="@color/accent_green"
-            android:textSize="26sp"
+            android:textColor="@color/white"
+            android:textSize="25sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ivLogo" />
@@ -43,175 +75,260 @@
             android:id="@+id/tvBrandTagline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Ultra-Low Latency Squad Audio"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:text="Esports-Grade Ultra-Low Latency Squad Voice"
+            android:textColor="#94A3B8"
+            android:textSize="12.5sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvBrandName" />
 
-        <!-- Feature Spec Grid -->
+        <!-- TACTICAL CLEARANCE CONTAINER -->
         <LinearLayout
-            android:id="@+id/llFeatureSpecs"
+            android:id="@+id/llClearanceContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:background="@drawable/bg_terminal_box"
+            android:layout_marginTop="22dp"
             android:orientation="vertical"
-            android:padding="16dp"
             app:layout_constraintTop_toBottomOf="@id/tvBrandTagline">
 
-            <!-- Feature 1 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:text="REQUIRED SYSTEM CLEARANCES"
+                android:textColor="#64748B"
+                android:textSize="10.5sp" />
+
+            <!-- Clearance Card 1: Mic Access -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_glass_card"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:gravity="center"
-                    android:text="⚡"
-                    android:textSize="16sp" />
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_action_circle_green">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="🎙️"
+                        android:textSize="18sp" />
+                </FrameLayout>
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-bold"
-                        android:text="Real-Time Opus Engine"
+                        android:text="Tactical Microphone Uplink"
                         android:textColor="@color/white"
                         android:textSize="13sp" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Crystal-clear squad callouts with zero background noise"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
+                        android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Transmits 48kHz Opus audio directly to teammates with zero cloud recording"
+                        android:textColor="#94A3B8"
+                        android:textSize="10.5sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_plan_badge_free"
+                    android:fontFamily="sans-serif-bold"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="AUDIO"
+                    android:textColor="@color/neon_green"
+                    android:textSize="8.5sp" />
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#1AFFFFFF" />
-
-            <!-- Feature 2 -->
+            <!-- Clearance Card 2: Battery Exemption -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_glass_card"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:gravity="center"
-                    android:text="📶"
-                    android:textSize="16sp" />
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_action_circle_purple">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="⚡"
+                        android:textSize="18sp" />
+                </FrameLayout>
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-bold"
-                        android:text="3G Network Tuning"
+                        android:text="Background Keep-Alive Shield"
                         android:textColor="@color/white"
                         android:textSize="13sp" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Adapts smoothly on weak connections with only 20kbps data"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
+                        android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Prevents Android OS from killing squad comms during heavy Free Fire / BGMI matches"
+                        android:textColor="#94A3B8"
+                        android:textSize="10.5sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_plan_badge_free"
+                    android:fontFamily="sans-serif-bold"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="STABILITY"
+                    android:textColor="#A855F7"
+                    android:textSize="8.5sp" />
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#1AFFFFFF" />
-
-            <!-- Feature 3 -->
+            <!-- Clearance Card 3: Floating Squad HUD -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_card"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:gravity="center"
-                    android:text="🎮"
-                    android:textSize="16sp" />
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_top_profile_bar">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="🎮"
+                        android:textSize="18sp" />
+                </FrameLayout>
+
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-bold"
-                        android:text="Zero Game Lag (&lt; 1% CPU)"
+                        android:text="Draggable In-Game Overlay"
                         android:textColor="@color/white"
                         android:textSize="13sp" />
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Runs silently in background while Free Fire runs at max FPS"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
+                        android:layout_marginTop="1dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Mute, undeafen &amp; view talking indicators without leaving your match"
+                        android:textColor="#94A3B8"
+                        android:textSize="10.5sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_plan_badge_free"
+                    android:fontFamily="sans-serif-bold"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="IN-GAME"
+                    android:textColor="#38BDF8"
+                    android:textSize="8.5sp" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Permission Explainer Note -->
-        <TextView
-            android:id="@+id/tvPermissionMessage"
-            android:layout_width="0dp"
+        <!-- Privacy & Security Guarantee -->
+        <LinearLayout
+            android:id="@+id/llPrivacyPledge"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:fontFamily="sans-serif"
+            android:layout_marginTop="16dp"
             android:gravity="center"
-            android:lineSpacingExtra="2dp"
-            android:text="To connect your voice to squad rooms, GamerVoice needs microphone access. Your audio is streamed direct peer-to-peer and never recorded."
-            android:textColor="#9E9E9E"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/llFeatureSpecs" />
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/llClearanceContainer">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:contentDescription="Shield"
+                android:src="@drawable/ic_shield_privacy"
+                app:tint="#64748B" />
+
+            <TextView
+                android:id="@+id/tvPermissionMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="100% Peer-to-Peer Encrypted • Zero Audio Saved"
+                android:textColor="#64748B"
+                android:textSize="11sp" />
+        </LinearLayout>
 
         <!-- Primary Action Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAllowContinue"
             android:layout_width="0dp"
             android:layout_height="54dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="18dp"
             android:layout_marginBottom="16dp"
-            android:backgroundTint="@color/accent_green"
+            android:backgroundTint="@color/neon_green"
             android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.04"
-            android:text="INITIALIZE SQUAD AUDIO"
+            android:letterSpacing="0.06"
+            android:text="INITIALIZE COMBAT AUDIO ⚡"
             android:textColor="@color/black"
-            android:textSize="14sp"
-            app:cornerRadius="10dp"
+            android:textSize="13.5sp"
+            app:cornerRadius="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvPermissionMessage"
+            app:layout_constraintTop_toBottomOf="@id/llPrivacyPledge"
             app:layout_constraintVertical_bias="1.0" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

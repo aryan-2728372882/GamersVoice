@@ -915,6 +915,7 @@
 
                     <!-- RAM & Auto Cache Purge Card -->
                     <LinearLayout
+                        android:id="@+id/cardSettingRamPurge"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
@@ -937,20 +938,42 @@
                             android:layout_weight="1"
                             android:orientation="vertical">
 
-                            <TextView
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-black"
-                                android:text="Auto RAM Purge (Active: &lt; 10MB)"
-                                android:textColor="@color/white"
-                                android:textSize="11.5sp" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tvSettingRamPurgeTitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Auto RAM Purge 👑"
+                                    android:textColor="@color/white"
+                                    android:textSize="11.5sp" />
+
+                                <TextView
+                                    android:id="@+id/tvSettingRamPurgeBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:background="@drawable/bg_plan_badge_free"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:paddingHorizontal="5dp"
+                                    android:paddingVertical="1dp"
+                                    android:text="VIP ONLY"
+                                    android:textColor="@color/neon_green"
+                                    android:textSize="8.5sp" />
+                            </LinearLayout>
 
                             <TextView
+                                android:id="@+id/tvSettingRamPurgeSubtitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="1dp"
                                 android:fontFamily="sans-serif"
-                                android:text="Runs automatically every 3 min in background without closing calls"
+                                android:text="VIP: Auto background clean every 3 min | Free: Tap PURGE NOW"
                                 android:textColor="#A0AEC0"
                                 android:textSize="9sp" />
                         </LinearLayout>

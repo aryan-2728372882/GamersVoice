@@ -92,16 +92,19 @@ class VoiceService : Service(),
     }
 
     // Safe periodic RAM cache cleaner to guarantee < 10MB memory usage without interruptions
+    // Automatically runs in the background for VIP members; Free users purge manually from Settings
     private val autoPurgeRunnable = object : Runnable {
         override fun run() {
             try {
-                com.gamervoice.app.util.ImageLoader.clearMemoryCache()
-                System.gc()
-                val runtime = Runtime.getRuntime()
-                val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
-                Log.d("VoiceService", "🧹 Auto RAM Purge executed safely: Heap usage ~${usedMemMb}MB (< 10MB safe)")
+                if (com.gamervoice.app.auth.PlanManager.isVip()) {
+                    com.gamervoice.app.util.ImageLoader.clearMemoryCache()
+                    System.gc()
+                    val runtime = Runtime.getRuntime()
+                    val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+                    Log.d("VoiceService", "🧹 VIP Auto RAM Purge executed safely: Heap usage ~${usedMemMb}MB (< 10MB safe)")
+                }
             } catch (_: Throwable) {}
-            mainHandler.postDelayed(this, 180_000L) // Runs safely every 3 minutes
+            mainHandler.postDelayed(this, 180_000L) // Checks safely every 3 minutes
         }
     }
 

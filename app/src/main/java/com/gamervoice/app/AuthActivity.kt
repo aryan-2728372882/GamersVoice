@@ -154,9 +154,11 @@ class AuthActivity : AppCompatActivity() {
         avatarViews.forEachIndexed { index, iv ->
             val avatarKey = "avatar_${index + 1}"
             if (avatarKey == selectedAvatar) {
-                iv.setBackgroundResource(R.drawable.bg_code_input)
+                iv.setBackgroundResource(R.drawable.bg_avatar_ring)
+                iv.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start()
             } else {
                 iv.background = null
+                iv.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start()
             }
         }
     }

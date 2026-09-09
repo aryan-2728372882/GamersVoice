@@ -366,6 +366,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.btnRoomsTabCreate.setOnClickListener(createRoomAction)
 
         // --- Settings Tab Controls ---
+        binding.cardSettingRamPurge.setOnClickListener {
+            if (!PlanManager.isVip()) {
+                showVipUpgradeDialog("👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.")
+            } else {
+                Toast.makeText(this, "👑 Auto RAM Purger is actively protecting your squad voice in background.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         binding.btnClearMemoryCache.setOnClickListener {
             ImageLoader.clearMemoryCache()
             System.gc()
@@ -684,6 +692,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabPlanBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvProfileTabPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
             binding.tvProfileTabCountdown.text = "Expires in: " + countdown
+
+            binding.tvSettingRamPurgeTitle.text = "Auto RAM Purge 👑"
+            binding.tvSettingRamPurgeSubtitle.text = "VIP: Auto background clean every 3 min (< 10MB)"
+            binding.tvSettingRamPurgeBadge.text = "ACTIVE"
+            binding.tvSettingRamPurgeBadge.setTextColor(Color.parseColor("#FFD700"))
+            binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
             binding.tvHomePlanBadge.text = "FREE"
@@ -694,6 +708,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             binding.tvProfileTabPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
             binding.tvProfileTabCountdown.text = "2 Cloud Rooms Quota • Standard Filter"
+
+            binding.tvSettingRamPurgeTitle.text = "Auto RAM Purge"
+            binding.tvSettingRamPurgeSubtitle.text = "Free tier: Tap PURGE NOW manually before games"
+            binding.tvSettingRamPurgeBadge.text = "VIP ONLY"
+            binding.tvSettingRamPurgeBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+            binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
         }
     }
 

@@ -4,25 +4,57 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary_dark"
+    android:background="#07090E"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        android:padding="20dp">
+
+        <!-- Tactical Status Badge -->
+        <LinearLayout
+            android:id="@+id/llAuthBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_top_profile_bar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:background="@drawable/bg_status_chip"
+                android:backgroundTint="@color/neon_green" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:text="ESPORTS VOICE NETWORK"
+                android:textColor="@color/neon_green"
+                android:textSize="9.5sp" />
+        </LinearLayout>
 
         <!-- App Logo & Branding -->
         <ImageView
             android:id="@+id/ivAuthLogo"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
             android:layout_marginTop="16dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_app_logo_hero"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/llAuthBadge" />
 
         <TextView
             android:id="@+id/tvAuthTitle"
@@ -30,9 +62,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.08"
             android:text="@string/app_name"
-            android:textColor="@color/accent_green"
-            android:textSize="24sp"
+            android:textColor="@color/white"
+            android:textSize="25sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ivAuthLogo" />
@@ -41,11 +74,11 @@
             android:id="@+id/tvAuthSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Ultra-Low Latency Squad Voice Chat"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:text="Ultra-Low Latency Squad Audio • Connect with Squad"
+            android:textColor="#94A3B8"
+            android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvAuthTitle" />
@@ -54,8 +87,8 @@
         <LinearLayout
             android:id="@+id/llAuthTabs"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="24dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="20dp"
             android:background="@drawable/bg_terminal_box"
             android:orientation="horizontal"
             android:padding="3dp"
@@ -281,13 +314,14 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSubmitAuth"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:backgroundTint="@color/accent_green"
+                android:layout_height="54dp"
+                android:backgroundTint="@color/neon_green"
                 android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.04"
                 android:text="SIGN IN"
                 android:textColor="@color/black"
                 android:textSize="14sp"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="12dp" />
 
             <!-- OR Divider -->
             <LinearLayout
@@ -307,10 +341,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="12dp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="sans-serif-bold"
                     android:text="OR"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textColor="#64748B"
+                    android:textSize="11sp" />
 
                 <View
                     android:layout_width="0dp"
@@ -324,18 +358,20 @@
                 android:id="@+id/btnGoogleSignIn"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:fontFamily="sans-serif-black"
+                android:layout_height="54dp"
+                android:backgroundTint="#0D1117"
+                android:fontFamily="sans-serif-bold"
+                android:letterSpacing="0.02"
                 android:text="Continue with Google"
                 android:textColor="@color/white"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
+                android:textSize="13.5sp"
+                app:cornerRadius="12dp"
                 app:icon="@drawable/ic_google_logo"
                 app:iconGravity="textStart"
                 app:iconPadding="12dp"
                 app:iconTint="@null"
-                app:strokeColor="#40FFFFFF"
-                app:strokeWidth="1dp" />
+                app:strokeColor="#2D3748"
+                app:strokeWidth="1.2dp" />
 
             <!-- Progress Indicator -->
             <ProgressBar

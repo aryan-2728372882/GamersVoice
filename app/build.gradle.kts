@@ -63,3 +63,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+configurations.all {
+    resolutionStrategy {
+        force("com.razorpay:standard-core:1.6.41")
+    }
+}
+
