@@ -21,7 +21,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.GravityCompat
 import com.gamervoice.app.auth.AuthManager
 import com.gamervoice.app.auth.PlanManager
 import com.gamervoice.app.auth.PlanTier
@@ -32,7 +31,6 @@ import com.gamervoice.app.databinding.DialogVipUpgradeBinding
 import com.gamervoice.app.databinding.ItemInstalledGameBinding
 import com.gamervoice.app.databinding.ItemParticipantBinding
 import com.gamervoice.app.databinding.ItemSavedRoomBinding
-import com.gamervoice.app.databinding.LayoutNavigationSliderBinding
 import com.gamervoice.app.model.RoomParticipant
 import com.gamervoice.app.model.RoomPersistenceManager
 import com.gamervoice.app.model.SavedRoom
@@ -50,13 +48,12 @@ import org.json.JSONObject
 class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, PaymentResultWithDataListener {
 
     private lateinit var binding: ActivityHomeBinding
-    private lateinit var sliderBinding: LayoutNavigationSliderBinding
 
     private var voiceService: VoiceService? = null
     private var isServiceBound = false
 
     private var isSpeakerphone = true
-    private var noiseFilterLevel = 2 // 0: Standard, 1: High, 2: Aggressive
+    private var noiseFilterLevel = 0 // 0: Normal (50%), 1: High (75%), 2: Ultra Silent (VIP)
     private var pendingPurchaseTier: PlanTier? = null
     private var vipUpgradeDialog: Dialog? = null
 
@@ -128,7 +125,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        sliderBinding = LayoutNavigationSliderBinding.bind(binding.navSlider.root)
 
         binding.btnCreateRoom.isEnabled = false
         binding.btnJoinRoom.isEnabled = false
@@ -136,7 +132,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.btnJoinRoomCard.isEnabled = false
 
         setupUI()
-        setupNavigationSlider()
         setupConsoleUI()
 
         val serviceIntent = Intent(this, VoiceService::class.java)
@@ -168,7 +163,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         verifyPlanExpiry()
         updatePlanUI()
         val isHudActive = FloatingHudManager.isHudShowing()
-        sliderBinding.switchDrawerHud.isChecked = isHudActive
         binding.switchSettingHud.isChecked = isHudActive
 
         val crashPrefs = getSharedPreferences(GamerVoiceApp.PREFS_CRASH, MODE_PRIVATE)
@@ -212,10 +206,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         binding.btnOpenMenu.setOnClickListener {
-            binding.drawerLayout.openDrawer(GravityCompat.START)
+            updateActiveNavTab(2) // Jump to Settings Tab
         }
         binding.llUserProfileHeader.setOnClickListener {
-            binding.drawerLayout.openDrawer(GravityCompat.START)
+            updateActiveNavTab(3) // Jump to Profile Tab
         }
 
         // Plan Badge Click
@@ -314,7 +308,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             } else {
                 FloatingHudManager.hideHud()
             }
-            sliderBinding.switchDrawerHud.isChecked = isChecked
         }
 
         binding.cardSettingNoiseFilter.setOnClickListener {
@@ -468,15 +461,40 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun cycleNoiseFilter() {
-        noiseFilterLevel = (noiseFilterLevel + 1) % 3
+        val isVip = PlanManager.isVip()
+        when (noiseFilterLevel) {
+            0 -> {
+                noiseFilterLevel = 1
+                updateNoiseFilterUI()
+                Toast.makeText(this, "Mic Filter: High (75%)", Toast.LENGTH_SHORT).show()
+            }
+            1 -> {
+                if (isVip) {
+                    noiseFilterLevel = 2
+                    updateNoiseFilterUI()
+                    Toast.makeText(this, "Mic Filter: Ultra Silent 👑 (< 10%)", Toast.LENGTH_SHORT).show()
+                } else {
+                    showVipUpgradeDialog("👑 Ultra Silent (< 10% Noise) is an exclusive VIP feature! Upgrade to eliminate keyboard, room, and fan noise.")
+                }
+            }
+            else -> {
+                noiseFilterLevel = 0
+                updateNoiseFilterUI()
+                Toast.makeText(this, "Mic Filter: Normal (50%)", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun updateNoiseFilterUI() {
+        if (!PlanManager.isVip() && noiseFilterLevel == 2) {
+            noiseFilterLevel = 0
+        }
         val label = when (noiseFilterLevel) {
-            0 -> "Standard"
-            1 -> "High"
-            else -> "Aggressive"
+            0 -> "Normal (50%)"
+            1 -> "High (75%)"
+            else -> "Ultra Silent 👑 (< 10%)"
         }
         binding.tvSettingNoiseFilterBadge.text = label
-        sliderBinding.tvDrawerNoiseFilter.text = label
-        Toast.makeText(this, "Mic Filter: $label", Toast.LENGTH_SHORT).show()
     }
 
     private fun toggleAudioRoute() {
@@ -497,7 +515,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         val label = if (isSpeakerphone) "Speaker" else "Earpiece"
         binding.tvSettingAudioRouteBadge.text = label
-        sliderBinding.tvDrawerAudioRoute.text = if (isSpeakerphone) "Speakerphone 🔊" else "Earpiece 👂"
         Toast.makeText(this, "Audio Output: $label", Toast.LENGTH_SHORT).show()
     }
 
@@ -607,7 +624,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         binding.tvHomeRoomQuota.text = quotaText
-        sliderBinding.tvDrawerRoomQuota.text = quotaText
 
         // Home View Saved Rooms
         binding.llHomeSavedRoomsContainer.removeAllViews()
@@ -634,33 +650,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 binding.llHomeSavedRoomsContainer.addView(itemBinding.root)
             }
         }
-
-        // Drawer View Saved Rooms
-        sliderBinding.llDrawerSavedRoomsContainer.removeAllViews()
-        if (rooms.isEmpty()) {
-            sliderBinding.tvDrawerNoRooms.visibility = View.VISIBLE
-            sliderBinding.llDrawerSavedRoomsContainer.addView(sliderBinding.tvDrawerNoRooms)
-        } else {
-            sliderBinding.tvDrawerNoRooms.visibility = View.GONE
-            for (room in rooms) {
-                val itemBinding = ItemSavedRoomBinding.inflate(layoutInflater, sliderBinding.llDrawerSavedRoomsContainer, false)
-                itemBinding.tvSavedRoomName.text = room.roomName
-                itemBinding.tvSavedRoomCode.text = room.roomCode
-                itemBinding.tvSavedRoomDate.text = "Permanent Squad Room"
-                itemBinding.tvSavedRoomPinBadge.visibility = if (room.pin.isNotEmpty()) View.VISIBLE else View.GONE
-
-                itemBinding.btnRejoinRoom.setOnClickListener {
-                    binding.drawerLayout.closeDrawer(GravityCompat.START)
-                    joinRoomWithCode(room.roomCode)
-                }
-                itemBinding.btnDeleteRoom.setOnClickListener {
-                    RoomPersistenceManager.deleteRoom(room.roomCode) {
-                        refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                    }
-                }
-                sliderBinding.llDrawerSavedRoomsContainer.addView(itemBinding.root)
-            }
-        }
     }
 
     // --- Monetization & VIP UI ---
@@ -670,17 +659,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             runOnUiThread {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "⚠️ Your VIP Pass has expired. Reverted to Free Plan.", Toast.LENGTH_LONG).show()
             }
-        }
-        if (wasExpired) {
-            updatePlanUI()
-            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
         }
     }
 
     private fun updatePlanUI() {
         val isVip = PlanManager.isVip()
+        updateNoiseFilterUI()
         val user = AuthManager.getCurrentUser()
         if (user != null) {
             binding.tvProfileTabName.text = user.name
@@ -695,11 +680,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
 
             val countdown = PlanManager.getExpiryCountdown()
-            sliderBinding.tvDrawerPlanBadge.text = "👑 " + PlanManager.getPlanName() + "\n" + countdown
-            sliderBinding.tvDrawerPlanBadge.setTextColor(Color.parseColor("#FFD700"))
-            sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
-            sliderBinding.llDrawerVipBanner.visibility = View.GONE
-
             binding.tvProfileTabPlanBadge.text = "👑 " + PlanManager.getPlanName() + " ACTIVE"
             binding.tvProfileTabPlanBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvProfileTabPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
@@ -709,11 +689,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvHomePlanBadge.text = "FREE"
             binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
-
-            sliderBinding.tvDrawerPlanBadge.text = "🟢 FREE PLAN (2 Rooms)"
-            sliderBinding.tvDrawerPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
-            sliderBinding.tvDrawerPlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
-            sliderBinding.llDrawerVipBanner.visibility = View.VISIBLE
 
             binding.tvProfileTabPlanBadge.text = "🟢 FREE PLAN"
             binding.tvProfileTabPlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
@@ -862,117 +837,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         pendingPurchaseTier = null
     }
 
-    // --- Navigation Slider Drawer & Settings ---
 
-    private fun setupNavigationSlider() {
-        val user = AuthManager.getCurrentUser()
-        if (user != null) {
-            sliderBinding.tvDrawerName.text = user.name
-            sliderBinding.tvDrawerEmail.text = user.email
-            ImageLoader.loadAvatar(sliderBinding.ivDrawerAvatar, user.avatar)
-        }
-
-        sliderBinding.btnDrawerUpgradeVip.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            showVipUpgradeDialog()
-        }
-
-        // Floating HUD toggle switch
-        sliderBinding.switchDrawerHud.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                if (!FloatingHudManager.hasOverlayPermission(this)) {
-                    sliderBinding.switchDrawerHud.isChecked = false
-                    requestOverlayPermission()
-                } else {
-                    val svc = voiceService
-                    if (svc != null && svc.currentRoomCode != null) {
-                        FloatingHudManager.showHud(this, svc)
-                    } else {
-                        Toast.makeText(this, "Floating HUD will activate automatically when you enter a room.", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
-                FloatingHudManager.hideHud()
-            }
-        }
-
-        // Noise Filter Sensitivity
-        sliderBinding.tvDrawerNoiseFilter.setOnClickListener {
-            noiseFilterLevel = (noiseFilterLevel + 1) % 3
-            val label = when (noiseFilterLevel) {
-                0 -> "Standard (Low)"
-                1 -> "High (Fan Filter)"
-                else -> "Aggressive (Fan Off)"
-            }
-            sliderBinding.tvDrawerNoiseFilter.text = label
-            Toast.makeText(this, "Mic Filter: $label", Toast.LENGTH_SHORT).show()
-        }
-
-        // Audio Output Routing (Speakerphone vs Earpiece)
-        sliderBinding.tvDrawerAudioRoute.setOnClickListener {
-            isSpeakerphone = !isSpeakerphone
-            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                val targetType = if (isSpeakerphone) android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER else android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
-                val targetDevice = audioManager.availableCommunicationDevices.find { it.type == targetType }
-                if (targetDevice != null) {
-                    audioManager.setCommunicationDevice(targetDevice)
-                } else {
-                    @Suppress("DEPRECATION")
-                    audioManager.isSpeakerphoneOn = isSpeakerphone
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.isSpeakerphoneOn = isSpeakerphone
-            }
-            sliderBinding.tvDrawerAudioRoute.text = if (isSpeakerphone) "Speakerphone 🔊" else "Earpiece 👂"
-            Toast.makeText(this, "Audio Output: " + (if (isSpeakerphone) "Speakerphone" else "Earpiece"), Toast.LENGTH_SHORT).show()
-        }
-
-        // Clear Cache Button
-        sliderBinding.btnDrawerClearCache.setOnClickListener {
-            ImageLoader.clearMemoryCache()
-            System.gc()
-            val runtime = Runtime.getRuntime()
-            val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
-            Toast.makeText(this, "🧹 Cache evicted! Current Heap: ~${usedMemMb}MB (< 10MB safe)", Toast.LENGTH_LONG).show()
-        }
-
-        // Legal Docs
-        sliderBinding.btnDrawerPrivacy.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            showLegalDialog("Privacy Policy", LegalDocsHelper.PRIVACY_POLICY, R.drawable.ic_shield_privacy)
-        }
-
-        sliderBinding.btnDrawerTerms.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            showLegalDialog("Terms of Service & EULA", LegalDocsHelper.TERMS_OF_SERVICE, R.drawable.ic_document_terms)
-        }
-
-        sliderBinding.btnDrawerGuidelines.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            showLegalDialog("Community & Fair Play", LegalDocsHelper.COMMUNITY_GUIDELINES, R.drawable.ic_info_circle)
-        }
-
-        sliderBinding.btnDrawerLicenses.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            showLegalDialog("Open Source Licenses", LegalDocsHelper.OPEN_SOURCE_LICENSES, R.drawable.ic_open_source)
-        }
-
-        sliderBinding.btnDrawerResetPlan.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            PlanManager.revokeVip {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "🔄 Account Plan reset to Free tier successfully.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        sliderBinding.btnDrawerLogout.setOnClickListener {
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            performLogout()
-        }
-    }
 
     private fun showLegalDialog(title: String, content: String, iconRes: Int) {
         val dialog = Dialog(this)
@@ -1011,11 +876,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         if (FloatingHudManager.isHudShowing()) {
             FloatingHudManager.hideHud()
             binding.switchSettingHud.isChecked = false
-            sliderBinding.switchDrawerHud.isChecked = false
         } else {
             FloatingHudManager.showHud(this, svc)
             binding.switchSettingHud.isChecked = true
-            sliderBinding.switchDrawerHud.isChecked = true
         }
     }
 

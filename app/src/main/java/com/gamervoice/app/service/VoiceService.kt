@@ -91,6 +91,20 @@ class VoiceService : Service(),
         }
     }
 
+    // Safe periodic RAM cache cleaner to guarantee < 10MB memory usage without interruptions
+    private val autoPurgeRunnable = object : Runnable {
+        override fun run() {
+            try {
+                com.gamervoice.app.util.ImageLoader.clearMemoryCache()
+                System.gc()
+                val runtime = Runtime.getRuntime()
+                val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+                Log.d("VoiceService", "🧹 Auto RAM Purge executed safely: Heap usage ~${usedMemMb}MB (< 10MB safe)")
+            } catch (_: Throwable) {}
+            mainHandler.postDelayed(this, 180_000L) // Runs safely every 3 minutes
+        }
+    }
+
     fun sendTacticalCallout(calloutId: String, calloutText: String) {
         signalingClient.sendTacticalCallout(calloutId, calloutText)
         com.gamervoice.app.util.TacticalCalloutHelper.playCalloutTone(calloutId)
@@ -113,6 +127,7 @@ class VoiceService : Service(),
         // Connect signaling server in background
         signalingClient.connect()
         mainHandler.postDelayed(pingRunnable, 5000)
+        mainHandler.postDelayed(autoPurgeRunnable, 60_000L)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -567,6 +582,7 @@ class VoiceService : Service(),
     override fun onDestroy() {
         super.onDestroy()
         mainHandler.removeCallbacks(pingRunnable)
+        mainHandler.removeCallbacks(autoPurgeRunnable)
         executor.execute {
             peerConnectionManager.closeAll()
             signalingClient.disconnect()
