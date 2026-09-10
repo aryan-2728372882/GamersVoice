@@ -524,8 +524,19 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         isSpeakerphone = !isSpeakerphone
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            val targetType = if (isSpeakerphone) android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER else android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
-            val targetDevice = audioManager.availableCommunicationDevices.find { it.type == targetType }
+            val devices = audioManager.availableCommunicationDevices
+            val targetDevice = if (isSpeakerphone) {
+                devices.find { it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+            } else {
+                devices.find {
+                    it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                    it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                    it.type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET ||
+                    it.type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                    it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                    it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                }
+            }
             if (targetDevice != null) {
                 audioManager.setCommunicationDevice(targetDevice)
             } else {
@@ -536,7 +547,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             @Suppress("DEPRECATION")
             audioManager.isSpeakerphoneOn = isSpeakerphone
         }
-        val label = if (isSpeakerphone) "Speaker" else "Earpiece"
+        val label = if (isSpeakerphone) "Speaker" else "Headset / Earphones"
         binding.tvSettingAudioRouteBadge.text = label
         Toast.makeText(this, "Audio Output: $label", Toast.LENGTH_SHORT).show()
     }

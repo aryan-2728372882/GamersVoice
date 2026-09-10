@@ -68,20 +68,39 @@ class PeerConnectionManager(
             this.isPttMode = isPtt
 
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                val speakerDevice = audioManager?.availableCommunicationDevices?.find {
-                    it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-                }
-                if (speakerDevice != null) {
-                    audioManager?.setCommunicationDevice(speakerDevice)
+            if (audioManager != null) {
+                audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                requestAudioFocus(audioManager)
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    val devices = audioManager.availableCommunicationDevices
+                    // Auto-detect and prioritize gamer headsets (Wired, Bluetooth, USB)
+                    val headsetDevice = devices.find {
+                        it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                        it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                    }
+                    if (headsetDevice != null) {
+                        audioManager.setCommunicationDevice(headsetDevice)
+                        Log.i(TAG, "Audio routed to Gaming Headset: ${headsetDevice.productName}")
+                    } else {
+                        val speakerDevice = devices.find { it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+                        if (speakerDevice != null) {
+                            audioManager.setCommunicationDevice(speakerDevice)
+                        }
+                    }
                 } else {
                     @Suppress("DEPRECATION")
-                    audioManager?.isSpeakerphoneOn = true
+                    val isWiredHeadset = audioManager.isWiredHeadsetOn
+                    @Suppress("DEPRECATION")
+                    val isBluetoothSco = audioManager.isBluetoothScoOn
+                    if (!isWiredHeadset && !isBluetoothSco) {
+                        @Suppress("DEPRECATION")
+                        audioManager.isSpeakerphoneOn = true
+                    }
                 }
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager?.isSpeakerphoneOn = true
             }
 
             // 1. Initialize WebRTC Native Globals once if not already done
@@ -404,11 +423,64 @@ class PeerConnectionManager(
             localAudioTrack?.setEnabled(false)
 
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audioManager?.mode = AudioManager.MODE_NORMAL
+            if (audioManager != null) {
+                abandonAudioFocus(audioManager)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    audioManager.clearCommunicationDevice()
+                }
+                audioManager.mode = AudioManager.MODE_NORMAL
+            }
 
             listener.onLog("WebRTC PeerConnections closed & reset")
         } catch (e: Throwable) {
             Log.e(TAG, "Error resetting PeerConnectionManager", e)
+        }
+    }
+
+    private var audioFocusRequest: Any? = null
+
+    private fun requestAudioFocus(audioManager: AudioManager) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val playbackAttributes = android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+                val focusReq = android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                    .setAudioAttributes(playbackAttributes)
+                    .setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener { focusChange ->
+                        Log.d(TAG, "Audio focus changed: $focusChange")
+                    }
+                    .build()
+                audioFocusRequest = focusReq
+                audioManager.requestAudioFocus(focusReq)
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.requestAudioFocus(
+                    { focusChange -> Log.d(TAG, "Audio focus changed: $focusChange") },
+                    AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not acquire AudioFocus", e)
+        }
+    }
+
+    private fun abandonAudioFocus(audioManager: AudioManager) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                (audioFocusRequest as? android.media.AudioFocusRequest)?.let {
+                    audioManager.abandonAudioFocusRequest(it)
+                }
+                audioFocusRequest = null
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(null)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not abandon AudioFocus", e)
         }
     }
 
