@@ -40,8 +40,19 @@ object WelcomeEmailHelper {
     }
 
     /**
+     * Resets the welcome email status for a specific email address (useful for retrying if credentials failed).
+     */
+    fun resetWelcomeSentStatus(context: Context, email: String) {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank()) return
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().remove(KEY_SENT_PREFIX + cleanEmail).apply()
+        Log.i(TAG, "Reset welcome email sent flag for $cleanEmail")
+    }
+
+    /**
      * Strict Rule: Sends the heartfelt welcome email ONLY ONCE upon new account creation (sign up).
-     * If the email was already sent previously or if called during regular sign-in, it will be skipped.
+     * If the email was already sent successfully or if called during regular sign-in, it will be skipped.
      */
     fun sendWelcomeEmailOnce(
         context: Context,
@@ -55,14 +66,13 @@ object WelcomeEmailHelper {
             return
         }
 
+        val appContext = context.applicationContext
+
         // Strict Check: Has this email address EVER received the welcome email on this device?
-        if (hasWelcomeBeenSent(context, cleanEmail)) {
+        if (hasWelcomeBeenSent(appContext, cleanEmail)) {
             Log.i(TAG, "Strict Rule Enforced: Welcome email already sent to $cleanEmail previously. Skipping dispatch.")
             return
         }
-
-        // Mark immediately to prevent race conditions or repeated clicks
-        markWelcomeAsSent(context, cleanEmail)
 
         executor.execute {
             try {
@@ -76,13 +86,15 @@ object WelcomeEmailHelper {
                 val cleanPass = SmtpConfig.SMTP_PASSWORD.replace(" ", "").trim()
 
                 if (cleanUser.isNotBlank() && cleanPass.isNotBlank()) {
-                    deliverViaSmtp(cleanEmail, subject, messageContent, cleanUser, cleanPass)
+                    deliverViaSmtpWithFallback(cleanEmail, subject, messageContent, cleanUser, cleanPass)
+                    // Mark as sent ONLY AFTER successful delivery!
+                    markWelcomeAsSent(appContext, cleanEmail)
                     Log.i(TAG, "Welcome email successfully dispatched to $cleanEmail via SMTP!")
                 } else {
                     Log.i(TAG, "SMTP credentials pending in SmtpConfig.kt. Welcome email letter prepared:\n$messageContent")
                 }
             } catch (t: Throwable) {
-                Log.w(TAG, "Notice: Could not send welcome email: ${t.localizedMessage}")
+                Log.e(TAG, "Notice: SMTP delivery failed for $cleanEmail: ${t.message}", t)
             }
         }
     }
@@ -104,11 +116,11 @@ object WelcomeEmailHelper {
                 val cleanPass = SmtpConfig.SMTP_PASSWORD.replace(" ", "").trim()
 
                 if (cleanUser.isNotBlank() && cleanPass.isNotBlank()) {
-                    deliverViaSmtp(cleanEmail, subject, messageContent, cleanUser, cleanPass)
+                    deliverViaSmtpWithFallback(cleanEmail, subject, messageContent, cleanUser, cleanPass)
                     Log.i(TAG, "Welcome email successfully dispatched to $cleanEmail via SMTP!")
                 }
             } catch (t: Throwable) {
-                Log.w(TAG, "Notice: Could not send welcome email: ${t.localizedMessage}")
+                Log.e(TAG, "Notice: SMTP delivery failed for $cleanEmail: ${t.message}", t)
             }
         }
     }
@@ -137,74 +149,169 @@ GamerVoice Core Engineering
         """.trimIndent()
     }
 
-    private fun deliverViaSmtp(toEmail: String, subject: String, body: String, username: String, pass: String) {
+    private fun deliverViaSmtpWithFallback(toEmail: String, subject: String, body: String, username: String, pass: String) {
+        try {
+            // Attempt 1: Direct SSL on Port 465
+            deliverViaSmtpSsl(toEmail, subject, body, username, pass, SmtpConfig.SMTP_HOST, 465)
+        } catch (e: Exception) {
+            Log.w(TAG, "Port 465 SSL failed (${e.message}). Attempting fallback to Port 587 STARTTLS...")
+            // Attempt 2: STARTTLS on Port 587
+            deliverViaSmtpStartTls(toEmail, subject, body, username, pass, SmtpConfig.SMTP_HOST, 587)
+        }
+    }
+
+    private fun deliverViaSmtpSsl(toEmail: String, subject: String, body: String, username: String, pass: String, host: String, port: Int) {
         val socketFactory = SSLSocketFactory.getDefault()
-        val socket = socketFactory.createSocket(SmtpConfig.SMTP_HOST, SmtpConfig.SMTP_PORT) as SSLSocket
+        val socket = socketFactory.createSocket(host, port) as SSLSocket
         socket.soTimeout = 15000
+        socket.startHandshake()
 
-        val reader = BufferedReader(InputStreamReader(socket.inputStream))
-        val writer = PrintWriter(OutputStreamWriter(socket.outputStream), true)
+        executeSmtpConversation(socket, toEmail, subject, body, username, pass)
+    }
 
-        fun readSmtpResponse(): String {
+    private fun deliverViaSmtpStartTls(toEmail: String, subject: String, body: String, username: String, pass: String, host: String, port: Int) {
+        val plainSocket = java.net.Socket(host, port)
+        plainSocket.soTimeout = 15000
+
+        val reader = BufferedReader(InputStreamReader(plainSocket.getInputStream(), Charsets.UTF_8))
+        val writer = PrintWriter(OutputStreamWriter(plainSocket.getOutputStream(), Charsets.UTF_8), true)
+
+        fun readResponse(): String {
             var lastLine = ""
             while (true) {
                 val line = reader.readLine() ?: break
                 lastLine = line
-                if (line.length >= 4 && line[3] == '-') {
-                    continue // Multi-line response continuation
-                }
+                if (line.length >= 4 && line[3] == '-') continue
                 break
             }
             return lastLine
         }
 
-        fun sendCommand(cmd: String) {
+        fun sendCmd(cmd: String) {
             writer.print("$cmd\r\n")
             writer.flush()
         }
 
-        readSmtpResponse() // Greeting 220
+        val greeting = readResponse()
+        if (!greeting.startsWith("220")) throw RuntimeException("SMTP greeting failed: $greeting")
 
-        sendCommand("EHLO localhost")
-        readSmtpResponse() // 250
+        sendCmd("EHLO [127.0.0.1]")
+        readResponse()
 
-        sendCommand("AUTH LOGIN")
-        readSmtpResponse() // 334
+        sendCmd("STARTTLS")
+        val startTlsResp = readResponse()
+        if (!startTlsResp.startsWith("220")) throw RuntimeException("STARTTLS rejected: $startTlsResp")
 
-        sendCommand(Base64.encodeToString(username.toByteArray(), Base64.NO_WRAP))
-        readSmtpResponse() // 334
+        val sslSocket = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(plainSocket, host, port, true) as SSLSocket
+        sslSocket.soTimeout = 15000
+        sslSocket.startHandshake()
 
-        sendCommand(Base64.encodeToString(pass.toByteArray(), Base64.NO_WRAP))
-        val authResult = readSmtpResponse()
+        executeSmtpConversation(sslSocket, toEmail, subject, body, username, pass)
+    }
+
+    private fun executeSmtpConversation(
+        socket: java.net.Socket,
+        toEmail: String,
+        subject: String,
+        body: String,
+        username: String,
+        pass: String
+    ) {
+        val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
+        val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8), true)
+
+        fun readResponse(): String {
+            var lastLine = ""
+            while (true) {
+                val line = reader.readLine() ?: break
+                lastLine = line
+                if (line.length >= 4 && line[3] == '-') continue
+                break
+            }
+            return lastLine
+        }
+
+        fun sendCmd(cmd: String) {
+            writer.print("$cmd\r\n")
+            writer.flush()
+        }
+
+        val greeting = readResponse()
+        if (!greeting.startsWith("220")) {
+            throw RuntimeException("SMTP Greeting failed: $greeting")
+        }
+
+        sendCmd("EHLO [127.0.0.1]")
+        readResponse()
+
+        sendCmd("AUTH LOGIN")
+        val authPrompt = readResponse()
+        if (!authPrompt.startsWith("334")) {
+            throw RuntimeException("AUTH LOGIN rejected: $authPrompt")
+        }
+
+        sendCmd(Base64.encodeToString(username.toByteArray(), Base64.NO_WRAP))
+        val userPrompt = readResponse()
+        if (!userPrompt.startsWith("334")) {
+            throw RuntimeException("SMTP Username rejected: $userPrompt")
+        }
+
+        sendCmd(Base64.encodeToString(pass.toByteArray(), Base64.NO_WRAP))
+        val authResult = readResponse()
         if (!authResult.startsWith("235")) {
             throw RuntimeException("SMTP Authentication failed: $authResult")
         }
 
         val sender = if (SmtpConfig.SENDER_EMAIL.isNotBlank()) SmtpConfig.SENDER_EMAIL.trim() else username
-        sendCommand("MAIL FROM:<$sender>")
-        readSmtpResponse()
+        sendCmd("MAIL FROM:<$sender>")
+        val mailFromResp = readResponse()
+        if (!mailFromResp.startsWith("250")) {
+            throw RuntimeException("MAIL FROM rejected: $mailFromResp")
+        }
 
-        sendCommand("RCPT TO:<$toEmail>")
-        readSmtpResponse()
+        sendCmd("RCPT TO:<$toEmail>")
+        val rcptResp = readResponse()
+        if (!rcptResp.startsWith("250")) {
+            throw RuntimeException("RCPT TO rejected: $rcptResp")
+        }
 
-        sendCommand("DATA")
-        readSmtpResponse()
+        sendCmd("DATA")
+        val dataResp = readResponse()
+        if (!dataResp.startsWith("354")) {
+            throw RuntimeException("DATA command rejected: $dataResp")
+        }
 
-        val mimeMessage = """
-From: "${SmtpConfig.SENDER_NAME}" <$sender>
-To: <$toEmail>
-Subject: $subject
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        // Send headers
+        writer.print("From: \"${SmtpConfig.SENDER_NAME}\" <$sender>\r\n")
+        writer.print("To: <$toEmail>\r\n")
+        writer.print("Subject: $subject\r\n")
+        writer.print("MIME-Version: 1.0\r\n")
+        writer.print("Content-Type: text/plain; charset=UTF-8\r\n")
+        writer.print("Content-Transfer-Encoding: 8bit\r\n")
+        writer.print("\r\n")
 
-$body
-.
-        """.trimIndent()
+        // Send body line by line with proper RFC 5321 dot-stuffing and CRLF
+        val lines = body.split("\n")
+        for (rawLine in lines) {
+            var line = rawLine.trimEnd('\r')
+            if (line.startsWith(".")) {
+                line = ".$line"
+            }
+            writer.print("$line\r\n")
+        }
 
-        sendCommand(mimeMessage)
-        readSmtpResponse()
+        // End of DATA stream
+        writer.print(".\r\n")
+        writer.flush()
 
-        sendCommand("QUIT")
-        socket.close()
+        val sendResult = readResponse()
+        if (!sendResult.startsWith("250")) {
+            throw RuntimeException("Message transmission rejected: $sendResult")
+        }
+
+        sendCmd("QUIT")
+        try {
+            socket.close()
+        } catch (_: Exception) {}
     }
 }
