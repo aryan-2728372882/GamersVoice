@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 8080;
 
 // Configuration from environment variables
 const SMTP_USER = process.env.SMTP_USER || 'supportgamersvoice@gmail.com';
-const SMTP_PASS = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
+const SMTP_PASS = (process.env.SMTP_PASS || 'ennawlvrlygkkefe').replace(/\s+/g, '');
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
