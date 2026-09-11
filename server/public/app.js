@@ -35,25 +35,48 @@ if (auth) {
 
 function updateUserInterface(user) {
   const container = document.getElementById("authStatusContainer");
-  if (!container) return;
+  const drawerContainer = document.getElementById("drawerAuthStatusContainer");
 
   if (user) {
     const displayName = user.displayName || user.email.split("@")[0];
     const initial = (displayName.charAt(0) || "G").toUpperCase();
     const vipText = currentVipPlan && currentVipPlan.isVip ? ("👑 " + currentVipPlan.planType) : "FREE";
 
-    container.innerHTML = 
+    const html = 
       '<div class="user-pill">' +
         '<div class="user-avatar-initials">' + initial + '</div>' +
         '<span class="user-name-label">' + escapeHtml(displayName) + '</span>' +
         '<span class="user-vip-tag" id="userVipTag">' + vipText + '</span>' +
         '<button class="btn-signout" onclick="handleSignOut()">Sign Out</button>' +
       '</div>';
+    
+    if (container) container.innerHTML = html;
+    if (drawerContainer) {
+      drawerContainer.innerHTML = 
+        '<div class="user-pill" style="width: 100%; justify-content: space-between; padding: 10px 14px;">' +
+          '<div style="display: flex; align-items: center; gap: 8px;">' +
+            '<div class="user-avatar-initials">' + initial + '</div>' +
+            '<div>' +
+              '<div class="user-name-label" style="font-weight: 700; color: #fff;">' + escapeHtml(displayName) + '</div>' +
+              '<span class="user-vip-tag" style="font-size: 0.7rem; padding: 2px 6px;">' + vipText + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="btn-signout" onclick="handleSignOut()">Sign Out</button>' +
+        '</div>';
+    }
   } else {
-    container.innerHTML = 
-      '<button class="btn btn-outline" id="openAuthBtn" onclick="openAuthModal()">' +
-        '<span class="btn-icon">⚡</span> <span class="btn-text">Sign In</span>' +
-      '</button>';
+    if (container) {
+      container.innerHTML = 
+        '<button class="btn btn-outline" id="openAuthBtn" onclick="openAuthModal()">' +
+          '<span class="btn-icon">⚡</span> <span class="btn-text">Sign In</span>' +
+        '</button>';
+    }
+    if (drawerContainer) {
+      drawerContainer.innerHTML = 
+        '<button class="btn btn-outline btn-block" onclick="closeDrawer(); openAuthModal();">' +
+          '<span class="btn-icon">⚡</span> <span class="btn-text">Sign In / Account</span>' +
+        '</button>';
+    }
   }
 }
 

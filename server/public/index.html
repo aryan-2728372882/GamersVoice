@@ -53,7 +53,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=2.3">
+  <link rel="stylesheet" href="/style.css?v=2.4">
 </head>
 <body>
 
@@ -136,6 +136,11 @@
       </nav>
 
       <div class="drawer-footer">
+        <div id="drawerAuthStatusContainer" style="margin-bottom: 12px; width: 100%;">
+          <button class="btn btn-outline btn-block" onclick="closeDrawer(); openAuthModal();">
+            <span class="btn-icon">⚡</span> <span class="btn-text">Sign In / Account</span>
+          </button>
+        </div>
         <a href="/download-apk" class="btn btn-gold-solid btn-block">
           <span>⬇️</span> Download Android APK
         </a>
@@ -151,7 +156,7 @@
         <div class="hero-content">
           <div class="hero-badge">
             <span class="badge-dot"></span>
-            <span class="badge-text">WEBRTC MILITARY AUDIO ENGINE &bull; DUAL STUN/TURN LIVE</span>
+            <span class="badge-text">WEBRTC MILITARY AUDIO ENGINE &bull; DUAL STUN/TURN</span>
           </div>
 
           <h1 class="hero-title">
@@ -976,6 +981,6 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script defer src="/app.js?v=2.3"></script>
+  <script defer src="/app.js?v=2.4"></script>
 </body>
 </html>
