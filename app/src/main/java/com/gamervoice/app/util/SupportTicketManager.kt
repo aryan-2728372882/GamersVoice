@@ -14,10 +14,6 @@ import java.util.concurrent.TimeUnit
 object SupportTicketManager {
 
     private const val TAG = "SupportTicketManager"
-
-    // Telegram Bot Configuration
-    var TELEGRAM_BOT_TOKEN = "8769801969:AAHdwQj7CMN_RA7ZD46mlkjw4S6bt0NOsqs"
-    var TELEGRAM_CHAT_ID = "-5550413473"
     var FALLBACK_SUPPORT_EMAIL = "supportgamersvoice@gmail.com"
 
     private val httpClient = OkHttpClient.Builder()
@@ -33,12 +29,6 @@ object SupportTicketManager {
         val isVip: Boolean
     )
 
-    private fun escapeHtml(text: String): String {
-        return text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-    }
-
     fun submitTicket(
         context: Context,
         submission: TicketSubmission,
@@ -47,60 +37,41 @@ object SupportTicketManager {
         val deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}"
         val androidVer = "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
         val appVer = "1.0.0-beta"
-        val vipBadge = if (submission.isVip) "👑 VIP SUBSCRIBER" else "🟢 FREE USER"
 
-        val formattedMessage = """
-🚨 <b>NEW GAMERVOICE SUPPORT TICKET</b>
-━━━━━━━━━━━━━━━━━━━━━━
-👤 <b>User:</b> <code>${escapeHtml(submission.userEmail)}</code> ($vipBadge)
-📂 <b>Category:</b> <b>${escapeHtml(submission.category)}</b>
-📝 <b>Subject:</b> ${escapeHtml(submission.subject)}
+        val payload = JSONObject().apply {
+            put("category", submission.category)
+            put("subject", submission.subject)
+            put("description", submission.description)
+            put("userEmail", submission.userEmail)
+            put("isVip", submission.isVip)
+            put("deviceModel", deviceModel)
+            put("osVersion", androidVer)
+            put("appVersion", appVer)
+        }
 
-💬 <b>Details:</b>
-${escapeHtml(submission.description)}
+        val body = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request = Request.Builder()
+            .url(SmtpConfig.SUPPORT_RELAY_URL)
+            .post(body)
+            .build()
 
-📱 <b>Device Info:</b>
-• Model: <code>${escapeHtml(deviceModel)}</code>
-• OS: <code>${escapeHtml(androidVer)}</code>
-• App Build: <code>${escapeHtml(appVer)}</code>
-🕒 <b>Time:</b> ${Date()}
-━━━━━━━━━━━━━━━━━━━━━━
-        """.trimIndent()
-
-        if (TELEGRAM_BOT_TOKEN.isNotBlank() && !TELEGRAM_BOT_TOKEN.contains("PLACEHOLDER") &&
-            TELEGRAM_CHAT_ID.isNotBlank() && !TELEGRAM_CHAT_ID.contains("PLACEHOLDER")) {
-
-            val url = "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"
-            val payload = JSONObject().apply {
-                put("chat_id", TELEGRAM_CHAT_ID)
-                put("text", formattedMessage)
-                put("parse_mode", "HTML")
+        httpClient.newCall(request).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                Log.e(TAG, "Failed to send ticket to server relay", e)
+                callback(false, "Network connection error. You can also email us at $FALLBACK_SUPPORT_EMAIL")
             }
 
-            val body = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-            val request = Request.Builder().url(url).post(body).build()
-
-            httpClient.newCall(request).enqueue(object : okhttp3.Callback {
-                override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
-                    Log.e(TAG, "Failed to send ticket to Telegram", e)
-                    callback(false, "Network error submitting to Telegram. You can email us at $FALLBACK_SUPPORT_EMAIL")
-                }
-
-                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                    val respStr = response.body?.string().orEmpty()
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                response.use {
                     if (response.isSuccessful) {
-                        Log.d(TAG, "Ticket posted to Telegram: $respStr")
-                        callback(true, "Your report has been sent directly to our development team via Telegram. We will respond to ${submission.userEmail}!")
+                        Log.d(TAG, "Ticket posted to server relay successfully")
+                        callback(true, "Your report has been submitted to the engineering team. We will contact you at ${submission.userEmail}!")
                     } else {
-                        Log.w(TAG, "Telegram error code ${response.code}: $respStr")
+                        Log.w(TAG, "Server error code ${response.code}")
                         callback(false, "Failed to deliver. Please email $FALLBACK_SUPPORT_EMAIL directly.")
                     }
                 }
-            })
-        } else {
-            // Local record when token is pending configuration
-            Log.i(TAG, "Ticket recorded locally (Telegram credentials pending):\n$formattedMessage")
-            callback(true, "Support ticket logged successfully! Our team will inspect your issue for ${submission.userEmail}.")
-        }
+            }
+        })
     }
 }

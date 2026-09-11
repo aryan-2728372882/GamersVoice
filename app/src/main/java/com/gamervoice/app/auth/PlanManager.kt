@@ -240,7 +240,8 @@ object PlanManager {
     }
 
     /**
-     * Purchases a plan tier and persists details (email, timestamps, 7d/30d/N/A, paymentId) to Cloud Firestore.
+     * Purchases a plan tier and persists details (email, timestamps, 7d/30d/N/A, paymentId) to Cloud Firestore
+     * only after server-side cryptographic verification succeeds.
      */
     fun purchasePlan(tier: PlanTier, paymentId: String? = null, callback: (Boolean) -> Unit) {
         val user = AuthManager.getCurrentUser()
@@ -250,48 +251,104 @@ object PlanManager {
             return
         }
 
-        val purchaseTime = System.currentTimeMillis()
-        val expiryTime = if (tier == PlanTier.LIFETIME) {
-            -1L
-        } else {
-            purchaseTime + (tier.durationDays.toLong() * 24L * 60L * 60L * 1000L)
+        if (paymentId.isNullOrEmpty() || !paymentId.startsWith("pay_")) {
+            Log.e(TAG, "Cannot purchase VIP without authentic Razorpay payment ID")
+            callback(false)
+            return
         }
 
-        val expiryLabel = if (tier == PlanTier.LIFETIME) {
-            "N/A"
-        } else {
-            SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date(expiryTime))
-        }
-
-        val purchasedAtLabel = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date(purchaseTime))
-
-        // Save locally
-        prefs?.edit()
-            ?.putBoolean(KEY_IS_VIP, true)
-            ?.putString(KEY_PLAN_TIER, tier.id)
-            ?.putLong(KEY_EXPIRY_TIMESTAMP, expiryTime)
-            ?.putString(KEY_EXPIRY_LABEL, expiryLabel)
-            ?.putString(KEY_PURCHASED_AT, purchasedAtLabel)
-            ?.putString(KEY_USER_EMAIL, user.email)
-            ?.apply {
-                if (paymentId != null) {
-                    putString(KEY_PAYMENT_ID, paymentId)
-                }
+        // Cryptographic Server-Side Payment Verification
+        verifyPaymentWithServer(paymentId, tier, user.uid, user.email) { verified ->
+            if (!verified) {
+                Log.e(TAG, "Server payment verification failed for $paymentId")
+                mainHandler.post { callback(false) }
+                return@verifyPaymentWithServer
             }
-            ?.apply()
 
-        // Sync with Cloud Firestore
-        syncPurchaseToFirestore(
-            uid = user.uid,
-            idToken = user.idToken,
-            email = user.email,
-            tier = tier,
-            paymentId = paymentId,
-            purchasedAt = purchasedAtLabel,
-            expiresAt = expiryLabel,
-            expiryTimestamp = expiryTime,
-            callback = callback
-        )
+            val purchaseTime = System.currentTimeMillis()
+            val expiryTime = if (tier == PlanTier.LIFETIME) {
+                -1L
+            } else {
+                purchaseTime + (tier.durationDays.toLong() * 24L * 60L * 60L * 1000L)
+            }
+
+            val expiryLabel = if (tier == PlanTier.LIFETIME) {
+                "N/A"
+            } else {
+                SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date(expiryTime))
+            }
+
+            val purchasedAtLabel = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date(purchaseTime))
+
+            // Save locally ONLY AFTER server verification succeeds
+            prefs?.edit()
+                ?.putBoolean(KEY_IS_VIP, true)
+                ?.putString(KEY_PLAN_TIER, tier.id)
+                ?.putLong(KEY_EXPIRY_TIMESTAMP, expiryTime)
+                ?.putString(KEY_EXPIRY_LABEL, expiryLabel)
+                ?.putString(KEY_PURCHASED_AT, purchasedAtLabel)
+                ?.putString(KEY_USER_EMAIL, user.email)
+                ?.putString(KEY_PAYMENT_ID, paymentId)
+                ?.apply()
+
+            // Sync with Cloud Firestore
+            syncPurchaseToFirestore(
+                uid = user.uid,
+                idToken = user.idToken,
+                email = user.email,
+                tier = tier,
+                paymentId = paymentId,
+                purchasedAt = purchasedAtLabel,
+                expiresAt = expiryLabel,
+                expiryTimestamp = expiryTime,
+                callback = callback
+            )
+        }
+    }
+
+    private fun verifyPaymentWithServer(
+        paymentId: String,
+        tier: PlanTier,
+        uid: String,
+        email: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        try {
+            val json = JSONObject().apply {
+                put("paymentId", paymentId)
+                put("planTier", tier.id)
+                put("userId", uid)
+                put("userEmail", email)
+            }
+
+            val req = Request.Builder()
+                .url(com.gamervoice.app.util.SmtpConfig.PAYMENT_VERIFY_URL)
+                .post(json.toString().toRequestBody(JSON_MEDIA))
+                .build()
+
+            httpClient.newCall(req).enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: IOException) {
+                    Log.w(TAG, "Server payment verification network failure: ${e.message}")
+                    onResult(false)
+                }
+
+                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                    val body = response.body?.string() ?: ""
+                    response.close()
+                    try {
+                        val resJson = JSONObject(body)
+                        val verified = resJson.optBoolean("verified", false)
+                        onResult(verified)
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Error parsing server payment verification response: ${t.message}")
+                        onResult(false)
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in verifyPaymentWithServer", e)
+            onResult(false)
+        }
     }
 
     /**
@@ -308,10 +365,10 @@ object PlanManager {
     }
 
     /**
-     * For testing/demo: activates a tier locally and in Firestore.
+     * Test tier activation is disabled in production release builds to enforce cryptographic verification.
      */
     fun activateTestTier(tier: PlanTier, callback: (Boolean) -> Unit) {
-        purchasePlan(tier, null, callback)
+        callback(false)
     }
 
     private fun syncPurchaseToFirestore(

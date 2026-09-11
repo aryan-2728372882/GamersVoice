@@ -73,7 +73,10 @@ object FloatingHudManager {
             }
             layoutParams = params
 
-            // Drag and Drop implementation
+            val displayMetrics = context.resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+
+            // Magnetic Drag and Drop physics
             var initialX = 0
             var initialY = 0
             var initialTouchX = 0f
@@ -86,6 +89,7 @@ object FloatingHudManager {
                         initialY = params.y
                         initialTouchX = event.rawX
                         initialTouchY = event.rawY
+                        b.llHudRoot.animate().scaleX(1.04f).scaleY(1.04f).setDuration(80).start()
                         true
                     }
                     MotionEvent.ACTION_MOVE -> {
@@ -98,18 +102,40 @@ object FloatingHudManager {
                         } catch (_: Exception) {}
                         true
                     }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        b.llHudRoot.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start()
+                        val hudWidth = b.root.width.takeIf { it > 0 } ?: 220
+                        val targetX = if (params.x + hudWidth / 2 < screenWidth / 2) {
+                            16
+                        } else {
+                            screenWidth - hudWidth - 16
+                        }
+                        val startX = params.x
+                        val animator = android.animation.ValueAnimator.ofInt(startX, targetX)
+                        animator.duration = 240
+                        animator.interpolator = android.view.animation.OvershootInterpolator(1.5f)
+                        animator.addUpdateListener { va ->
+                            params.x = va.animatedValue as Int
+                            try {
+                                wm.updateViewLayout(b.root, params)
+                            } catch (_: Exception) {}
+                        }
+                        animator.start()
+                        true
+                    }
                     else -> false
                 }
             }
 
-            // Mic Toggle
-            b.flHudMicButton.setOnClickListener {
+            // Mic Toggle with smooth bounce
+            com.gamervoice.app.util.AnimationHelper.attachPressAnimation(b.flHudMicButton) {
                 service.toggleMicMode()
                 val isPtt = service.isPttModeEnabled()
                 updateMicState(isPtt)
             }
 
-            b.btnDismissHud.setOnClickListener {
+            // Dismiss Button with smooth bounce
+            com.gamervoice.app.util.AnimationHelper.attachPressAnimation(b.btnDismissHud) {
                 hideHud()
             }
 
@@ -135,7 +161,20 @@ object FloatingHudManager {
             } else {
                 ContextCompat.getColor(b.root.context, R.color.accent_green)
             }
-            b.ivHudMicIcon.setColorFilter(color)
+            b.ivHudMicIcon.animate()
+                .scaleX(0.75f)
+                .scaleY(0.75f)
+                .setDuration(70)
+                .withEndAction {
+                    b.ivHudMicIcon.setColorFilter(color)
+                    b.ivHudMicIcon.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(120)
+                        .setInterpolator(android.view.animation.OvershootInterpolator(2.0f))
+                        .start()
+                }
+                .start()
 
             val isVip = PlanManager.isVip()
             val statusText = if (isMutedOrPtt) {
@@ -153,7 +192,14 @@ object FloatingHudManager {
     fun updateSpeakingState(isSpeaking: Boolean) {
         val b = binding ?: return
         mainHandler.post {
-            b.ivHudSpeakingGlow.visibility = if (isSpeaking) View.VISIBLE else View.INVISIBLE
+            if (isSpeaking) {
+                b.ivHudSpeakingGlow.visibility = View.VISIBLE
+                b.ivHudSpeakingGlow.animate().alpha(1f).scaleX(1.2f).scaleY(1.2f).setDuration(120).start()
+            } else {
+                b.ivHudSpeakingGlow.animate().alpha(0f).scaleX(1.0f).scaleY(1.0f).setDuration(150).withEndAction {
+                    b.ivHudSpeakingGlow.visibility = View.INVISIBLE
+                }.start()
+            }
         }
     }
 

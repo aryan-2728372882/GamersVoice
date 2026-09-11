@@ -31,7 +31,7 @@ object LegalDocsHelper {
 
         5. STATUTORY GRIEVANCE REDRESSAL MECHANISM (RULE 3(2) IT RULES, 2021)
         In accordance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021:
-        • Designated Grievance Officer: Legal & Grievance Cell, GamerVoice Core Engineering
+        • Designated Resident Grievance Officer: Aryan Kumar
         • Official Contact Email: supportgamersvoice@gmail.com
         • Statutory Turnaround: Acknowledgment within 24 hours; complete resolution within 15 days from receipt.
         • Jurisdiction: New Delhi, Republic of India.
@@ -43,8 +43,8 @@ object LegalDocsHelper {
         Last Updated: September 2026
         Version: 1.0.0-beta
 
-        1. STRICT NO-REFUND POLICY FOR DIGITAL PASSES
-        All payments made for GamerVoice VIP memberships (Weekly, Monthly, or Lifetime VIP Pass) are FINAL and NON-REFUNDABLE once processed. VIP access unlocks digital entitlements instantaneously—including the AI Ultra-Silent Noise Filter (< 10% Noise), Unlimited Squad Rooms, and Autonomous Background RAM Purging. Once these digital privileges are activated on your account, transactions cannot be reversed, canceled, or refunded.
+        1. DIGITAL SERVICES & REFUND POLICY
+        All payments made for GamerVoice VIP memberships (Weekly, Monthly, or Lifetime VIP Pass) grant instantaneous digital access to VIP features (AI Ultra-Silent Noise Shield, Unlimited Squad Rooms, Autonomous RAM Purging). Because digital services are provisioned immediately upon transaction confirmation, purchases are generally non-refundable once activated. This policy does not prejudice any statutory consumer rights under applicable Indian laws or the rules of the app distribution platform.
 
         2. RBI & STATUTORY E-COMMERCE COMPLIANCE
         - Payments are processed via authorized payment aggregators (Razorpay) compliant with the Reserve Bank of India (RBI) regulations and the Payment and Settlement Systems Act, 2007.
@@ -56,10 +56,11 @@ object LegalDocsHelper {
         - Accidental double charge by your banking provider
         - Payment gateway timeout
         
-        DO NOT initiate chargebacks or disputes through third parties without contacting us first. Submit a priority ticket through the in-app "Contact Support" form or email supportgamersvoice@gmail.com with your Razorpay Payment ID. Our engineering team resolves verified payment discrepancies within 24–48 hours.
+        DO NOT initiate chargebacks or disputes through third parties without contacting us first. Submit a priority ticket through the in-app "Contact Support" form or email supportgamersvoice@gmail.com with your Razorpay Payment ID. Our engineering team resolves verified payment discrepancies and processes corrective reversals within 24–48 hours.
 
         4. CONSUMER REDRESSAL CONTACT
         For all billing inquiries and payment disputes:
+        • Designated Grievance Officer: Aryan Kumar
         • Official Support Email: supportgamersvoice@gmail.com
         • Response Window: Priority VIP resolution within 24 hours.
     """.trimIndent()
@@ -113,11 +114,12 @@ object LegalDocsHelper {
         • Consumer Protection (E-Commerce) Rules, 2020
         • CERT-In Cyber Security Directions (Section 70B IT Act)
 
-        2. DESIGNATED GRIEVANCE OFFICER (RULE 3(2) IT RULES 2021)
+        2. DESIGNATED RESIDENT GRIEVANCE OFFICER (RULE 3(2) IT RULES 2021)
         Users may submit legal complaints, privacy concerns, or intermediary notices to:
-        • Designation: Grievance Redressal Officer
+        • Designated Resident Grievance Officer: Aryan Kumar
         • App: GamerVoice Squad Audio Comms
         • Official Legal Email: supportgamersvoice@gmail.com
+        • Jurisdiction: New Delhi, Republic of India
         • Statutory Timeline:
           - Acknowledgment of complaint: Within 24 hours
           - Redressal / Disposal: Within 15 days of receipt

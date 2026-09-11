@@ -28,7 +28,9 @@ import com.gamervoice.app.auth.UserProfile
 import com.gamervoice.app.databinding.ActivityHomeBinding
 import com.gamervoice.app.databinding.DialogContactUsBinding
 import com.gamervoice.app.databinding.DialogLegalDocBinding
+import com.gamervoice.app.databinding.DialogNoiseFilterBinding
 import com.gamervoice.app.databinding.DialogVipUpgradeBinding
+import com.gamervoice.app.util.AnimationHelper
 import com.gamervoice.app.util.SupportTicketManager
 import com.gamervoice.app.databinding.ItemInstalledGameBinding
 import com.gamervoice.app.databinding.ItemParticipantBinding
@@ -58,6 +60,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private var noiseFilterLevel = 0 // 0: Normal (50%), 1: High (75%), 2: Ultra Silent (VIP)
     private var pendingPurchaseTier: PlanTier? = null
     private var vipUpgradeDialog: Dialog? = null
+    private var currentActiveTab = 0
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
         runOnUiThread {
@@ -221,17 +224,18 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             ImageLoader.loadAvatar(binding.ivUserAvatar, user.avatar)
         }
 
-        binding.llUserProfileHeader.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.llUserProfileHeader) {
             updateActiveNavTab(3) // Jump to Profile Tab
         }
 
-        // Plan Badge Click
-        binding.tvHomePlanBadge.setOnClickListener {
+        // Plan Badge Click & Ambient Glow Pulse
+        AnimationHelper.startAmbientPulse(binding.tvHomePlanBadge)
+        AnimationHelper.attachPressAnimation(binding.tvHomePlanBadge) {
             showVipUpgradeDialog()
         }
 
         // Sponsor Banner Ad - Remove Ads click
-        binding.btnBannerRemoveAds.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnBannerRemoveAds) {
             showVipUpgradeDialog()
         }
 
@@ -256,53 +260,50 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        // Create Room Dual Card & legacy button
-        binding.btnCreateRoomCard.setOnClickListener(createRoomAction)
-        binding.btnCreateRoom.setOnClickListener(createRoomAction)
+        // Create Room Dual Card & legacy button with spring bounce
+        AnimationHelper.attachPressAnimation(binding.btnCreateRoomCard) { createRoomAction.onClick(binding.btnCreateRoomCard) }
+        AnimationHelper.attachPressAnimation(binding.btnCreateRoom) { createRoomAction.onClick(binding.btnCreateRoom) }
 
-        val joinRoomAction = View.OnClickListener {
-            showJoinInputView()
-        }
-
-        // Join Room Dual Card & legacy button
-        binding.btnJoinRoomCard.setOnClickListener(joinRoomAction)
-        binding.btnJoinRoom.setOnClickListener(joinRoomAction)
+        // Join Room Dual Card & legacy button with spring bounce
+        AnimationHelper.attachPressAnimation(binding.btnJoinRoomCard) { showJoinInputView() }
+        AnimationHelper.attachPressAnimation(binding.btnJoinRoom) { showJoinInputView() }
 
         // Submit Room code
-        binding.btnSubmitJoin.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnSubmitJoin) {
             joinRoomWithCode(binding.etJoinRoomCode.text.toString().trim().uppercase())
         }
 
-        binding.btnBackToHome.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnBackToHome) {
             showHomeView()
         }
 
-        binding.btnCopyCode.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnCopyCode) {
             val code = binding.tvDisplayRoomCode.text.toString()
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("GamerVoice Room Code", code)
             clipboard.setPrimaryClip(clip)
+            AnimationHelper.popView(binding.btnCopyCode, 1.12f)
             Toast.makeText(this, getString(R.string.code_copied), Toast.LENGTH_SHORT).show()
         }
 
         // Save Current Room to Firestore
-        binding.btnSaveCurrentRoom.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnSaveCurrentRoom) {
             val code = binding.tvDisplayRoomCode.text.toString().trim()
             if (code.isNotEmpty()) {
                 saveRoomToSquad(code)
             }
         }
 
-        binding.btnToggleMicMode.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnToggleMicMode) {
             voiceService?.toggleMicMode()
         }
 
-        binding.btnToggleFloatingHud.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnToggleFloatingHud) {
             toggleFloatingHud()
         }
 
-        // --- App & Audio Settings (4 Cards Grid) ---
-        binding.cardSettingHud.setOnClickListener {
+        // --- App & Audio Settings (4 Cards Grid with Tactile Springs) ---
+        AnimationHelper.attachPressAnimation(binding.cardSettingHud) {
             binding.switchSettingHud.isChecked = !binding.switchSettingHud.isChecked
         }
         binding.switchSettingHud.setOnCheckedChangeListener { _, isChecked ->
@@ -323,11 +324,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        binding.cardSettingNoiseFilter.setOnClickListener {
-            cycleNoiseFilter()
+        AnimationHelper.attachPressAnimation(binding.cardSettingNoiseFilter) {
+            showNoiseFilterDialog()
         }
 
-        binding.cardSettingAudioRoute.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardSettingAudioRoute) {
             toggleAudioRoute()
         }
 
@@ -343,7 +344,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val isLowDataSaved = audioPrefs.getBoolean("low_data_3g", false)
         binding.switchSettingLowData.isChecked = isLowDataSaved
 
-        binding.cardSettingLowData.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardSettingLowData) {
             binding.switchSettingLowData.isChecked = !binding.switchSettingLowData.isChecked
         }
         binding.switchSettingLowData.setOnCheckedChangeListener { _, isChecked ->
@@ -360,56 +361,58 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         // --- Legal & Policies (4 Cards Grid) ---
-        binding.cardLegalPrivacy.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalPrivacy) {
             showLegalDialog("Privacy Policy", LegalDocsHelper.PRIVACY_POLICY, R.drawable.ic_shield_privacy)
         }
-        binding.cardLegalTerms.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalTerms) {
             showLegalDialog("Terms of Service & EULA", LegalDocsHelper.TERMS_OF_SERVICE, R.drawable.ic_document_terms)
         }
-        binding.cardLegalGuidelines.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalGuidelines) {
             showLegalDialog("Community & Fair Play", LegalDocsHelper.COMMUNITY_GUIDELINES, R.drawable.ic_gamers_squad)
         }
-        binding.cardLegalLicenses.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalLicenses) {
             showLegalDialog("Open Source Licenses", LegalDocsHelper.OPEN_SOURCE_LICENSES, R.drawable.ic_code_brackets)
         }
-        binding.cardLegalRefund.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalRefund) {
             showLegalDialog("Payment & Refund Policy", LegalDocsHelper.REFUND_POLICY, R.drawable.ic_shield_privacy)
         }
-        binding.cardLegalIndianCompliance.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardLegalIndianCompliance) {
             showLegalDialog("India Statutory Compliance", LegalDocsHelper.INDIAN_GOVT_COMPLIANCE, R.drawable.ic_shield_check)
         }
-        binding.cardSupportContact.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardSupportContact) {
             showContactSupportDialog()
         }
 
         // --- Footer & Logout Squad ---
-        binding.btnLogoutSquad.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnLogoutSquad) {
             performLogout()
         }
 
-        // --- Bottom Navigation Bar Tabs (True Dedicated Multi-Tab Switching) ---
-        binding.navTabHome.setOnClickListener {
+        // --- Bottom Navigation Bar Tabs (Smooth Scale Pops & Transitions) ---
+        AnimationHelper.attachPressAnimation(binding.navTabHome) {
             updateActiveNavTab(0)
         }
-        binding.navTabRooms.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.navTabRooms) {
             updateActiveNavTab(1)
         }
-        binding.navTabSettings.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.navTabSettings) {
             updateActiveNavTab(2)
         }
-        binding.navTabProfile.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.navTabProfile) {
             updateActiveNavTab(3)
         }
 
         // --- Rooms Tab Controls ---
-        binding.btnRoomsTabJoin.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnRoomsTabJoin) {
             val code = binding.etRoomsTabCode.text.toString().trim().uppercase()
             joinRoomWithCode(code)
         }
-        binding.btnRoomsTabCreate.setOnClickListener(createRoomAction)
+        AnimationHelper.attachPressAnimation(binding.btnRoomsTabCreate) {
+            createRoomAction.onClick(binding.btnRoomsTabCreate)
+        }
 
         // --- Settings Tab Controls ---
-        binding.cardSettingRamPurge.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.cardSettingRamPurge) {
             if (!PlanManager.isVip()) {
                 showVipUpgradeDialog("👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.")
             } else {
@@ -417,11 +420,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        binding.btnClearMemoryCache.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnClearMemoryCache) {
             ImageLoader.clearMemoryCache()
             System.gc()
             val runtime = Runtime.getRuntime()
             val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+            AnimationHelper.popView(binding.btnClearMemoryCache, 1.08f)
             Toast.makeText(this, "🧹 Memory cleared! Active heap: ~${usedMemMb}MB (< 10MB safe)", Toast.LENGTH_SHORT).show()
         }
 
@@ -432,28 +436,39 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.llProfilePlanMonthly.setBackgroundResource(if (profileSelectedTier == PlanTier.MONTHLY) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
             binding.llProfilePlanLifetime.setBackgroundResource(if (profileSelectedTier == PlanTier.LIFETIME) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
 
-            when (profileSelectedTier) {
-                PlanTier.WEEKLY -> binding.btnProfileActivateVip.text = "⚡ UNLOCK 7 DAYS VIP — ₹29"
-                PlanTier.MONTHLY -> binding.btnProfileActivateVip.text = "⚡ UNLOCK 30 DAYS VIP — ₹89"
-                PlanTier.LIFETIME -> binding.btnProfileActivateVip.text = "⚡ UNLOCK LIFETIME VIP — ₹249"
-                else -> binding.btnProfileActivateVip.text = "⚡ UNLOCK VIP PASS"
+            val selectedCard = when (profileSelectedTier) {
+                PlanTier.WEEKLY -> binding.llProfilePlanWeekly
+                PlanTier.MONTHLY -> binding.llProfilePlanMonthly
+                PlanTier.LIFETIME -> binding.llProfilePlanLifetime
+                else -> null
             }
+            if (selectedCard != null) {
+                AnimationHelper.popView(selectedCard, 1.04f)
+            }
+
+            val text = when (profileSelectedTier) {
+                PlanTier.WEEKLY -> "⚡ UNLOCK 7 DAYS VIP — ₹29"
+                PlanTier.MONTHLY -> "⚡ UNLOCK 30 DAYS VIP — ₹89"
+                PlanTier.LIFETIME -> "⚡ UNLOCK LIFETIME VIP — ₹249"
+                else -> "⚡ UNLOCK VIP PASS"
+            }
+            AnimationHelper.animateTextChange(binding.btnProfileActivateVip, text)
         }
         updateProfileCardSelection()
 
-        binding.llProfilePlanWeekly.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.llProfilePlanWeekly) {
             profileSelectedTier = PlanTier.WEEKLY
             updateProfileCardSelection()
         }
-        binding.llProfilePlanMonthly.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.llProfilePlanMonthly) {
             profileSelectedTier = PlanTier.MONTHLY
             updateProfileCardSelection()
         }
-        binding.llProfilePlanLifetime.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.llProfilePlanLifetime) {
             profileSelectedTier = PlanTier.LIFETIME
             updateProfileCardSelection()
         }
-        binding.btnProfileActivateVip.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnProfileActivateVip) {
             val u = AuthManager.getCurrentUser()
             if (u != null) {
                 startRazorpayCheckout(profileSelectedTier, u)
@@ -461,7 +476,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show()
             }
         }
-        binding.btnProfileResetToFree.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnProfileResetToFree) {
             PlanManager.revokeVip {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
@@ -469,13 +484,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        binding.btnContinue.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnContinue) {
             startVoiceServiceForeground()
             Toast.makeText(this, "GamerVoice active in background. Launching game...", Toast.LENGTH_SHORT).show()
             moveTaskToBack(true)
         }
 
-        binding.btnLeaveRoom.setOnClickListener {
+        AnimationHelper.attachPressAnimation(binding.btnLeaveRoom) {
             FloatingHudManager.hideHud()
             voiceService?.leaveRoom()
             showHomeView()
@@ -486,63 +501,149 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val activeColor = ContextCompat.getColor(this, R.color.neon_green)
         val inactiveColor = Color.parseColor("#8E9BAE")
 
-        binding.ivNavHome.setColorFilter(if (activeTab == 0) activeColor else inactiveColor)
-        binding.tvNavHome.setTextColor(if (activeTab == 0) activeColor else inactiveColor)
-        binding.navIndicatorHome.visibility = if (activeTab == 0) View.VISIBLE else View.INVISIBLE
+        val icons = listOf(binding.ivNavHome, binding.ivNavRooms, binding.ivNavSettings, binding.ivNavProfile)
+        val texts = listOf(binding.tvNavHome, binding.tvNavRooms, binding.tvNavSettings, binding.tvNavProfile)
+        val indicators = listOf(binding.navIndicatorHome, binding.navIndicatorRooms, binding.navIndicatorSettings, binding.navIndicatorProfile)
+        val containers = listOf(binding.tabContainerHome, binding.tabContainerRooms, binding.tabContainerSettings, binding.tabContainerProfile)
 
-        binding.ivNavRooms.setColorFilter(if (activeTab == 1) activeColor else inactiveColor)
-        binding.tvNavRooms.setTextColor(if (activeTab == 1) activeColor else inactiveColor)
-        binding.navIndicatorRooms.visibility = if (activeTab == 1) View.VISIBLE else View.INVISIBLE
+        for (i in icons.indices) {
+            val isSelected = (i == activeTab)
+            icons[i].setColorFilter(if (isSelected) activeColor else inactiveColor)
+            texts[i].setTextColor(if (isSelected) activeColor else inactiveColor)
+            indicators[i].visibility = if (isSelected) View.VISIBLE else View.INVISIBLE
 
-        binding.ivNavSettings.setColorFilter(if (activeTab == 2) activeColor else inactiveColor)
-        binding.tvNavSettings.setTextColor(if (activeTab == 2) activeColor else inactiveColor)
-        binding.navIndicatorSettings.visibility = if (activeTab == 2) View.VISIBLE else View.INVISIBLE
+            if (isSelected) {
+                AnimationHelper.popView(icons[i], 1.22f)
+            } else {
+                icons[i].animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start()
+            }
+        }
 
-        binding.ivNavProfile.setColorFilter(if (activeTab == 3) activeColor else inactiveColor)
-        binding.tvNavProfile.setTextColor(if (activeTab == 3) activeColor else inactiveColor)
-        binding.navIndicatorProfile.visibility = if (activeTab == 3) View.VISIBLE else View.INVISIBLE
-
-        // Show ONLY the dedicated view container for the selected tab
-        binding.tabContainerHome.visibility = if (activeTab == 0) View.VISIBLE else View.GONE
-        binding.tabContainerRooms.visibility = if (activeTab == 1) View.VISIBLE else View.GONE
-        binding.tabContainerSettings.visibility = if (activeTab == 2) View.VISIBLE else View.GONE
-        binding.tabContainerProfile.visibility = if (activeTab == 3) View.VISIBLE else View.GONE
+        // Smooth sliding crossfade container transition
+        if (currentActiveTab != activeTab && currentActiveTab in containers.indices && activeTab in containers.indices) {
+            AnimationHelper.transitionContainers(containers[currentActiveTab], containers[activeTab])
+        } else {
+            for (i in containers.indices) {
+                containers[i].visibility = if (i == activeTab) View.VISIBLE else View.GONE
+            }
+        }
+        currentActiveTab = activeTab
 
         binding.nsvContent.smoothScrollTo(0, 0)
     }
 
-    private fun cycleNoiseFilter() {
+    private fun showNoiseFilterDialog() {
+        val dialog = Dialog(this)
+        val nb = DialogNoiseFilterBinding.inflate(layoutInflater)
+        dialog.setContentView(nb.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val width = (resources.displayMetrics.widthPixels * 0.94).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+
         val isVip = PlanManager.isVip()
         val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
-        if (noiseFilterLevel == 0) {
-            if (isVip) {
-                noiseFilterLevel = 1
-                audioPrefs.edit().putInt("noise_filter_level", 1).apply()
-                updateNoiseFilterUI()
-                voiceService?.setNoiseFilterLevel(1)
-                Toast.makeText(this, "Mic Filter: 100% Ultra Silent AI Active 👑", Toast.LENGTH_SHORT).show()
-            } else {
-                showVipUpgradeDialog("👑 100% Ultra-Silent AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100% of background noise, fan hum, keyboard clicks, and breathing.")
+        val savedPercent = audioPrefs.getInt("noise_filter_percent", if (noiseFilterLevel == 1) 100 else 50)
+
+        nb.sliderNoiseLevel.value = savedPercent.toFloat().coerceIn(0f, 100f)
+
+        fun updateHeroUI(percent: Int) {
+            AnimationHelper.animateTextChange(nb.tvNoisePercentHero, "$percent%")
+            when {
+                percent == 0 -> {
+                    nb.tvNoiseTierLabel.text = "Raw Audio (0% Filter)"
+                    nb.tvNoiseDescription.text = "Pure unfiltered microphone stream with zero processing overhead."
+                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+                    nb.llVipLockWarning.visibility = View.GONE
+                }
+                percent <= 25 -> {
+                    nb.tvNoiseTierLabel.text = "Light Acoustic Clean (25%)"
+                    nb.tvNoiseDescription.text = "Gentle room resonance cancellation for quiet gaming spaces."
+                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_cyan))
+                    nb.llVipLockWarning.visibility = View.GONE
+                }
+                percent <= 50 -> {
+                    nb.tvNoiseTierLabel.text = "Standard Squad Shield (50%)"
+                    nb.tvNoiseDescription.text = "Balanced noise reduction. Dampens fan hum and loud keyboard taps."
+                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+                    nb.llVipLockWarning.visibility = View.GONE
+                }
+                percent <= 75 -> {
+                    nb.tvNoiseTierLabel.text = "Squad Focus Pro (75%) 👑"
+                    nb.tvNoiseDescription.text = "Aggressive noise gate eliminates ceiling fans and breathing."
+                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
+                    if (!isVip) {
+                        nb.llVipLockWarning.visibility = View.VISIBLE
+                        AnimationHelper.shakeView(nb.llVipLockWarning)
+                    } else {
+                        nb.llVipLockWarning.visibility = View.GONE
+                    }
+                }
+                else -> {
+                    nb.tvNoiseTierLabel.text = "100% Ultra Silent AI Shield 👑"
+                    nb.tvNoiseDescription.text = "Total studio silence. AI isolates squad voice only. 0% fan or room noise."
+                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
+                    if (!isVip) {
+                        nb.llVipLockWarning.visibility = View.VISIBLE
+                        AnimationHelper.shakeView(nb.llVipLockWarning)
+                    } else {
+                        nb.llVipLockWarning.visibility = View.GONE
+                    }
+                }
             }
-        } else {
-            noiseFilterLevel = 0
-            audioPrefs.edit().putInt("noise_filter_level", 0).apply()
-            updateNoiseFilterUI()
-            voiceService?.setNoiseFilterLevel(0)
-            Toast.makeText(this, "Mic Filter: 50% Standard (Natural Room Sound)", Toast.LENGTH_SHORT).show()
         }
+
+        updateHeroUI(savedPercent)
+
+        nb.sliderNoiseLevel.addOnChangeListener { _, value, _ ->
+            val p = value.toInt()
+            updateHeroUI(p)
+        }
+
+        AnimationHelper.attachPressAnimation(nb.btnCloseNoiseDialog) {
+            dialog.dismiss()
+        }
+
+        AnimationHelper.attachPressAnimation(nb.btnApplyNoiseSetting) {
+            val selectedPercent = nb.sliderNoiseLevel.value.toInt()
+            if (selectedPercent > 50 && !isVip) {
+                AnimationHelper.shakeView(nb.llNoiseHeroBox)
+                dialog.dismiss()
+                showVipUpgradeDialog("👑 $selectedPercent% AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100% of background noise, fan hum, and breathing.")
+                return@attachPressAnimation
+            }
+
+            audioPrefs.edit().putInt("noise_filter_percent", selectedPercent).apply()
+            val levelIndex = if (selectedPercent >= 75) 1 else 0
+            noiseFilterLevel = levelIndex
+            audioPrefs.edit().putInt("noise_filter_level", levelIndex).apply()
+            updateNoiseFilterUI(selectedPercent)
+            voiceService?.setNoiseFilterLevel(levelIndex)
+            Toast.makeText(this, "Mic Filter updated to $selectedPercent%!", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
-    private fun updateNoiseFilterUI() {
-        if (!PlanManager.isVip() && noiseFilterLevel == 1) {
+    private fun updateNoiseFilterUI(customPercent: Int? = null) {
+        val isVip = PlanManager.isVip()
+        val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+        var p = customPercent ?: audioPrefs.getInt("noise_filter_percent", if (noiseFilterLevel == 1) 100 else 50)
+        if (!isVip && p > 50) {
+            p = 50
             noiseFilterLevel = 0
-            getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
-                .edit()
+            audioPrefs.edit()
+                .putInt("noise_filter_percent", 50)
                 .putInt("noise_filter_level", 0)
                 .apply()
         }
-        val label = if (noiseFilterLevel == 1) "100% Ultra Silent 👑" else "50% Standard"
-        binding.tvSettingNoiseFilterBadge.text = label
+        val label = when {
+            p >= 100 -> "100% AI Shield 👑"
+            p >= 75 -> "75% Squad Pro 👑"
+            p > 0 -> "$p% Standard"
+            else -> "Off (Raw)"
+        }
+        AnimationHelper.animateTextChange(binding.tvSettingNoiseFilterBadge, label)
     }
 
     private fun toggleAudioRoute() {
@@ -573,7 +674,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             audioManager.isSpeakerphoneOn = isSpeakerphone
         }
         val label = if (isSpeakerphone) "Speaker" else "Headset / Earphones"
-        binding.tvSettingAudioRouteBadge.text = label
+        AnimationHelper.animateTextChange(binding.tvSettingAudioRouteBadge, label)
         Toast.makeText(this, "Audio Output: $label", Toast.LENGTH_SHORT).show()
     }
 
@@ -788,7 +889,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             vipBinding.tvVipSubtitle.text = customSubtitle
         }
 
-        vipBinding.ivCloseVipDialog.setOnClickListener { dialog.dismiss() }
+        AnimationHelper.attachPressAnimation(vipBinding.ivCloseVipDialog) { dialog.dismiss() }
 
         var selectedTier = PlanTier.MONTHLY
 
@@ -797,34 +898,45 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             vipBinding.llPlanMonthly.setBackgroundResource(if (selectedTier == PlanTier.MONTHLY) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
             vipBinding.llPlanLifetime.setBackgroundResource(if (selectedTier == PlanTier.LIFETIME) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
 
-            when (selectedTier) {
-                PlanTier.WEEKLY -> vipBinding.btnActivateVip.text = "⚡ UNLOCK 7 DAYS VIP — ₹29"
-                PlanTier.MONTHLY -> vipBinding.btnActivateVip.text = "⚡ UNLOCK 30 DAYS VIP — ₹89"
-                PlanTier.LIFETIME -> vipBinding.btnActivateVip.text = "⚡ UNLOCK LIFETIME VIP — ₹249"
-                else -> vipBinding.btnActivateVip.text = "⚡ UNLOCK VIP PASS"
+            val selectedCard = when (selectedTier) {
+                PlanTier.WEEKLY -> vipBinding.llPlanWeekly
+                PlanTier.MONTHLY -> vipBinding.llPlanMonthly
+                PlanTier.LIFETIME -> vipBinding.llPlanLifetime
+                else -> null
             }
+            if (selectedCard != null) {
+                AnimationHelper.popView(selectedCard, 1.05f)
+            }
+
+            val text = when (selectedTier) {
+                PlanTier.WEEKLY -> "⚡ UNLOCK 7 DAYS VIP — ₹29"
+                PlanTier.MONTHLY -> "⚡ UNLOCK 30 DAYS VIP — ₹89"
+                PlanTier.LIFETIME -> "⚡ UNLOCK LIFETIME VIP — ₹249"
+                else -> "⚡ UNLOCK VIP PASS"
+            }
+            AnimationHelper.animateTextChange(vipBinding.btnActivateVip, text)
         }
         updateCardSelection()
 
-        vipBinding.llPlanWeekly.setOnClickListener {
+        AnimationHelper.attachPressAnimation(vipBinding.llPlanWeekly) {
             selectedTier = PlanTier.WEEKLY
             updateCardSelection()
         }
-        vipBinding.llPlanMonthly.setOnClickListener {
+        AnimationHelper.attachPressAnimation(vipBinding.llPlanMonthly) {
             selectedTier = PlanTier.MONTHLY
             updateCardSelection()
         }
-        vipBinding.llPlanLifetime.setOnClickListener {
+        AnimationHelper.attachPressAnimation(vipBinding.llPlanLifetime) {
             selectedTier = PlanTier.LIFETIME
             updateCardSelection()
         }
 
-        vipBinding.btnActivateVip.setOnClickListener {
+        AnimationHelper.attachPressAnimation(vipBinding.btnActivateVip) {
             startRazorpayCheckout(selectedTier, user)
         }
 
         // Revoke VIP / Reset to Free Plan
-        vipBinding.btnResetToFree.setOnClickListener {
+        AnimationHelper.attachPressAnimation(vipBinding.btnResetToFree) {
             PlanManager.revokeVip {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
@@ -878,15 +990,26 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     override fun onPaymentSuccess(razorpayPaymentID: String?, paymentData: PaymentData?) {
         val tier = pendingPurchaseTier ?: PlanTier.WEEKLY
-        val paymentId = razorpayPaymentID ?: paymentData?.paymentId ?: "pay_${System.currentTimeMillis()}"
+        val paymentId = razorpayPaymentID ?: paymentData?.paymentId ?: ""
         val user = AuthManager.getCurrentUser()
         val email = user?.email ?: "gamer"
 
-        PlanManager.purchasePlan(tier, paymentId) {
-            updatePlanUI()
-            refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-            vipUpgradeDialog?.dismiss()
-            Toast.makeText(this, "👑 Payment Successful ($paymentId)! Activated ${tier.title} for $email.", Toast.LENGTH_LONG).show()
+        if (paymentId.isEmpty()) {
+            Toast.makeText(this, "⚠️ Payment ID missing. Verification cannot proceed.", Toast.LENGTH_LONG).show()
+            pendingPurchaseTier = null
+            return
+        }
+
+        Toast.makeText(this, "Verifying payment with server...", Toast.LENGTH_SHORT).show()
+        PlanManager.purchasePlan(tier, paymentId) { success ->
+            if (success) {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                vipUpgradeDialog?.dismiss()
+                Toast.makeText(this, "👑 Payment Verified ($paymentId)! Activated ${tier.title} for $email.", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "❌ Verification failed or pending server confirmation. If amount was deducted, submit a support ticket.", Toast.LENGTH_LONG).show()
+            }
         }
         pendingPurchaseTier = null
     }
@@ -922,14 +1045,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         dialogBinding.tvDialogContent.text = content
         dialogBinding.ivDialogIcon.setImageResource(iconRes)
 
-        dialogBinding.btnCopyLegalDoc.setOnClickListener {
+        AnimationHelper.attachPressAnimation(dialogBinding.btnCopyLegalDoc) {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("Legal Doc", content))
+            val clip = ClipData.newPlainText("Legal Doc", content)
+            clipboard.setPrimaryClip(clip)
+            AnimationHelper.popView(dialogBinding.btnCopyLegalDoc, 1.1f)
             Toast.makeText(this, "$title copied to clipboard!", Toast.LENGTH_SHORT).show()
         }
 
-        dialogBinding.ivCloseDialog.setOnClickListener { dialog.dismiss() }
-        dialogBinding.btnAcknowledgeDialog.setOnClickListener { dialog.dismiss() }
+        AnimationHelper.attachPressAnimation(dialogBinding.ivCloseDialog) { dialog.dismiss() }
+        AnimationHelper.attachPressAnimation(dialogBinding.btnAcknowledgeDialog) { dialog.dismiss() }
 
         dialog.show()
     }
@@ -965,22 +1090,22 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        dialogBinding.ivCloseContactDialog.setOnClickListener {
+        AnimationHelper.attachPressAnimation(dialogBinding.ivCloseContactDialog) {
             dialog.dismiss()
         }
 
-        dialogBinding.btnSubmitContactTicket.setOnClickListener {
+        AnimationHelper.attachPressAnimation(dialogBinding.btnSubmitContactTicket) {
             val category = dialogBinding.spnContactCategory.selectedItem?.toString() ?: "General"
             val subject = dialogBinding.etContactSubject.text?.toString()?.trim().orEmpty()
             val description = dialogBinding.etContactDescription.text?.toString()?.trim().orEmpty()
 
             if (subject.isEmpty()) {
                 Toast.makeText(this, "Please enter a subject summary", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                return@attachPressAnimation
             }
             if (description.isEmpty()) {
                 Toast.makeText(this, "Please describe the issue in detail", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                return@attachPressAnimation
             }
 
             dialogBinding.btnSubmitContactTicket.isEnabled = false
