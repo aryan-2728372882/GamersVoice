@@ -242,6 +242,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && !req.url.startsWith('/api/')) {
       const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       let pathname = parsedUrl.pathname;
+
+      // Policy & Legal direct route redirects
+      if (pathname === '/privacy' || pathname === '/terms' || pathname === '/refund') {
+        res.writeHead(302, { 'Location': '/#' + pathname.slice(1) });
+        res.end();
+        return;
+      }
+
       if (pathname === '/') pathname = '/index.html';
 
       const targetStaticPath = path.join(PUBLIC_DIR, pathname);

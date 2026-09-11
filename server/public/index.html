@@ -53,7 +53,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=2.5">
+  <link rel="stylesheet" href="/style.css?v=2.6">
 </head>
 <body>
 
@@ -910,6 +910,29 @@
     </div>
   </div>
 
+  <!-- Legal & Policies Modal -->
+  <div class="modal-backdrop" id="policyModal">
+    <div class="modal-box glass-box policy-modal-box">
+      <button class="modal-close" id="closePolicyModalBtn" onclick="closePolicyModal()" aria-label="Close Policy Modal">&times;</button>
+      
+      <div class="modal-header">
+        <span class="modal-emoji">📜</span>
+        <h3 class="modal-title" id="policyModalTitle">Legal &amp; Privacy Policies</h3>
+        <p class="modal-subtitle">Transparent terms, military-grade encryption, and consumer-first protections.</p>
+      </div>
+
+      <div class="policy-tabs" role="tablist">
+        <button class="policy-tab active" id="tabTerms" onclick="switchPolicyTab('terms')">Terms of Service</button>
+        <button class="policy-tab" id="tabPrivacy" onclick="switchPolicyTab('privacy')">Privacy Policy</button>
+        <button class="policy-tab" id="tabRefund" onclick="switchPolicyTab('refund')">Refund &amp; Cancellation</button>
+      </div>
+
+      <div class="policy-body" id="policyContent">
+        <!-- Content dynamically injected by switchPolicyTab() -->
+      </div>
+    </div>
+  </div>
+
   <!-- Luxury Footer -->
   <footer class="footer" id="support">
     <div class="footer-container">
@@ -948,11 +971,11 @@
         <div class="footer-col">
           <h4 class="footer-col-title">SECURITY &amp; PRIVACY</h4>
           <ul class="footer-links">
-            <li><a href="#">End-to-End P2P Encryption</a></li>
-            <li><a href="#">Zero Audio Logging Guarantee</a></li>
-            <li><a href="#">Razorpay 256-Bit Verification</a></li>
-            <li><a href="#">Dual STUN + Metered TURN</a></li>
-            <li><a href="#">Anti-Cheat TOS Compliant</a></li>
+            <li><a href="#features" onclick="openPolicyModal('privacy'); return false;">End-to-End P2P Encryption</a></li>
+            <li><a href="#features" onclick="openPolicyModal('privacy'); return false;">Zero Audio Logging Guarantee</a></li>
+            <li><a href="#vip" onclick="openPolicyModal('refund'); return false;">Razorpay 256-Bit Verification</a></li>
+            <li><a href="#features">Dual STUN + Metered TURN</a></li>
+            <li><a href="/terms" onclick="openPolicyModal('terms'); return false;">Anti-Cheat TOS Compliant</a></li>
           </ul>
         </div>
 
@@ -971,7 +994,9 @@
           &copy; 2026 GamerVoice. All rights reserved. Crafted with ❤️ for gaming squads.
         </div>
         <div class="footer-legal">
-          <span>Terms of Service</span> &bull; <span>Privacy Policy</span> &bull; <span>Refund Policy</span>
+          <a href="/terms" onclick="openPolicyModal('terms'); return false;">Terms of Service</a> &bull; 
+          <a href="/privacy" onclick="openPolicyModal('privacy'); return false;">Privacy Policy</a> &bull; 
+          <a href="/refund" onclick="openPolicyModal('refund'); return false;">Refund Policy</a>
         </div>
       </div>
     </div>
@@ -981,6 +1006,6 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script defer src="/app.js?v=2.4"></script>
+  <script defer src="/app.js?v=2.6"></script>
 </body>
 </html>

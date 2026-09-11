@@ -612,6 +612,105 @@ document.getElementById("supportForm")?.addEventListener("submit", async (e) => 
   }
 });
 
+// 9. Legal & Policy Modals
+const policyData = {
+  terms: {
+    title: "Terms of Service",
+    content: `
+      <h4>1. Acceptance of Terms</h4>
+      <p>By accessing or utilizing GamerVoice (the application, website, and signaling relay infrastructure), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the service.</p>
+      
+      <h4>2. Nature of Service &amp; Fair Play</h4>
+      <p>GamerVoice provides an ultra-low latency, decentralized WebRTC voice communication utility for mobile squad gamers. GamerVoice is completely external to any third-party games (such as Battlegrounds Mobile India, Free Fire, PUBG Mobile, or Call of Duty Mobile).</p>
+      <p>GamerVoice strictly operates in compliance with game anti-cheat systems. It does not inject binaries, hook into protected process memory, alter game code, or provide unfair in-game advantages.</p>
+
+      <h4>3. Permitted Squad Conduct</h4>
+      <p>Users agree to use squad communication channels responsibly. You must not utilize the signaling relays for denial-of-service attempts, unauthorized packet relaying, commercial advertising, or harassment of squad members.</p>
+
+      <h4>4. VIP Subscriptions &amp; Payments</h4>
+      <p>VIP plans unlock dedicated TURN relays, high-fidelity AI noise suppression compute, and custom permanent squad rooms. Subscriptions are billed through certified payment partner Razorpay. Terms governing cancellations are detailed in our Refund Policy.</p>
+
+      <h4>5. Service Reliability &amp; Limitation of Liability</h4>
+      <p>While our redundant server architecture strives for 99.9% network availability, GamerVoice is provided on an "as-is" and "as-available" basis without warranties of uninterrupted uptime during unexpected carrier network disruptions.</p>
+    `
+  },
+  privacy: {
+    title: "Privacy Policy",
+    content: `
+      <h4>1. Zero Audio Logging Guarantee</h4>
+      <p><strong>We never record, intercept, store, or eavesdrop on your voice conversations.</strong> GamerVoice uses direct Peer-to-Peer WebRTC audio streams secured via industry-standard DTLS-SRTP encryption. Voice packets flow directly between squad teammates without passing through recording buffers.</p>
+
+      <h4>2. Information We Collect</h4>
+      <p>To enable account identity and VIP plan status synchronization across devices, we collect minimal necessary data:</p>
+      <ul>
+        <li>Account email address and optional display name / squad callsign.</li>
+        <li>Authentication tokens managed securely through Google Firebase Auth.</li>
+        <li>Anonymous operational telemetry (such as packet round-trip time and packet loss percentage) solely for real-time network optimization.</li>
+      </ul>
+
+      <h4>3. Third-Party Processors &amp; Security</h4>
+      <p>Payments are handled securely via <strong>Razorpay</strong> over 256-bit TLS encryption with full PCI-DSS Level 1 compliance. GamerVoice servers never view, receive, or store your credit card numbers, CVVs, or banking credentials.</p>
+
+      <h4>4. Data Retention &amp; User Control</h4>
+      <p>You have full ownership of your data. You may request account closure and permanent deletion of your profile by reaching out to our developer support team at <code>supportgamersvoice@gmail.com</code>.</p>
+    `
+  },
+  refund: {
+    title: "Refund & Cancellation Policy",
+    content: `
+      <h4>1. VIP Pass Activation</h4>
+      <p>GamerVoice VIP tier subscriptions (Weekly, Monthly, and Seasonal Squad Passes) deliver immediate digital benefits upon payment confirmation, including dedicated TURN relays and hardware-accelerated noise suppression.</p>
+
+      <h4>2. 48-Hour Refund Eligibility</h4>
+      <p>We want you to have an exceptional squad experience. You are entitled to a full refund under the following conditions:</p>
+      <ul>
+        <li>You encountered persistent technical inability or server disruption preventing use of VIP relays, and reported it within 48 hours of purchase.</li>
+        <li>You were charged twice due to a payment gateway timeout or duplicate transaction error.</li>
+      </ul>
+
+      <h4>3. How to Request a Refund</h4>
+      <p>To initiate a refund, simply open the in-app support modal or email <code>supportgamersvoice@gmail.com</code> with your Razorpay Payment ID (e.g., <code>pay_...</code>) and account email. Our support team responds within 24 hours.</p>
+
+      <h4>4. Processing Time</h4>
+      <p>Once approved, refunds are credited back to the original payment source (UPI, Card, or Netbanking) within 5 to 7 business days as per banking standards.</p>
+    `
+  }
+};
+
+window.openPolicyModal = function(type) {
+  const modal = document.getElementById("policyModal");
+  if (!modal) return;
+  modal.classList.add("active");
+  switchPolicyTab(type || 'terms');
+};
+
+window.closePolicyModal = function() {
+  const modal = document.getElementById("policyModal");
+  if (modal) modal.classList.remove("active");
+  if (window.location.hash === '#terms' || window.location.hash === '#privacy' || window.location.hash === '#refund') {
+    history.replaceState(null, null, ' ');
+  }
+};
+
+window.switchPolicyTab = function(type) {
+  const t = policyData[type] ? type : 'terms';
+  ['terms', 'privacy', 'refund'].forEach((key) => {
+    const tab = document.getElementById("tab" + key.charAt(0).toUpperCase() + key.slice(1));
+    if (tab) {
+      if (key === t) tab.classList.add("active");
+      else tab.classList.remove("active");
+    }
+  });
+
+  const titleEl = document.getElementById("policyModalTitle");
+  const contentEl = document.getElementById("policyContent");
+  if (titleEl) titleEl.innerText = policyData[t].title;
+  if (contentEl) {
+    contentEl.innerHTML = policyData[t].content;
+    contentEl.scrollTop = 0;
+  }
+};
+
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -620,4 +719,17 @@ function escapeHtml(str) {
 document.addEventListener("DOMContentLoaded", () => {
   initTelemetry();
   initNoiseLab();
+
+  // Hash routing for policy modal
+  const hash = window.location.hash.toLowerCase().replace('#', '');
+  if (hash === 'terms' || hash === 'privacy' || hash === 'refund') {
+    openPolicyModal(hash);
+  }
+
+  window.addEventListener('hashchange', () => {
+    const h = window.location.hash.toLowerCase().replace('#', '');
+    if (h === 'terms' || h === 'privacy' || h === 'refund') {
+      openPolicyModal(h);
+    }
+  });
 });
