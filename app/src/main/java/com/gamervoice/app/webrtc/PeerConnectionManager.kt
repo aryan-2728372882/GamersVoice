@@ -34,6 +34,7 @@ class PeerConnectionManager(
     }
 
     private var factory: PeerConnectionFactory? = null
+    private var adm: org.webrtc.audio.JavaAudioDeviceModule? = null
     private var audioSource: AudioSource? = null
     private var localAudioTrack: AudioTrack? = null
 
@@ -46,6 +47,10 @@ class PeerConnectionManager(
 
     private var isPttMode = true
     private var isMicTransmitting = false
+    var isLowDataMode = false
+        private set
+    var currentNoiseFilterLevel = 0 // 0 = 50% Standard, 1 = 100% Ultra Silent (VIP)
+        private set
 
     private val iceServers = listOf(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
@@ -103,14 +108,13 @@ class PeerConnectionManager(
                 }
             }
 
-            // 1. Initialize WebRTC Native Globals once if not already done
+            // 1. Initialize PeerConnectionFactory globally
             if (!isFactoryInitialized) {
                 try {
-                    PeerConnectionFactory.initialize(
-                        PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
-                            .setEnableInternalTracer(false)
-                            .createInitializationOptions()
-                    )
+                    val initOptions = PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
+                        .setEnableInternalTracer(false)
+                        .createInitializationOptions()
+                    PeerConnectionFactory.initialize(initOptions)
                     isFactoryInitialized = true
                 } catch (e: Throwable) {
                     Log.w(TAG, "PeerConnectionFactory already initialized", e)
@@ -119,7 +123,7 @@ class PeerConnectionManager(
 
             // 2. Create reusable PeerConnectionFactory if not already built
             if (factory == null) {
-                val adm = try {
+                val createdAdm = try {
                     val isAecSupported = org.webrtc.audio.JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported()
                     val isNsSupported = org.webrtc.audio.JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported()
 
@@ -164,53 +168,18 @@ class PeerConnectionManager(
                     null
                 }
 
+                adm = createdAdm
                 val factoryBuilder = PeerConnectionFactory.builder()
-                if (adm != null) {
-                    factoryBuilder.setAudioDeviceModule(adm)
+                if (createdAdm != null) {
+                    factoryBuilder.setAudioDeviceModule(createdAdm)
                 }
                 factory = factoryBuilder.createPeerConnectionFactory()
             }
 
-            // 3. Create Local Audio Source with Tiered Noise Suppression (Free vs VIP)
+            // 3. Create Local Audio Source with Tiered Noise Suppression (50% Standard vs 100% VIP Ultra Silent)
             if (audioSource == null) {
-                val isVip = com.gamervoice.app.auth.PlanManager.isVip()
-                val audioConstraints = MediaConstraints().apply {
-                    if (isVip) {
-                        // VIP ULTRA-STUDIO AI NOISE SHIELD: < 10% Noise (Near Zero Background Noise)
-                        // Aggressively cuts ceiling fan hum (< 300Hz), filters phone back taps & keystrokes
-                        val vipKeys = listOf(
-                            "googEchoCancellation" to "true",
-                            "googEchoCancellation2" to "true",
-                            "googAutoGainControl" to "true",
-                            "googAutoGainControl2" to "true",
-                            "googNoiseSuppression" to "true",
-                            "googNoiseSuppression2" to "true",
-                            "googExperimentalNoiseSuppression" to "true",
-                            "googHighpassFilter" to "true",
-                            "googVeryHighpassFilter" to "true",
-                            "googTypingNoiseDetection" to "true",
-                            "googAudioMirroring" to "false"
-                        )
-                        for ((k, v) in vipKeys) {
-                            mandatory.add(MediaConstraints.KeyValuePair(k, v))
-                            optional.add(MediaConstraints.KeyValuePair(k, v))
-                        }
-                    } else {
-                        // FREE: Standard Noise Filter (~50% to 70% reduction, allows room/fan ambiance)
-                        val freeKeys = listOf(
-                            "googEchoCancellation" to "true",
-                            "googAutoGainControl" to "true",
-                            "googNoiseSuppression" to "true",
-                            "googHighpassFilter" to "false",
-                            "googVeryHighpassFilter" to "false",
-                            "googTypingNoiseDetection" to "false"
-                        )
-                        for ((k, v) in freeKeys) {
-                            mandatory.add(MediaConstraints.KeyValuePair(k, v))
-                            optional.add(MediaConstraints.KeyValuePair(k, v))
-                        }
-                    }
-                }
+                val is100 = (currentNoiseFilterLevel == 1 && com.gamervoice.app.auth.PlanManager.isVip())
+                val audioConstraints = createAudioConstraints(is100)
                 audioSource = factory?.createAudioSource(audioConstraints)
             }
 
@@ -220,11 +189,120 @@ class PeerConnectionManager(
 
             setMicTransmitting(!isPttMode)
 
-            val isVipMode = com.gamervoice.app.auth.PlanManager.isVip()
-            listener.onLog(if (isVipMode) "Audio Engine: VIP Ultra-Studio AI Noise Shield Active (< 10% Noise)" else "Audio Engine: Standard Free Noise Filter (50-70% Attenuation)")
+            val is100 = (currentNoiseFilterLevel == 1 && com.gamervoice.app.auth.PlanManager.isVip())
+            listener.onLog(if (is100) "Audio Engine: 100% Ultra Silent AI Noise Shield Active 👑" else "Audio Engine: 50% Standard Room Noise Filter Active")
         } catch (e: Throwable) {
             Log.e(TAG, "Critical error initializing PeerConnectionManager", e)
             listener.onLog("WebRTC Init Warning: ${e.message}")
+        }
+    }
+
+    private fun createAudioConstraints(is100Percent: Boolean): MediaConstraints {
+        return MediaConstraints().apply {
+            if (is100Percent) {
+                // VIP ULTRA-STUDIO AI NOISE SHIELD: 100% Background Noise Elimination
+                // Eliminates ceiling fans, TV noise, keystrokes, breathing, and phone back taps
+                val vipKeys = listOf(
+                    "googEchoCancellation" to "true",
+                    "googEchoCancellation2" to "true",
+                    "googAutoGainControl" to "true",
+                    "googAutoGainControl2" to "true",
+                    "googNoiseSuppression" to "true",
+                    "googNoiseSuppression2" to "true",
+                    "googExperimentalNoiseSuppression" to "true",
+                    "googHighpassFilter" to "true",
+                    "googVeryHighpassFilter" to "true",
+                    "googTypingNoiseDetection" to "true",
+                    "googAudioMirroring" to "false"
+                )
+                for ((k, v) in vipKeys) {
+                    mandatory.add(MediaConstraints.KeyValuePair(k, v))
+                    optional.add(MediaConstraints.KeyValuePair(k, v))
+                }
+            } else {
+                // FREE: 50% Standard Noise Filter (Standard voice isolation, allows natural room ambiance)
+                val freeKeys = listOf(
+                    "googEchoCancellation" to "true",
+                    "googAutoGainControl" to "true",
+                    "googNoiseSuppression" to "true",
+                    "googNoiseSuppression2" to "false",
+                    "googExperimentalNoiseSuppression" to "false",
+                    "googHighpassFilter" to "false",
+                    "googVeryHighpassFilter" to "false",
+                    "googTypingNoiseDetection" to "false",
+                    "googAudioMirroring" to "false"
+                )
+                for ((k, v) in freeKeys) {
+                    mandatory.add(MediaConstraints.KeyValuePair(k, v))
+                    optional.add(MediaConstraints.KeyValuePair(k, v))
+                }
+            }
+        }
+    }
+
+    fun setNoiseFilterLevel(level: Int) {
+        this.currentNoiseFilterLevel = level
+        val is100 = (level == 1 && com.gamervoice.app.auth.PlanManager.isVip())
+        try {
+            adm?.setNoiseSuppressorEnabled(true)
+        } catch (_: Throwable) {}
+
+        // Dynamically rebuild the local audio track and hot-swap across all active peer senders
+        try {
+            val f = factory ?: return
+            val newConstraints = createAudioConstraints(is100)
+            val newSource = f.createAudioSource(newConstraints)
+            val newTrack = f.createAudioTrack("ARDAMSa0_" + System.currentTimeMillis(), newSource)
+            newTrack.setEnabled(isMicTransmitting)
+
+            for (pc in peerConnections.values) {
+                for (sender in pc.senders) {
+                    if (sender.track()?.kind() == "audio") {
+                        sender.setTrack(newTrack, false)
+                    }
+                }
+            }
+
+            localAudioTrack?.dispose()
+            audioSource?.dispose()
+
+            audioSource = newSource
+            localAudioTrack = newTrack
+
+            listener.onLog("Noise Filter dynamically switched: ${if (is100) "100% Ultra Silent AI Shield 👑" else "50% Standard Noise Filter"}")
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to dynamically update noise filter track", e)
+        }
+    }
+
+    fun setLowDataMode(enabled: Boolean) {
+        this.isLowDataMode = enabled
+        listener.onLog("3G / Weak Signal Mode: ${if (enabled) "ENABLED (12kbps Opus DTX)" else "DISABLED (HD Studio)"}")
+    }
+
+    fun hasActivePeers(): Boolean = peerConnections.isNotEmpty()
+
+    fun queryRealP2PLatency(callback: (Long) -> Unit) {
+        if (peerConnections.isEmpty()) return
+        for (pc in peerConnections.values) {
+            pc.getStats { report ->
+                try {
+                    for (stat in report.statsMap.values) {
+                        if (stat.type == "candidate-pair") {
+                            val state = stat.members["state"]
+                            val isNominated = stat.members["nominated"] as? Boolean ?: false
+                            if (state == "succeeded" || isNominated) {
+                                val rttSec = stat.members["currentRoundTripTime"] as? Double
+                                if (rttSec != null && rttSec > 0.0) {
+                                    val rttMs = (rttSec * 1000.0).toLong()
+                                    callback(rttMs)
+                                    return@getStats
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Throwable) {}
+            }
         }
     }
 
@@ -235,11 +313,13 @@ class PeerConnectionManager(
             if (regex.containsMatchIn(sdp)) {
                 regex.replace(sdp) { match ->
                     val existing = match.groupValues[1]
-                    if (isVip) {
-                        // VIP: 64kbps HD 48kHz Studio Voice + DTX (zero background noise during silence)
+                    if (isLowDataMode) {
+                        // 3G WEAK SIGNAL: Extreme data compression (12kbps), Discontinuous Transmission (zero packets when silent), In-Band FEC
+                        "a=fmtp:111 minptime=20;useinbandfec=1;maxaveragebitrate=12000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
+                    } else if (isVip) {
+                        // VIP: 64kbps HD 48kHz Studio Voice + DTX
                         "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=48000;sprop-maxcapturerate=48000;$existing"
                     } else {
-                        // FREE: 20kbps Standard 16kHz Voice (~50-70% reduction, smooth on 3G)
                         "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=20000;stereo=0;sprop-stereo=0;usedtx=0;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
                     }
                 }

@@ -84,11 +84,31 @@ class VoiceService : Service(),
 
     private val pingRunnable = object : Runnable {
         override fun run() {
-            if (signalingClient.isConnected) {
+            if (peerConnectionManager.hasActivePeers()) {
+                // Measure real WebRTC peer-to-peer latency between players
+                peerConnectionManager.queryRealP2PLatency { rttMs ->
+                    currentLatencyMs = rttMs
+                    mainHandler.post {
+                        listener?.onLatencyUpdated(rttMs)
+                    }
+                }
+            } else if (signalingClient.isConnected) {
+                // If waiting alone in room, indicate ready status
+                mainHandler.post {
+                    listener?.onLatencyUpdated(-1L)
+                }
                 signalingClient.sendPing()
             }
-            mainHandler.postDelayed(this, 3000)
+            mainHandler.postDelayed(this, 2500)
         }
+    }
+
+    fun setNoiseFilterLevel(level: Int) {
+        peerConnectionManager.setNoiseFilterLevel(level)
+    }
+
+    fun setLowDataMode(enabled: Boolean) {
+        peerConnectionManager.setLowDataMode(enabled)
     }
 
     // Safe periodic RAM cache cleaner to guarantee < 10MB memory usage without interruptions

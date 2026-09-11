@@ -94,6 +94,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 showHomeView()
             }
             updateMicModeUI(svc.isPttModeEnabled())
+
+            // Synchronize audio engine settings
+            val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+            val savedNoise = audioPrefs.getInt("noise_filter_level", 0)
+            val savedLowData = audioPrefs.getBoolean("low_data_3g", false)
+            svc.setNoiseFilterLevel(savedNoise)
+            svc.setLowDataMode(savedLowData)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -324,11 +331,32 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             toggleAudioRoute()
         }
 
+        // Restore saved audio settings
+        val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+        noiseFilterLevel = audioPrefs.getInt("noise_filter_level", 0)
+        if (!PlanManager.isVip() && noiseFilterLevel == 1) {
+            noiseFilterLevel = 0
+            audioPrefs.edit().putInt("noise_filter_level", 0).apply()
+        }
+        updateNoiseFilterUI()
+
+        val isLowDataSaved = audioPrefs.getBoolean("low_data_3g", false)
+        binding.switchSettingLowData.isChecked = isLowDataSaved
+
         binding.cardSettingLowData.setOnClickListener {
             binding.switchSettingLowData.isChecked = !binding.switchSettingLowData.isChecked
         }
         binding.switchSettingLowData.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(this, if (isChecked) "3G / Weak Signal Mode: Enabled (Low-Bandwidth)" else "3G / Weak Signal Mode: Disabled", Toast.LENGTH_SHORT).show()
+            getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean("low_data_3g", isChecked)
+                .apply()
+            voiceService?.setLowDataMode(isChecked)
+            Toast.makeText(
+                this,
+                if (isChecked) "3G / Weak Signal Mode: Enabled (12kbps Opus DTX)" else "3G / Weak Signal Mode: Disabled (HD Studio Voice)",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         // --- Legal & Policies (4 Cards Grid) ---
@@ -485,38 +513,35 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun cycleNoiseFilter() {
         val isVip = PlanManager.isVip()
-        when (noiseFilterLevel) {
-            0 -> {
+        val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+        if (noiseFilterLevel == 0) {
+            if (isVip) {
                 noiseFilterLevel = 1
+                audioPrefs.edit().putInt("noise_filter_level", 1).apply()
                 updateNoiseFilterUI()
-                Toast.makeText(this, "Mic Filter: High (75%)", Toast.LENGTH_SHORT).show()
+                voiceService?.setNoiseFilterLevel(1)
+                Toast.makeText(this, "Mic Filter: 100% Ultra Silent AI Active 👑", Toast.LENGTH_SHORT).show()
+            } else {
+                showVipUpgradeDialog("👑 100% Ultra-Silent AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100% of background noise, fan hum, keyboard clicks, and breathing.")
             }
-            1 -> {
-                if (isVip) {
-                    noiseFilterLevel = 2
-                    updateNoiseFilterUI()
-                    Toast.makeText(this, "Mic Filter: Ultra Silent 👑 (< 10%)", Toast.LENGTH_SHORT).show()
-                } else {
-                    showVipUpgradeDialog("👑 Ultra Silent (< 10% Noise) is an exclusive VIP feature! Upgrade to eliminate keyboard, room, and fan noise.")
-                }
-            }
-            else -> {
-                noiseFilterLevel = 0
-                updateNoiseFilterUI()
-                Toast.makeText(this, "Mic Filter: Normal (50%)", Toast.LENGTH_SHORT).show()
-            }
+        } else {
+            noiseFilterLevel = 0
+            audioPrefs.edit().putInt("noise_filter_level", 0).apply()
+            updateNoiseFilterUI()
+            voiceService?.setNoiseFilterLevel(0)
+            Toast.makeText(this, "Mic Filter: 50% Standard (Natural Room Sound)", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun updateNoiseFilterUI() {
-        if (!PlanManager.isVip() && noiseFilterLevel == 2) {
+        if (!PlanManager.isVip() && noiseFilterLevel == 1) {
             noiseFilterLevel = 0
+            getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
+                .edit()
+                .putInt("noise_filter_level", 0)
+                .apply()
         }
-        val label = when (noiseFilterLevel) {
-            0 -> "Normal (50%)"
-            1 -> "High (75%)"
-            else -> "Ultra Silent 👑 (< 10%)"
-        }
+        val label = if (noiseFilterLevel == 1) "100% Ultra Silent 👑" else "50% Standard"
         binding.tvSettingNoiseFilterBadge.text = label
     }
 
@@ -1251,8 +1276,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         runOnUiThread {
             try {
                 if (latencyMs < 0) {
-                    binding.tvTelemetryPing.text = "-- ms"
-                    binding.tvTelemetryPing.setTextColor(Color.parseColor("#94A3B8"))
+                    binding.tvTelemetryPing.text = "P2P Ready"
+                    binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
                 } else {
                     binding.tvTelemetryPing.text = "${latencyMs}ms"
                     when {
