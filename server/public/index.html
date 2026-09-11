@@ -7,8 +7,8 @@
   
   <!-- SEO & Social Meta Tags -->
   <meta name="description" content="GamerVoice is the ultra-low latency, military-grade squad VOIP audio app engineered for competitive mobile gaming squads. 100% Peer-to-Peer, crystal-clear AI noise suppression, dual STUN/TURN relays, zero FPS drop.">
-  <meta name="keywords" content="gamervoice, squad voip, gaming voice chat, free fire voice chat, bgmi voice, low latency voip, noise reduction, webrtc squad audio, aryan kumar">
-  <meta name="author" content="Aryan Kumar">
+  <meta name="keywords" content="gamervoice, squad voip, gaming voice chat, free fire voice chat, bgmi voice, low latency voip, noise reduction, webrtc squad audio">
+  <meta name="author" content="GamerVoice Team">
   <meta name="theme-color" content="#06080E">
   <link rel="canonical" href="https://gamersvoice.onrender.com/">
   <link rel="icon" type="image/png" href="/logo.png">
@@ -53,7 +53,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=2.6">
+  <link rel="stylesheet" href="/style.css?v=2.7">
 </head>
 <body>
 
@@ -262,7 +262,7 @@
                         <div class="speaking-pulse"></div>
                       </div>
                       <div class="sim-player-info">
-                        <div class="sim-player-name">Aryan (You)</div>
+                        <div class="sim-player-name">Squad Lead (You)</div>
                         <div class="sim-player-status highlight-emerald">Talking &bull; Host</div>
                       </div>
                       <div class="sim-vol-level">100%</div>
@@ -536,79 +536,92 @@
           </p>
         </div>
 
-        <div class="comparison-table-wrapper">
-          <table class="comparison-table">
+        <!-- Mobile Competitor Switcher -->
+        <div class="comparison-mobile-controls">
+          <div class="comparison-swipe-hint">
+            <span class="hint-swipe-icon">↔️</span> Swipe table or tap platform to compare:
+          </div>
+          <div class="comparison-tabs" role="tablist">
+            <button class="comp-tab active" onclick="setComparisonView('all')" id="compTabAll">All (Swipe ↔)</button>
+            <button class="comp-tab" onclick="setComparisonView('discord')" id="compTabDiscord">vs Discord</button>
+            <button class="comp-tab" onclick="setComparisonView('ingame')" id="compTabIngame">vs In-Game</button>
+            <button class="comp-tab" onclick="setComparisonView('whatsapp')" id="compTabWhatsapp">vs WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="comparison-table-wrapper" id="comparisonTableWrapper">
+          <table class="comparison-table" id="comparisonTable">
             <thead>
               <tr>
-                <th class="th-feature">Performance Metric</th>
-                <th class="th-gamervoice">
+                <th class="th-feature col-metric">Performance Metric</th>
+                <th class="th-gamervoice col-gv">
                   <div class="th-brand">
                     <img src="/logo.png" alt="GamerVoice" class="table-logo" width="22" height="22">
                     <span>GamerVoice</span>
                   </div>
                   <span class="badge-winner">TOP RATED</span>
                 </th>
-                <th>Discord Mobile</th>
-                <th class="col-extra">In-Game Voice</th>
-                <th class="col-extra">WhatsApp Call</th>
+                <th class="col-discord">Discord Mobile</th>
+                <th class="col-ingame">In-Game Voice</th>
+                <th class="col-whatsapp">WhatsApp Call</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="feature-name"><strong>End-to-End Latency</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">15 – 22 ms</span> (P2P Direct)</td>
-                <td>85 – 140 ms (Server Detour)</td>
-                <td class="col-extra">90 – 180 ms (Game Server)</td>
-                <td class="col-extra">120 – 250 ms</td>
+                <td class="feature-name col-metric"><strong>End-to-End Latency</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">15 – 22 ms</span> (P2P Direct)</td>
+                <td class="col-discord">85 – 140 ms (Server Detour)</td>
+                <td class="col-ingame">90 – 180 ms (Game Server)</td>
+                <td class="col-whatsapp">120 – 250 ms</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>RAM Consumption</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">~42 MB</span> (Ultra-Lean)</td>
-                <td>180 – 260 MB (Heavy Electron)</td>
-                <td class="col-extra">Embedded in Game Process</td>
-                <td class="col-extra">110 – 160 MB</td>
+                <td class="feature-name col-metric"><strong>RAM Consumption</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">~42 MB</span> (Ultra-Lean)</td>
+                <td class="col-discord">180 – 260 MB (Heavy Electron)</td>
+                <td class="col-ingame">Embedded in Game Process</td>
+                <td class="col-whatsapp">110 – 160 MB</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>In-Game FPS Impact</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">0 FPS Drop</span> (Zero Stutter)</td>
-                <td>-15 to -25 FPS micro-stutters</td>
-                <td class="col-extra">Audio glitches drop frames</td>
-                <td class="col-extra">Significant lag spikes</td>
+                <td class="feature-name col-metric"><strong>In-Game FPS Impact</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">0 FPS Drop</span> (Zero Stutter)</td>
+                <td class="col-discord">-15 to -25 FPS micro-stutters</td>
+                <td class="col-ingame">Audio glitches drop frames</td>
+                <td class="col-whatsapp">Significant lag spikes</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>Carrier NAT Traversal</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">Dual STUN + TURN Relay</span></td>
-                <td>Single STUN (fails on CGNAT)</td>
-                <td class="col-extra">Frequent "Mic Glitch / Can't Hear"</td>
-                <td class="col-extra">Standard STUN</td>
+                <td class="feature-name col-metric"><strong>Carrier NAT Traversal</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">Dual STUN + TURN Relay</span></td>
+                <td class="col-discord">Single STUN (fails on CGNAT)</td>
+                <td class="col-ingame">Frequent "Mic Glitch / Can't Hear"</td>
+                <td class="col-whatsapp">Standard STUN</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>Floating In-Game HUD</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">Yes (Tactical Draggable Pill)</span></td>
-                <td>Heavy Overlay (covers game UI)</td>
-                <td class="col-extra">Cluttered, non-customizable</td>
-                <td class="col-extra">No Gaming HUD</td>
+                <td class="feature-name col-metric"><strong>Floating In-Game HUD</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">Yes (Tactical Draggable Pill)</span></td>
+                <td class="col-discord">Heavy Overlay (covers game UI)</td>
+                <td class="col-ingame">Cluttered, non-customizable</td>
+                <td class="col-whatsapp">No Gaming HUD</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>Audio Codec &amp; Sampling</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">Opus 48kHz HD (64 kbps)</span></td>
-                <td>Opus 24–48kHz</td>
-                <td class="col-extra">16kHz Compressed Mono</td>
-                <td class="col-extra">SILK / Opus Adaptive</td>
+                <td class="feature-name col-metric"><strong>Audio Codec &amp; Sampling</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">Opus 48kHz HD (64 kbps)</span></td>
+                <td class="col-discord">Opus 24–48kHz</td>
+                <td class="col-ingame">16kHz Compressed Mono</td>
+                <td class="col-whatsapp">SILK / Opus Adaptive</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>Noise Filtering</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">0% to 100% Neural Slider</span></td>
-                <td>Krisp (CPU intensive)</td>
-                <td class="col-extra">None / Fixed Threshold</td>
-                <td class="col-extra">Basic Echo Only</td>
+                <td class="feature-name col-metric"><strong>Noise Filtering</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">0% to 100% Neural Slider</span></td>
+                <td class="col-discord">Krisp (CPU intensive)</td>
+                <td class="col-ingame">None / Fixed Threshold</td>
+                <td class="col-whatsapp">Basic Echo Only</td>
               </tr>
               <tr>
-                <td class="feature-name"><strong>Account Safety &amp; Anti-Cheat</strong></td>
-                <td class="gamervoice-cell"><span class="val-highlight">100% Safe (Zero Game Mod)</span></td>
-                <td>Safe</td>
-                <td class="col-extra">Safe</td>
-                <td class="col-extra">Safe</td>
+                <td class="feature-name col-metric"><strong>Account Safety &amp; Anti-Cheat</strong></td>
+                <td class="gamervoice-cell col-gv"><span class="val-highlight">100% Safe (Zero Game Mod)</span></td>
+                <td class="col-discord">Safe</td>
+                <td class="col-ingame">Safe</td>
+                <td class="col-whatsapp">Safe</td>
               </tr>
             </tbody>
           </table>
@@ -841,7 +854,7 @@
       <form id="authForm" class="auth-form">
         <div class="form-group" id="nameGroup" style="display: none;">
           <label for="authNameInput">Your Gamer Tag / Name</label>
-          <input type="text" id="authNameInput" class="form-input" autocomplete="name" placeholder="e.g. Aryan Legend">
+          <input type="text" id="authNameInput" class="form-input" autocomplete="name" placeholder="e.g. Ghost Operator">
         </div>
 
         <div class="form-group">
@@ -984,7 +997,6 @@
           <ul class="footer-links">
             <li><a href="mailto:supportgamersvoice@gmail.com">supportgamersvoice@gmail.com</a></li>
             <li><a href="#support" id="footerSupportLink" onclick="openSupport(); return false;">Submit Support Ticket</a></li>
-            <li><span class="footer-author-badge">Engineered by Aryan Kumar</span></li>
           </ul>
         </div>
       </div>
@@ -1006,6 +1018,6 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script defer src="/app.js?v=2.6"></script>
+  <script defer src="/app.js?v=2.7"></script>
 </body>
 </html>

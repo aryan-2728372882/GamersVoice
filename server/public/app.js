@@ -711,6 +711,33 @@ window.switchPolicyTab = function(type) {
   }
 };
 
+// 10. Interactive Mobile Comparison View Switcher
+window.setComparisonView = function(view) {
+  const table = document.getElementById("comparisonTable");
+  const wrapper = document.getElementById("comparisonTableWrapper");
+  if (!table) return;
+
+  const validViews = ['all', 'discord', 'ingame', 'whatsapp'];
+  const targetView = validViews.includes(view) ? view : 'all';
+
+  validViews.forEach(v => {
+    const btn = document.getElementById('compTab' + v.charAt(0).toUpperCase() + v.slice(1));
+    if (btn) {
+      if (v === targetView) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+
+  table.classList.remove('view-discord', 'view-ingame', 'view-whatsapp');
+  if (targetView !== 'all') {
+    table.classList.add('view-' + targetView);
+  }
+
+  if (wrapper) {
+    wrapper.scrollTo({ left: 0, behavior: 'smooth' });
+  }
+};
+
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

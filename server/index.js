@@ -781,7 +781,7 @@ If something doesn’t work properly, you have an idea, or there’s something y
 Thanks for giving GamerVoice a chance.
 We hope it becomes a small part of a lot of great games, late-night conversations, ridiculous clutches, and memories with your friends.
 Welcome to the community. 🎮
-— Aryan & the GamerVoice team`;
+— The GamerVoice Team`;
 }
 
 function buildWelcomeHtml(name, email) {
@@ -907,7 +907,7 @@ function buildWelcomeHtml(name, email) {
             We hope it becomes a small part of a lot of great games, late-night conversations, ridiculous clutches, and memories with your friends.
           </p>
           <div style="font-size: 16px; font-weight: 800; color: #00FF88; margin-bottom: 6px;">Welcome to the community. 🎮</div>
-          <div style="font-size: 15px; font-weight: 700; color: #F8FAFC;">&mdash; Aryan &amp; the GamerVoice team</div>
+          <div style="font-size: 15px; font-weight: 700; color: #F8FAFC;">&mdash; The GamerVoice Team</div>
         </td>
       </tr>
       <tr>

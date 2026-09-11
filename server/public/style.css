@@ -1569,6 +1569,116 @@ img {
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
 }
 
+/* --- Comparison Table Controls & Styling --- */
+.comparison-mobile-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 18px auto;
+  width: 100%;
+  max-width: 620px;
+}
+
+.comparison-swipe-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: var(--radius-full);
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  text-align: center;
+}
+
+.hint-swipe-icon {
+  display: inline-block;
+  animation: swipePulse 1.8s infinite ease-in-out;
+}
+
+@keyframes swipePulse {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+}
+
+.comparison-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  width: 100%;
+  overflow-x: auto;
+  justify-content: center;
+}
+
+.comp-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+  transition: var(--transition-fast);
+}
+
+.comp-tab:hover {
+  background: rgba(255, 215, 0, 0.08);
+  color: var(--gold-primary);
+}
+
+.comp-tab.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.12) 100%);
+  color: var(--gold-primary);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+}
+
+/* Custom golden scrollbar for table wrapper */
+.comparison-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.comparison-table-wrapper::-webkit-scrollbar-track {
+  background: rgba(13, 21, 39, 0.85);
+  border-radius: 4px;
+}
+
+.comparison-table-wrapper::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Table View Modes */
+.comparison-table.view-discord .col-ingame,
+.comparison-table.view-discord .col-whatsapp {
+  display: none !important;
+}
+
+.comparison-table.view-ingame .col-discord,
+.comparison-table.view-ingame .col-whatsapp {
+  display: none !important;
+}
+
+.comparison-table.view-whatsapp .col-discord,
+.comparison-table.view-whatsapp .col-ingame {
+  display: none !important;
+}
+
 /* --- Comparison Table --- */
 .comparison-table-wrapper {
   overflow-x: auto;
@@ -1615,6 +1725,7 @@ img {
   gap: 6px;
   color: var(--gold-primary);
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .badge-winner {
@@ -1626,6 +1737,7 @@ img {
   background: var(--gold-primary);
   color: #06080E;
   margin-top: 3px;
+  white-space: nowrap;
 }
 
 .gamervoice-cell {
@@ -2375,6 +2487,50 @@ select.form-input option:checked {
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+
+  .comparison-table {
+    min-width: 680px !important;
+    width: 680px !important;
+  }
+
+  .comparison-table.view-discord,
+  .comparison-table.view-ingame,
+  .comparison-table.view-whatsapp {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .comparison-table th, .comparison-table td {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    white-space: normal;
+  }
+
+  .comparison-table th.col-metric, .comparison-table td.col-metric {
+    min-width: 125px;
+    width: 125px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: #090E1A;
+    box-shadow: 3px 0 10px rgba(0, 0, 0, 0.6);
+  }
+
+  .comparison-table th.col-metric {
+    z-index: 6;
+    background: #0E1626;
+  }
+
+  .comparison-table th.col-gv, .comparison-table td.col-gv {
+    min-width: 135px;
+  }
+
+  .comparison-table th.col-discord, .comparison-table td.col-discord,
+  .comparison-table th.col-ingame, .comparison-table td.col-ingame,
+  .comparison-table th.col-whatsapp, .comparison-table td.col-whatsapp {
+    min-width: 135px;
   }
 }
 
@@ -2430,35 +2586,18 @@ select.form-input option:checked {
     width: 100%;
     text-align: center;
   }
-
-  .col-extra {
-    display: none !important;
-  }
-  
-  .comparison-table {
-    min-width: 100% !important;
-    width: 100% !important;
-    table-layout: fixed;
-  }
-  
   .comparison-table th, .comparison-table td {
-    padding: 10px 8px;
+    padding: 10px 10px;
     font-size: 0.78rem;
     line-height: 1.35;
   }
   
   .th-brand span {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
   
   .badge-winner {
-    font-size: 0.58rem;
-  }
-}
-
-@media screen and (min-width: 641px) {
-  .comparison-table {
-    min-width: 620px;
+    font-size: 0.6rem;
   }
 }
 
