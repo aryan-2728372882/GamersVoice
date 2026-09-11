@@ -11,3 +11,5 @@ local.properties
 .cxx
 node_modules/
 *.pdf
+*used_payments.json
+*.env

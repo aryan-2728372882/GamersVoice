@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
 const { randomUUID } = require('crypto');
@@ -8,13 +10,37 @@ const PORT = process.env.PORT || 8080;
 
 // Configuration from environment variables
 const SMTP_USER = process.env.SMTP_USER || 'supportgamersvoice@gmail.com';
-const SMTP_PASS = (process.env.SMTP_PASS || 'ennawlvrlygkkefe').replace(/\s+/g, '');
+const SMTP_PASS = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SWhlEskNokZ9rR';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+
+// Replay attack prevention store (persisted to disk)
+const USED_PAYMENTS_FILE = path.join(__dirname, 'used_payments.json');
+let usedPaymentIds = new Set();
+try {
+  if (fs.existsSync(USED_PAYMENTS_FILE)) {
+    const raw = fs.readFileSync(USED_PAYMENTS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      usedPaymentIds = new Set(parsed);
+    }
+  }
+} catch (err) {
+  console.error('[Storage Error] Failed to read used payments file:', err.message);
+}
+
+function recordUsedPayment(paymentId) {
+  usedPaymentIds.add(paymentId);
+  try {
+    fs.writeFileSync(USED_PAYMENTS_FILE, JSON.stringify(Array.from(usedPaymentIds), null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Storage Error] Failed to write used payments file:', err.message);
+  }
+}
 
 // In-memory data structures
 const rooms = new Map();
@@ -80,38 +106,47 @@ function sendResponse(res, statusCode, data) {
 
 // HTTP Server for APIs, Webhooks, and Health Checks
 const server = http.createServer(async (req, res) => {
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  try {
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    });
-    res.end();
-    return;
-  }
-
-  // Rate Limiting on API endpoints (60 req/min)
-  if (isRateLimited(ipRateLimits, clientIp, 60, 60000)) {
-    sendResponse(res, 429, { error: 'Rate limit exceeded. Please wait a moment.' });
-    return;
-  }
-
-  // Serve Brand Logo
-  if (req.url === '/logo.png') {
-    const logoPath = path.join(__dirname, '../logo.png');
-    if (fs.existsSync(logoPath)) {
-      res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400',
-        'Access-Control-Allow-Origin': '*'
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
       });
-      fs.createReadStream(logoPath).pipe(res);
+      res.end();
       return;
     }
-  }
+
+    // Rate Limiting on API endpoints (60 req/min)
+    if (isRateLimited(ipRateLimits, clientIp, 60, 60000)) {
+      sendResponse(res, 429, { error: 'Rate limit exceeded. Please wait a moment.' });
+      return;
+    }
+
+    // Serve Brand Logo safely
+    if (req.url === '/logo.png') {
+      const candidates = [
+        path.join(__dirname, 'logo.png'),
+        path.join(__dirname, '../logo.png'),
+        path.join(__dirname, '../app/src/main/res/drawable/app_logo.png')
+      ];
+      const logoPath = candidates.find(p => fs.existsSync(p));
+      if (logoPath) {
+        res.writeHead(200, {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*'
+        });
+        fs.createReadStream(logoPath).pipe(res);
+        return;
+      } else {
+        sendResponse(res, 404, { error: 'Logo not found' });
+        return;
+      }
+    }
 
   // Health Check
   if (req.url === '/' || req.url === '/health') {
@@ -232,7 +267,17 @@ const server = http.createServer(async (req, res) => {
     try {
       const { paymentId, planTier, userId, userEmail } = await parseJsonBody(req);
       if (!paymentId || !paymentId.startsWith('pay_')) {
-        sendResponse(res, 400, { verified: false, error: 'Invalid payment ID' });
+        sendResponse(res, 400, { verified: false, error: 'Invalid payment ID format' });
+        return;
+      }
+
+      // Replay Attack Protection: Check if paymentId was already redeemed
+      if (usedPaymentIds.has(paymentId)) {
+        console.warn(`[Payment Replay Attack] Blocked reused payment ID: ${paymentId} by ${userId}`);
+        sendResponse(res, 400, {
+          verified: false,
+          error: 'This payment ID has already been redeemed for VIP membership.'
+        });
         return;
       }
 
@@ -244,48 +289,50 @@ const server = http.createServer(async (req, res) => {
 
       const expectedAmount = expectedAmounts[planTier];
 
-      if (RAZORPAY_KEY_SECRET) {
-        const authHeader = 'Basic ' + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-        const rzpResponse = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
-          headers: { Authorization: authHeader }
+      if (!RAZORPAY_KEY_SECRET) {
+        console.error('[Payment Error] RAZORPAY_KEY_SECRET is not configured on server.');
+        sendResponse(res, 503, {
+          verified: false,
+          error: 'Server payment verification gateway is unconfigured. Please configure RAZORPAY_KEY_SECRET in Render dashboard.'
         });
-
-        if (!rzpResponse.ok) {
-          sendResponse(res, 400, { verified: false, error: 'Payment lookup failed on Razorpay' });
-          return;
-        }
-
-        const paymentData = await rzpResponse.json();
-        if (paymentData.status !== 'captured') {
-          sendResponse(res, 400, { verified: false, error: `Payment not captured. Status: ${paymentData.status}` });
-          return;
-        }
-
-        if (expectedAmount && paymentData.amount !== expectedAmount) {
-          sendResponse(res, 400, {
-            verified: false,
-            error: `Payment amount mismatch: expected ₹${expectedAmount / 100}, got ₹${paymentData.amount / 100}`
-          });
-          return;
-        }
-
-        console.log(`[Payment Verified] Razorpay payment ${paymentId} verified for ${userId} (${planTier})`);
-        sendResponse(res, 200, {
-          verified: true,
-          paymentId,
-          planTier,
-          amountPaid: paymentData.amount / 100,
-          currency: paymentData.currency
-        });
-      } else {
-        console.warn(`[Payment Warning] RAZORPAY_KEY_SECRET not set. Validating format for payment ${paymentId}`);
-        sendResponse(res, 200, {
-          verified: true,
-          paymentId,
-          planTier,
-          note: 'Key secret validation pending server configuration'
-        });
+        return;
       }
+
+      const authHeader = 'Basic ' + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+      const rzpResponse = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+        headers: { Authorization: authHeader }
+      });
+
+      if (!rzpResponse.ok) {
+        sendResponse(res, 400, { verified: false, error: 'Payment lookup failed on Razorpay' });
+        return;
+      }
+
+      const paymentData = await rzpResponse.json();
+      if (paymentData.status !== 'captured') {
+        sendResponse(res, 400, { verified: false, error: `Payment not captured. Status: ${paymentData.status}` });
+        return;
+      }
+
+      if (expectedAmount && paymentData.amount !== expectedAmount) {
+        sendResponse(res, 400, {
+          verified: false,
+          error: `Payment amount mismatch: expected ₹${expectedAmount / 100}, got ₹${paymentData.amount / 100}`
+        });
+        return;
+      }
+
+      // Commit to persistent used payment IDs store to prevent replay attacks
+      recordUsedPayment(paymentId);
+
+      console.log(`[Payment Verified] Razorpay payment ${paymentId} verified for ${userId} (${planTier})`);
+      sendResponse(res, 200, {
+        verified: true,
+        paymentId,
+        planTier,
+        amountPaid: paymentData.amount / 100,
+        currency: paymentData.currency
+      });
     } catch (err) {
       console.error('[Payment Verification Error]', err.message);
       sendResponse(res, 500, { verified: false, error: err.message });
@@ -295,13 +342,20 @@ const server = http.createServer(async (req, res) => {
 
   // Not Found
   sendResponse(res, 404, { error: 'Route not found' });
+  } catch (fatalErr) {
+    console.error('[HTTP Fatal Error]', fatalErr);
+    if (!res.headersSent) {
+      sendResponse(res, 500, { error: 'Internal server error' });
+    }
+  }
 });
 
 // WebSocket Server attached to HTTP server
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   ws.isAlive = true;
+  ws.clientIp = req?.headers['x-forwarded-for']?.split(',')[0]?.trim() || req?.socket?.remoteAddress || 'unknown';
 
   ws.on('pong', () => {
     ws.isAlive = true;
@@ -411,6 +465,15 @@ function handleCreateRoom(ws, data = {}) {
 }
 
 function handleJoinRoom(ws, data = {}) {
+  const clientIp = ws.clientIp || 'unknown';
+
+  // Room code brute-force protection: max 12 attempts per minute
+  if (isRateLimited(roomAttemptLimits, clientIp, 12, 60000)) {
+    console.warn(`[Brute-Force Protection] Join rate limit exceeded by ${clientIp}`);
+    sendError(ws, 'Too many room join attempts. Please wait 1 minute before trying again.');
+    return;
+  }
+
   const requestedCode = typeof data === 'string' ? data : data.roomCode;
   if (!requestedCode || typeof requestedCode !== 'string') {
     sendError(ws, 'Invalid room code');
@@ -418,6 +481,10 @@ function handleJoinRoom(ws, data = {}) {
   }
 
   const roomCode = requestedCode.toUpperCase().trim();
+  if (!/^[A-Z0-9]{5}$/.test(roomCode)) {
+    sendError(ws, 'Invalid room code format (must be 5 alphanumeric characters)');
+    return;
+  }
   let room = rooms.get(roomCode);
 
   if (!room) {
@@ -751,4 +818,13 @@ function buildWelcomeHtml(name, email) {
 
 server.listen(PORT, () => {
   console.log(`GamerVoice signaling & security server listening on port ${PORT}`);
+});
+
+// Process resilience: prevent uncaught async errors from terminating voice sessions
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL PROCESS UNCAUGHT EXCEPTION]', err.stack || err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL PROCESS UNHANDLED REJECTION]', reason);
 });

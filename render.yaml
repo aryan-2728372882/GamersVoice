@@ -12,7 +12,7 @@
       - key: SMTP_USER
         value: supportgamersvoice@gmail.com
       - key: SMTP_PASS
-        value: ennawlvrlygkkefe
+        sync: false
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
