@@ -53,7 +53,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=2.2">
+  <link rel="stylesheet" href="/style.css?v=2.3">
 </head>
 <body>
 
@@ -67,7 +67,7 @@
     <div class="nav-container">
       <a href="#" class="brand-logo" aria-label="GamerVoice Home">
         <div class="logo-wrapper">
-          <img src="/logo.png" alt="GamerVoice Emblem" class="nav-logo-img">
+          <img src="/logo.png" alt="GamerVoice Emblem" class="nav-logo-img" width="38" height="38">
           <div class="logo-halo"></div>
         </div>
         <div class="brand-text">
@@ -115,7 +115,10 @@
     <div class="drawer-content">
       <div class="drawer-header">
         <div class="brand-logo">
-          <img src="/logo.png" alt="GamerVoice" class="nav-logo-img">
+          <div class="logo-wrapper">
+            <img src="/logo.png" alt="GamerVoice" class="drawer-logo-img" width="34" height="34">
+            <div class="logo-halo"></div>
+          </div>
           <span class="brand-name">GAMER<span class="gold-text">VOICE</span></span>
         </div>
         <button class="drawer-close-btn" onclick="closeDrawer()" aria-label="Close Menu">&times;</button>
@@ -216,7 +219,7 @@
                 <!-- Phone App Header -->
                 <div class="sim-app-header">
                   <div class="sim-brand">
-                    <img src="/logo.png" alt="GamerVoice" class="sim-logo-img">
+                    <img src="/logo.png" alt="GamerVoice" class="sim-logo-img" width="24" height="24">
                     <div>
                       <div class="sim-title">GAMERVOICE</div>
                       <div class="sim-subtitle">SQUAD VOIP v1.0.0</div>
@@ -535,7 +538,7 @@
                 <th class="th-feature">Performance Metric</th>
                 <th class="th-gamervoice">
                   <div class="th-brand">
-                    <img src="/logo.png" alt="GamerVoice" class="table-logo">
+                    <img src="/logo.png" alt="GamerVoice" class="table-logo" width="22" height="22">
                     <span>GamerVoice</span>
                   </div>
                   <span class="badge-winner">TOP RATED</span>
@@ -820,7 +823,7 @@
       <button class="modal-close" id="closeAuthModal" onclick="closeAuthModal()" aria-label="Close Auth Modal">&times;</button>
       
       <div class="modal-header">
-        <img src="/logo.png" alt="GamerVoice" class="modal-logo">
+        <img src="/logo.png" alt="GamerVoice" class="modal-logo" width="46" height="46">
         <h3 class="modal-title" id="authModalTitle">Welcome to GamerVoice</h3>
         <p class="modal-subtitle">Sign in or create an account to manage your VIP squad clearance.</p>
       </div>
@@ -908,7 +911,10 @@
       <div class="footer-main">
         <div class="footer-brand">
           <div class="brand-logo">
-            <img src="/logo.png" alt="GamerVoice" class="nav-logo-img">
+            <div class="logo-wrapper">
+              <img src="/logo.png" alt="GamerVoice" class="footer-logo-img" width="38" height="38">
+              <div class="logo-halo"></div>
+            </div>
             <div class="brand-text">
               <span class="brand-name">GAMER<span class="gold-text">VOICE</span></span>
               <span class="brand-tag">ULTRA-LOW LATENCY SQUAD COMMS</span>
@@ -970,6 +976,6 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script defer src="/app.js?v=2.2"></script>
+  <script defer src="/app.js?v=2.3"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /* ==========================================================================
-   GamerVoice Ultra-Fast Responsive Stylesheet (v2.1)
+   GamerVoice Ultra-Fast Responsive Stylesheet (v2.3)
    Color Palette: Obsidian (#06080E), Gold (#FFD700), Cyan (#00E5FF), Emerald (#00FF88)
-   Zero Layout Shift • Ultra-Lightweight • Fluid Auto-Resize (320px to 4K)
+   Zero Overflow • Strict Logo Sizing • Fluid Auto-Resize (320px to 4K)
    ========================================================================== */
 
 :root {
@@ -64,7 +64,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* --- Ambient Dynamic Lighting Auras (Hardware Accelerated & Will-Change) --- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Ambient Dynamic Lighting Auras --- */
 .ambient-glow {
   position: fixed;
   border-radius: 50%;
@@ -73,7 +79,6 @@ body {
   z-index: 0;
   opacity: 0.15;
   transform: translateZ(0);
-  will-change: transform;
 }
 
 .glow-gold {
@@ -147,6 +152,89 @@ body {
   50% { opacity: 0.4; transform: scale(0.85); }
 }
 
+/* --- Logo Standards (Strictly Constrained Across All Screen Sizes) --- */
+.logo-wrapper {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  max-width: 38px;
+  max-height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-logo-img,
+.drawer-logo-img,
+.footer-logo-img {
+  width: 38px !important;
+  height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  border: 1.5px solid var(--gold-primary) !important;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: block;
+}
+
+.drawer-logo-img {
+  width: 34px !important;
+  height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+}
+
+.sim-logo-img {
+  width: 24px !important;
+  height: 24px !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--gold-primary) !important;
+  flex-shrink: 0;
+  display: block;
+}
+
+.table-logo {
+  width: 22px !important;
+  height: 22px !important;
+  max-width: 22px !important;
+  max-height: 22px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.modal-logo {
+  width: 46px !important;
+  height: 46px !important;
+  max-width: 46px !important;
+  max-height: 46px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid var(--gold-primary) !important;
+  margin: 0 auto 10px auto !important;
+  display: block !important;
+}
+
+.logo-halo {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  background: var(--gold-gradient);
+  filter: blur(6px);
+  opacity: 0.6;
+  z-index: 1;
+}
+
 /* --- Navigation Bar --- */
 .navbar {
   position: fixed;
@@ -178,35 +266,6 @@ body {
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
-}
-
-.logo-wrapper {
-  position: relative;
-  width: 38px;
-  height: 38px;
-}
-
-.nav-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 1.5px solid var(--gold-primary);
-  position: relative;
-  z-index: 2;
-}
-
-.logo-halo {
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 50%;
-  background: var(--gold-gradient);
-  filter: blur(6px);
-  opacity: 0.6;
-  z-index: 1;
 }
 
 .brand-text {
@@ -286,7 +345,7 @@ body {
   transition: var(--transition);
 }
 
-/* Mobile Drawer */
+/* Mobile Drawer (Slider) */
 .mobile-drawer {
   position: fixed;
   top: 0;
@@ -325,7 +384,7 @@ body {
   position: absolute;
   top: 0;
   right: 0;
-  width: min(85vw, 340px);
+  width: min(85vw, 320px);
   height: 100%;
   background: #090E1A;
   border-left: 1px solid var(--border-gold);
@@ -351,6 +410,10 @@ body {
   margin-bottom: 20px;
 }
 
+.drawer-header .brand-logo {
+  gap: 10px;
+}
+
 .drawer-close-btn {
   background: none;
   border: none;
@@ -370,9 +433,9 @@ body {
 .drawer-link {
   color: var(--text-primary);
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid transparent;
@@ -391,7 +454,7 @@ body {
 }
 
 .drawer-footer {
-  padding-top: 20px;
+  padding-top: 18px;
   border-top: 1px solid var(--border-glass);
 }
 
@@ -758,13 +821,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.sim-logo-img {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid var(--gold-primary);
 }
 
 .sim-title {
@@ -1485,12 +1541,6 @@ body {
   font-size: 0.95rem;
 }
 
-.table-logo {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-}
-
 .badge-winner {
   display: inline-block;
   font-size: 0.62rem;
@@ -1834,14 +1884,6 @@ body {
   text-align: center;
 }
 
-.modal-logo {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 1.5px solid var(--gold-primary);
-  margin-bottom: 8px;
-}
-
 .modal-emoji {
   font-size: 2rem;
   display: block;
@@ -1967,6 +2009,10 @@ body {
   grid-template-columns: 2fr 1fr 1fr 1.2fr;
   gap: clamp(20px, 3.5vw, 40px);
   margin-bottom: 40px;
+}
+
+.footer-brand .brand-logo {
+  gap: 12px;
 }
 
 .footer-desc {
@@ -2135,7 +2181,7 @@ body {
   }
   
   .phone-floating-tag {
-    display: none; /* Prevents overflow clipping on mobile */
+    display: none;
   }
   
   .footer-main {
