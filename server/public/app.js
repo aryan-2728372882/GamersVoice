@@ -189,7 +189,19 @@ function showAuthError(msg) {
   }
 }
 
-// 3. Razorpay In-Browser VIP Checkout
+// Helper to lazily load Razorpay checkout SDK on demand
+function loadRazorpaySdk() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+// 3. Razorpay In-Browser VIP Checkout (On-Demand Loading)
 window.initiateVipCheckout = async function(planTier, priceInr) {
   if (!currentUser) {
     openAuthModal();
@@ -197,8 +209,9 @@ window.initiateVipCheckout = async function(planTier, priceInr) {
     return;
   }
 
-  if (typeof Razorpay === "undefined") {
-    alert("Payment gateway is loading. Please check your internet connection.");
+  const loaded = await loadRazorpaySdk();
+  if (!loaded || typeof Razorpay === "undefined") {
+    alert("Payment gateway failed to initialize. Please check your internet connection and retry.");
     return;
   }
 
@@ -276,7 +289,7 @@ function initTelemetry() {
   const simPing = document.getElementById("simPing");
 
   fetch("/health")
-    .then(r => r.json())
+    .then(r => r.ok ? r.json() : null)
     .catch(() => {});
 
   try {
@@ -284,21 +297,22 @@ function initTelemetry() {
     const wsUrl = protocol + "//" + window.location.host;
     const ws = new WebSocket(wsUrl);
     let pingStart = 0;
+    let pingInterval = null;
 
     ws.onopen = () => {
-      setInterval(() => {
+      pingInterval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           pingStart = performance.now();
           ws.send(JSON.stringify({ type: "ping", timestamp: pingStart }));
         }
-      }, 3500);
+      }, 3000);
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "pong") {
-          const latency = Math.round(performance.now() - pingStart);
+          const latency = Math.max(12, Math.round(performance.now() - pingStart));
           if (pingDisplay) pingDisplay.innerText = latency + " ms";
           if (simPing) simPing.innerText = latency + "ms";
         }
@@ -306,8 +320,13 @@ function initTelemetry() {
     };
 
     ws.onerror = () => {
-      if (pingDisplay) pingDisplay.innerText = "18 ms (Ultra-Low)";
+      if (pingInterval) clearInterval(pingInterval);
+      if (pingDisplay) pingDisplay.innerText = "18 ms";
       if (simPing) simPing.innerText = "18ms";
+    };
+
+    ws.onclose = () => {
+      if (pingInterval) clearInterval(pingInterval);
     };
   } catch (e) {
     if (pingDisplay) pingDisplay.innerText = "18 ms";
@@ -483,10 +502,24 @@ function initNoiseLab() {
     }
     ctx.stroke();
 
-    requestAnimationFrame(draw);
+    if (isCanvasVisible) {
+      requestAnimationFrame(draw);
+    }
   }
 
-  draw();
+  let isCanvasVisible = false;
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      isCanvasVisible = entries[0].isIntersecting;
+      if (isCanvasVisible) {
+        requestAnimationFrame(draw);
+      }
+    }, { threshold: 0.05 });
+    observer.observe(canvas);
+  } else {
+    isCanvasVisible = true;
+    requestAnimationFrame(draw);
+  }
 }
 
 // 7. Navigation Drawer & FAQ Accordion Controls

@@ -6,7 +6,7 @@ const { randomUUID } = require('crypto');
 
 const nodemailer = require('nodemailer');
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // Configuration from environment variables
 const SMTP_USER = process.env.SMTP_USER || 'supportgamersvoice@gmail.com';
