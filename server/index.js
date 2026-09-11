@@ -42,6 +42,31 @@ function recordUsedPayment(paymentId) {
   }
 }
 
+// Welcome email deduplication store (persisted to disk)
+const SENT_EMAILS_FILE = path.join(__dirname, 'sent_welcome_emails.json');
+let sentWelcomeEmails = new Set();
+try {
+  if (fs.existsSync(SENT_EMAILS_FILE)) {
+    const raw = fs.readFileSync(SENT_EMAILS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      sentWelcomeEmails = new Set(parsed.map(e => String(e).toLowerCase().trim()));
+    }
+  }
+} catch (err) {
+  console.error('[Storage Error] Failed to read sent welcome emails file:', err.message);
+}
+
+function recordSentWelcomeEmail(email) {
+  const cleanEmail = email.trim().toLowerCase();
+  sentWelcomeEmails.add(cleanEmail);
+  try {
+    fs.writeFileSync(SENT_EMAILS_FILE, JSON.stringify(Array.from(sentWelcomeEmails), null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Storage Error] Failed to write sent welcome emails file:', err.message);
+  }
+}
+
 // In-memory data structures
 const rooms = new Map();
 const clients = new Map();
@@ -237,8 +262,20 @@ const server = http.createServer(async (req, res) => {
       const displayName = name && name.trim() ? name.trim() : 'Gamer';
       const cleanEmail = email.trim().toLowerCase();
 
+      // Deduplication: Check if welcome email was already dispatched to this email (from web or mobile app)
+      if (sentWelcomeEmails.has(cleanEmail)) {
+        console.log(`[Email Deduplication] Welcome email already sent to ${cleanEmail}. Bypassing duplicate dispatch.`);
+        sendResponse(res, 200, {
+          success: true,
+          alreadySent: true,
+          message: 'Welcome email was already dispatched to this address.'
+        });
+        return;
+      }
+
       if (!SMTP_PASS) {
         console.log(`[SMTP Notice] Server SMTP_PASS not set in environment. Mocking dispatch to: ${cleanEmail}`);
+        recordSentWelcomeEmail(cleanEmail);
         sendResponse(res, 200, {
           success: true,
           message: 'Email request received (SMTP pending server environment variable)'
@@ -266,6 +303,7 @@ const server = http.createServer(async (req, res) => {
       };
 
       await transporter.sendMail(mailOptions);
+      recordSentWelcomeEmail(cleanEmail);
       console.log(`[Email Dispatched] Heartfelt welcome email sent to ${cleanEmail}`);
       sendResponse(res, 200, { success: true, message: 'Welcome email successfully dispatched' });
     } catch (err) {

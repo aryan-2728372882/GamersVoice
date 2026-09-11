@@ -12,4 +12,5 @@ local.properties
 node_modules/
 *.pdf
 *used_payments.json
+*sent_welcome_emails.json
 *.env
