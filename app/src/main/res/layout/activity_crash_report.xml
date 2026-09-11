@@ -8,16 +8,27 @@
     android:padding="20dp"
     tools:context=".CrashReportActivity">
 
+    <ImageView
+        android:id="@+id/ivCrashLogo"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:contentDescription="GamerVoice Logo"
+        android:src="@drawable/app_logo_small"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/tvCrashTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:text="@string/crash_report_title"
         android:textColor="#FF5252"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toBottomOf="@id/ivCrashLogo"
+        app:layout_constraintStart_toEndOf="@id/ivCrashLogo"
+        app:layout_constraintTop_toTopOf="@id/ivCrashLogo" />
 
     <TextView
         android:id="@+id/tvCrashSubtitle"

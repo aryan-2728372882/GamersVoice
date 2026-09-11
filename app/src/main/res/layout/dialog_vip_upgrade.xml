@@ -20,19 +20,11 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <FrameLayout
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@drawable/bg_plan_badge_vip">
-
-                <ImageView
-                    android:layout_width="26dp"
-                    android:layout_height="26dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="VIP Crown"
-                    android:src="@drawable/ic_vip_crown"
-                    app:tint="#FFD700" />
-            </FrameLayout>
+            <ImageView
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:contentDescription="VIP Emblem"
+                android:src="@drawable/app_logo_small" />
 
             <LinearLayout
                 android:layout_width="0dp"

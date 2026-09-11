@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 8080;
 
 // Configuration from environment variables
 const SMTP_USER = process.env.SMTP_USER || 'supportgamersvoice@gmail.com';
-const SMTP_PASS = process.env.SMTP_PASS || '';
+const SMTP_PASS = (process.env.SMTP_PASS || 'ennawlvrlygkkefe').replace(/\s+/g, '');
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -97,6 +97,20 @@ const server = http.createServer(async (req, res) => {
   if (isRateLimited(ipRateLimits, clientIp, 60, 60000)) {
     sendResponse(res, 429, { error: 'Rate limit exceeded. Please wait a moment.' });
     return;
+  }
+
+  // Serve Brand Logo
+  if (req.url === '/logo.png') {
+    const logoPath = path.join(__dirname, '../logo.png');
+    if (fs.existsSync(logoPath)) {
+      res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+        'Access-Control-Allow-Origin': '*'
+      });
+      fs.createReadStream(logoPath).pipe(res);
+      return;
+    }
   }
 
   // Health Check
@@ -619,7 +633,10 @@ function buildWelcomeHtml(name, email) {
         <td style="padding: 32px 32px 20px 32px; text-align: left;">
           <table border="0" cellpadding="0" cellspacing="0" width="100%">
             <tr>
-              <td>
+              <td width="48" valign="middle" style="padding-right: 14px;">
+                <img src="https://raw.githubusercontent.com/aryan-2728372882/GamersVoice/main/logo.png" width="44" height="44" alt="GamerVoice Logo" style="display: block; border-radius: 12px; border: 1px solid #FFD700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);" />
+              </td>
+              <td valign="middle">
                 <span style="display: inline-block; font-size: 22px; font-weight: 900; letter-spacing: 2px; color: #00FF88; text-transform: uppercase;">GAMERVOICE</span>
                 <div style="font-size: 11px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; margin-top: 2px;">SQUAD AUDIO // ZERO-LAG VOIP</div>
               </td>

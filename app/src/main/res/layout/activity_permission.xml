@@ -49,11 +49,9 @@
         <!-- Glowing Hero Logo Emblem -->
         <FrameLayout
             android:id="@+id/flHeroEmblem"
-            android:layout_width="92dp"
-            android:layout_height="92dp"
+            android:layout_width="104dp"
+            android:layout_height="104dp"
             android:layout_marginTop="18dp"
-            android:background="@drawable/bg_avatar_ring"
-            android:padding="5dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/llTopBadge">
@@ -63,7 +61,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:contentDescription="@string/app_name"
-                android:src="@drawable/ic_app_logo_hero" />
+                android:src="@drawable/app_logo" />
         </FrameLayout>
 
         <!-- Brand Name -->

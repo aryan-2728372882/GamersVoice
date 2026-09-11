@@ -30,19 +30,11 @@
             android:orientation="horizontal">
 
             <!-- Telegram / Support Icon with Ring -->
-            <FrameLayout
+            <ImageView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@drawable/bg_avatar_ring"
-                android:padding="2dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="🛠️"
-                    android:textSize="20sp" />
-            </FrameLayout>
+                android:contentDescription="GamerVoice Support"
+                android:src="@drawable/app_logo_small" />
 
             <LinearLayout
                 android:layout_width="0dp"

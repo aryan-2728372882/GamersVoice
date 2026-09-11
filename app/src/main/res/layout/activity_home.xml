@@ -64,7 +64,7 @@
                     android:fontFamily="sans-serif-black"
                     android:maxLines="1"
                     android:singleLine="true"
-                    android:text="Aryan Prabhakar"
+                    android:text="Aryan Kumar"
                     android:textColor="@color/white"
                     android:textSize="13.5sp" />
 
@@ -95,7 +95,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:text="prabhakararyan2007@gmail.com"
+                android:text="supportgamersvoice@gmail.com"
                 android:textColor="#A0AEC0"
                 android:textSize="10sp" />
 
@@ -1460,7 +1460,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-black"
-                                android:text="Aryan Prabhakar"
+                                android:text="Aryan Kumar"
                                 android:textColor="@color/white"
                                 android:textSize="14.5sp" />
 
@@ -1470,7 +1470,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="prabhakararyan2007@gmail.com"
+                                android:text="supportgamersvoice@gmail.com"
                                 android:textColor="#A0AEC0"
                                 android:textSize="11sp" />
 

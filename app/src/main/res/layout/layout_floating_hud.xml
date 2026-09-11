@@ -37,12 +37,21 @@
             app:tint="@color/accent_green" />
     </FrameLayout>
 
+    <!-- Brand Mini Emblem -->
+    <ImageView
+        android:id="@+id/ivHudLogo"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="6dp"
+        android:contentDescription="GamerVoice"
+        android:src="@drawable/app_logo_small" />
+
     <!-- App / Room status indicator -->
     <TextView
         android:id="@+id/tvHudStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="6dp"
         android:fontFamily="sans-serif-black"
         android:text="VOICE ACTIVE"
         android:textColor="@color/accent_green"
