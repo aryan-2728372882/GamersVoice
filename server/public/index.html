@@ -1,0 +1,519 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GamerVoice | Heaven-Defying Ultra-Low Latency Squad VOIP</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="GamerVoice is the ultra-low latency, military-grade squad VOIP audio app built for competitive mobile gaming squads. 100% Peer-to-Peer, crystal clear AI noise suppression, zero FPS drop.">
+  <meta name="keywords" content="gamervoice, squad voip, gaming voice chat, free fire voice chat, bgmi voice, low latency voip, noise reduction, webrtc squad audio, aryan kumar">
+  <meta name="author" content="Aryan Kumar">
+  <meta name="theme-color" content="#06080E">
+  <link rel="canonical" href="https://gamersvoice.onrender.com/">
+  <link rel="icon" type="image/png" href="/logo.png">
+
+  <!-- OpenGraph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://gamersvoice.onrender.com/">
+  <meta property="og:title" content="GamerVoice | Heaven-Defying Squad VOIP">
+  <meta property="og:description" content="Sub-20ms ultra-low latency squad voice chat with crystal clear background noise removal. Built for Free Fire & BGMI squads.">
+  <meta property="og:image" content="/logo.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="GamerVoice | Heaven-Defying Squad VOIP">
+  <meta property="twitter:description" content="Sub-20ms ultra-low latency squad voice chat with crystal clear background noise removal. Built for Free Fire & BGMI squads.">
+  <meta property="twitter:image" content="/logo.png">
+
+  <!-- Google Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "GamerVoice",
+    "operatingSystem": "Android",
+    "applicationCategory": "GameApplication",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "1280"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    },
+    "description": "Zero-lag WebRTC squad voice chat app with dual STUN/TURN relays and hardware-accelerated noise suppression."
+  }
+  </script>
+
+  <!-- Google Fonts: Orbitron & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Razorpay Checkout Script -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <!-- Firebase Web SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- Background Ambient Auras -->
+  <div class="ambient-glow glow-gold"></div>
+  <div class="ambient-glow glow-cyan"></div>
+  <div class="ambient-glow glow-emerald"></div>
+
+  <!-- Header Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand-logo">
+        <div class="logo-wrapper">
+          <img src="/logo.png" alt="GamerVoice Luxury Emblem" class="nav-logo-img">
+          <div class="logo-halo"></div>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">GAMER<span class="gold-text">VOICE</span></span>
+          <span class="brand-tag">SQUAD // VOIP</span>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#noise-demo" class="nav-link">Noise Suppression</a>
+        <a href="#telemetry" class="nav-link">Live Ping</a>
+        <a href="#vip" class="nav-link nav-vip-link">👑 VIP Perks</a>
+        <a href="#support" class="nav-link" id="openSupportLink">Support</a>
+      </div>
+
+      <div class="nav-actions">
+        <div id="authStatusContainer">
+          <button class="btn btn-outline" id="openAuthBtn">
+            <span class="btn-icon">⚡</span> Sign In / Sign Up
+          </button>
+        </div>
+        <a href="/download-apk" class="btn btn-primary btn-gold pulse-btn" id="navDownloadBtn">
+          <span class="btn-icon">⬇️</span> Get APK (16.8MB)
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="hero-container">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span class="badge-text">WEBRTC P2P MILITARY AUDIO ENGINE &bull; DUAL STUN/TURN LIVE</span>
+      </div>
+
+      <h1 class="hero-title">
+        HEAVEN-DEFYING <br>
+        <span class="gradient-text">SQUAD VOIP COMMS</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Zero mic stutter. Sub-20ms ultra-low ping. Hardware-accelerated Opus audio engineered 
+        for Free Fire &amp; BGMI squads to secure flawless clutches with zero game FPS drops.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="/download-apk" class="btn btn-hero btn-gold-solid">
+          <span class="hero-btn-icon">⚡</span>
+          <div class="hero-btn-text">
+            <strong>DOWNLOAD OFFICIAL APK</strong>
+            <small>v1.0.0 Release &bull; 16.83 MB &bull; Free</small>
+          </div>
+        </a>
+
+        <a href="#vip" class="btn btn-hero btn-glass">
+          <span class="hero-btn-icon">👑</span>
+          <div class="hero-btn-text">
+            <strong>GET VIP CLEARANCE</strong>
+            <small>Unlock 100% Noise Filtering &bull; From ₹29</small>
+          </div>
+        </a>
+      </div>
+
+      <!-- Hero 3D Emblem Showcase -->
+      <div class="hero-3d-visual" id="heroVisual">
+        <div class="emblem-card-3d">
+          <img src="/logo.png" alt="GamerVoice Master Emblem" class="emblem-img-3d">
+          <div class="emblem-scanline"></div>
+          <div class="emblem-particle-ring"></div>
+        </div>
+      </div>
+
+      <!-- Live Server Telemetry Bar -->
+      <div class="telemetry-bar" id="telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-label">NETWORK LATENCY</span>
+          <div class="telemetry-val">
+            <span class="ping-indicator"></span>
+            <span id="pingDisplay" class="highlight-val">Measuring...</span>
+          </div>
+        </div>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">AUDIO CODEC</span>
+          <span class="telemetry-val highlight-cyan">Opus 48kHz P2P</span>
+        </div>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">NAT TRAVERSAL</span>
+          <span class="telemetry-val highlight-emerald">Dual STUN + TURN Relay</span>
+        </div>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">ACTIVE SQUAD CHANNELS</span>
+          <span id="activeRoomsDisplay" class="telemetry-val highlight-gold">Live Connected</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive Noise Cancellation Lab -->
+  <section class="section" id="noise-demo">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-badge">INTERACTIVE LAB</span>
+        <h2 class="section-title">TEST HARDWARE NOISE SUPPRESSION</h2>
+        <p class="section-desc">
+          Drag the slider to hear and visualize how GamerVoice's neural noise-gate eliminates high-speed ceiling fans, mechanical keyboard clatter, and ambient background roar.
+        </p>
+      </div>
+
+      <div class="noise-lab-card">
+        <div class="wave-visualizer-box">
+          <canvas id="waveCanvas" width="800" height="200"></canvas>
+          <div class="wave-overlay-tags">
+            <span class="wave-tag tag-left">0% (Raw Mic Noise)</span>
+            <span class="wave-tag tag-right">100% (Pure Vocal Clarity)</span>
+          </div>
+        </div>
+
+        <div class="slider-control-box">
+          <div class="slider-meta">
+            <span class="slider-label">SUPPRESSION LEVEL:</span>
+            <span id="noisePercentLabel" class="slider-value">75% (Enhanced Squad)</span>
+          </div>
+          <input type="range" min="0" max="100" value="75" class="luxury-slider" id="noiseSlider">
+          <div class="slider-ticks">
+            <span>0% (Free Plan)</span>
+            <span>50% (Standard)</span>
+            <span>75% (Squad VIP)</span>
+            <span class="tick-gold">100% (Lifetime Legend)</span>
+          </div>
+        </div>
+
+        <div class="noise-presets">
+          <span class="presets-title">Simulate Background Scenarios:</span>
+          <button class="preset-btn active" data-scenario="fan">🌪️ High-Speed Ceiling Fan</button>
+          <button class="preset-btn" data-scenario="keyboard">⌨️ Blue Switch Mechanical Clicks</button>
+          <button class="preset-btn" data-scenario="street">🚗 Traffic &amp; Street Noise</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3D Feature Grid -->
+  <section class="section" id="features">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-badge">ENGINEERING MASTERY</span>
+        <h2 class="section-title">WHY PRO SQUADS CHOOSE GAMERVOICE</h2>
+        <p class="section-desc">Designed from the ground up for high-stakes tournaments where every millisecond of callout latency decides victory.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="tilt-card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Sub-20ms P2P Pipeline</h3>
+          <p class="card-text">Voice packets travel directly from your device to your squadmates over encrypted WebRTC data channels with zero detour server buffering.</p>
+          <div class="card-glow"></div>
+        </div>
+
+        <div class="tilt-card">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Dual STUN + TURN Relays</h3>
+          <p class="card-text">Carrier-Grade NAT traversal guarantees zero call drops or connection timeouts even on restrictive mobile networks (Jio, Airtel, Vi, 5G/4G).</p>
+          <div class="card-glow"></div>
+        </div>
+
+        <div class="tilt-card">
+          <div class="card-icon">🎛️</div>
+          <h3 class="card-title">Zero FPS Drop Engine</h3>
+          <p class="card-text">Consumes under 45MB of RAM and <1% CPU overhead. Play Free Fire or BGMI at maximum 90/120 FPS without lag, micro-stutters, or frame drops.</p>
+          <div class="card-glow"></div>
+        </div>
+
+        <div class="tilt-card">
+          <div class="card-icon">🎧</div>
+          <h3 class="card-title">Floating In-Game HUD</h3>
+          <p class="card-text">Tactical pill overlay gives you one-tap mic mute, audio routing switches, and live squad speaking waveforms directly over your game screen.</p>
+          <div class="card-glow"></div>
+        </div>
+
+        <div class="tilt-card">
+          <div class="card-icon">🔒</div>
+          <h3 class="card-title">100% Zero Audio Logging</h3>
+          <p class="card-text">Your privacy is absolute. GamerVoice never records, samples, transmits, or stores audio streams on any central servers. What's spoken in squad stays in squad.</p>
+          <div class="card-glow"></div>
+        </div>
+
+        <div class="tilt-card">
+          <div class="card-icon">👑</div>
+          <h3 class="card-title">Persistent Squad Hubs</h3>
+          <p class="card-text">VIP members claim custom 5-letter permanent room codes (e.g. ALPHA, KINGS) that never expire, ready for your squad to jump in anytime.</p>
+          <div class="card-glow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIP Pricing Matrix & Web Checkout -->
+  <section class="section" id="vip">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-badge gold-badge">VIP CLEARANCE</span>
+        <h2 class="section-title">DOMINATE WITH PRO VIP PERKS</h2>
+        <p class="section-desc">
+          Purchase your VIP pass directly on our website. Our server cryptographically syncs your clearance to Cloud Firestore, instantly unlocking all VIP benefits inside your Android app!
+        </p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Weekly Plan -->
+        <div class="pricing-card">
+          <div class="plan-header">
+            <span class="plan-badge">STARTER PASS</span>
+            <h3 class="plan-name">WEEKLY VIP</h3>
+            <div class="plan-price">
+              <span class="currency">₹</span><span class="amount">29</span>
+              <span class="period">/ 7 days</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> 75% Neural Noise Cancellation</li>
+            <li><span class="check">✓</span> Unlimited Persistent Squad Rooms</li>
+            <li><span class="check">✓</span> Priority TURN Carrier Routing</li>
+            <li><span class="check">✓</span> Golden VIP Badge in Squad HUD</li>
+          </ul>
+          <button class="btn btn-pricing btn-glass" onclick="initiateVipCheckout('WEEKLY', 29)">
+            Buy Weekly (₹29)
+          </button>
+        </div>
+
+        <!-- Monthly Plan (Featured) -->
+        <div class="pricing-card featured-card">
+          <div class="featured-ribbon">MOST POPULAR</div>
+          <div class="plan-header">
+            <span class="plan-badge gold-text">SQUAD COMMANDER</span>
+            <h3 class="plan-name">MONTHLY VIP</h3>
+            <div class="plan-price">
+              <span class="currency">₹</span><span class="amount">89</span>
+              <span class="period">/ 30 days</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> <strong>100% Military-Grade Noise Removal</strong></li>
+            <li><span class="check">✓</span> Unlimited Permanent Squad Rooms</li>
+            <li><span class="check">✓</span> Ultra-Low Latency TURN Priority</li>
+            <li><span class="check">✓</span> VIP Golden Monogram in Profile</li>
+            <li><span class="check">✓</span> Direct Developer Email Support</li>
+          </ul>
+          <button class="btn btn-pricing btn-gold-solid pulse-btn" onclick="initiateVipCheckout('MONTHLY', 89)">
+            Activate Monthly (₹89)
+          </button>
+        </div>
+
+        <!-- Lifetime Plan -->
+        <div class="pricing-card lifetime-card">
+          <div class="plan-header">
+            <span class="plan-badge highlight-cyan">PERMANENT ACCESS</span>
+            <h3 class="plan-name">LIFETIME LEGEND</h3>
+            <div class="plan-price">
+              <span class="currency">₹</span><span class="amount">249</span>
+              <span class="period">/ one-time</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> <strong>Permanent VIP Access (Never Expires)</strong></li>
+            <li><span class="check">✓</span> 100% Studio Clean Voice Filter</li>
+            <li><span class="check">✓</span> Unlimited Permanent Custom Rooms</li>
+            <li><span class="check">✓</span> Exclusive Imperial Gold Badge</li>
+            <li><span class="check">✓</span> All Future Version Updates Included</li>
+          </ul>
+          <button class="btn btn-pricing btn-cyan" onclick="initiateVipCheckout('LIFETIME', 249)">
+            Claim Lifetime (₹249)
+          </button>
+        </div>
+      </div>
+
+      <div class="cross-sync-notice">
+        <div class="sync-icon">🔄</div>
+        <div class="sync-text">
+          <strong>Cross-Platform Instant Sync:</strong> Make sure you are signed in with the same email you use in the GamerVoice Android app. Once purchased, your VIP clearance activates across both web and mobile instantly.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Authentication Modal -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-box glass-box">
+      <button class="modal-close" id="closeAuthModal">&times;</button>
+      
+      <div class="modal-header">
+        <img src="/logo.png" alt="GamerVoice" class="modal-logo">
+        <h3 class="modal-title" id="authModalTitle">Welcome to GamerVoice</h3>
+        <p class="modal-subtitle">Sign in or create an account to manage your VIP squad clearance.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignIn">Sign In</button>
+        <button class="auth-tab" id="tabSignUp">Create Account</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <div class="form-group" id="nameGroup" style="display: none;">
+          <label>Your Gamer Tag / Name</label>
+          <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Aryan Legend">
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="authEmailInput" class="form-input" placeholder="gamer@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="authPassInput" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <div id="authErrorMessage" class="auth-error-msg"></div>
+
+        <button type="submit" class="btn btn-gold-solid btn-block" id="authSubmitBtn">
+          Sign In
+        </button>
+
+        <div class="auth-divider"><span>OR</span></div>
+
+        <button type="button" class="btn btn-outline btn-block" id="googleSignInBtn">
+          <span class="btn-icon">🌐</span> Continue with Google
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Support Ticket Modal -->
+  <div class="modal-backdrop" id="supportModal">
+    <div class="modal-box glass-box">
+      <button class="modal-close" id="closeSupportModal">&times;</button>
+      
+      <div class="modal-header">
+        <span class="modal-emoji">🛠️</span>
+        <h3 class="modal-title">GamerVoice Support</h3>
+        <p class="modal-subtitle">Submit your issue or request directly to our developer team.</p>
+      </div>
+
+      <form id="supportForm" class="auth-form">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="supportCategory" class="form-input">
+            <option value="Audio/Noise Issue">Audio / Noise Suppression Issue</option>
+            <option value="Payment/VIP">Payment / VIP Activation</option>
+            <option value="Connection/Lag">Connection / High Ping Issue</option>
+            <option value="Feature Request">Feature Request &amp; Feedback</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="supportSubject" class="form-input" placeholder="Brief issue title" required>
+        </div>
+
+        <div class="form-group">
+          <label>Detailed Description</label>
+          <textarea id="supportDescription" class="form-input" rows="4" placeholder="Describe what happened..." required></textarea>
+        </div>
+
+        <div id="supportStatusMsg" class="auth-error-msg"></div>
+
+        <button type="submit" class="btn btn-gold-solid btn-block" id="supportSubmitBtn">
+          Submit Ticket
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Luxury Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <img src="/logo.png" alt="GamerVoice" class="nav-logo-img">
+            <div class="brand-text">
+              <span class="brand-name">GAMER<span class="gold-text">VOICE</span></span>
+              <span class="brand-tag">ULTRA-LOW LATENCY SQUAD COMMS</span>
+            </div>
+          </div>
+          <p class="footer-desc">
+            Empowering competitive gaming squads across India with zero-lag peer-to-peer audio, AI noise suppression, and carrier-grade NAT traversal.
+          </p>
+          <div class="footer-status-pill">
+            <span class="status-indicator-live"></span> All Systems Operational
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">PLATFORM</h4>
+          <ul class="footer-links">
+            <li><a href="/download-apk">Download Android APK (v1.0.0)</a></li>
+            <li><a href="#vip">VIP Membership Tiers</a></li>
+            <li><a href="#noise-demo">Noise Reduction Lab</a></li>
+            <li><a href="#telemetry">Live Server Telemetry</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">SECURITY</h4>
+          <ul class="footer-links">
+            <li><a href="#">End-to-End P2P Encryption</a></li>
+            <li><a href="#">Zero Audio Logging Policy</a></li>
+            <li><a href="#">Razorpay Encrypted Verification</a></li>
+            <li><a href="#">Dual STUN + Metered TURN</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">DEVELOPER &amp; SUPPORT</h4>
+          <ul class="footer-links">
+            <li><a href="mailto:supportgamersvoice@gmail.com">supportgamersvoice@gmail.com</a></li>
+            <li><a href="#support" id="footerSupportLink">Submit Support Ticket</a></li>
+            <li><span class="footer-author-badge">Engineered by Aryan Kumar</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-copyright">
+          &copy; 2026 GamerVoice. All rights reserved. Crafted with ❤️ for gaming squads.
+        </div>
+        <div class="footer-legal">
+          <span>Terms of Service</span> &bull; <span>Privacy Policy</span> &bull; <span>Refund Policy</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

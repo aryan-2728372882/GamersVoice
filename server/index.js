@@ -104,6 +104,48 @@ function sendResponse(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.apk': 'application/vnd.android.package-archive'
+};
+
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+function serveStaticFile(res, filePath, defaultMime = 'application/octet-stream', downloadName = null) {
+  try {
+    const safePath = path.normalize(filePath);
+    if (!safePath.startsWith(PUBLIC_DIR) && !safePath.startsWith(path.dirname(PUBLIC_DIR))) {
+      return false;
+    }
+
+    if (fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
+      const ext = path.extname(safePath).toLowerCase();
+      const contentType = MIME_TYPES[ext] || defaultMime;
+      const headers = {
+        'Content-Type': contentType,
+        'Access-Control-Allow-Origin': '*'
+      };
+      if (downloadName) {
+        headers['Content-Disposition'] = `attachment; filename="${downloadName}"`;
+      }
+      res.writeHead(200, headers);
+      fs.createReadStream(safePath).pipe(res);
+      return true;
+    }
+  } catch (err) {
+    console.error('[Static File Error]', err.message);
+  }
+  return false;
+}
+
 // HTTP Server for APIs, Webhooks, and Health Checks
 const server = http.createServer(async (req, res) => {
   try {
@@ -121,26 +163,21 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Rate Limiting on API endpoints (60 req/min)
-    if (isRateLimited(ipRateLimits, clientIp, 60, 60000)) {
+    if (req.url.startsWith('/api/') && isRateLimited(ipRateLimits, clientIp, 60, 60000)) {
       sendResponse(res, 429, { error: 'Rate limit exceeded. Please wait a moment.' });
       return;
     }
 
-    // Serve Brand Logo safely
+    // Serve Brand Logo
     if (req.url === '/logo.png') {
       const candidates = [
+        path.join(PUBLIC_DIR, 'logo.png'),
         path.join(__dirname, 'logo.png'),
         path.join(__dirname, '../logo.png'),
         path.join(__dirname, '../app/src/main/res/drawable/app_logo.png')
       ];
       const logoPath = candidates.find(p => fs.existsSync(p));
-      if (logoPath) {
-        res.writeHead(200, {
-          'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=86400',
-          'Access-Control-Allow-Origin': '*'
-        });
-        fs.createReadStream(logoPath).pipe(res);
+      if (logoPath && serveStaticFile(res, logoPath, 'image/png')) {
         return;
       } else {
         sendResponse(res, 404, { error: 'Logo not found' });
@@ -148,17 +185,45 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-  // Health Check
-  if (req.url === '/' || req.url === '/health') {
-    sendResponse(res, 200, {
-      status: 'ok',
-      service: 'GamerVoice WebRTC Signaling & Security Relay',
-      activeRooms: rooms.size,
-      connectedClients: clients.size,
-      timestamp: new Date().toISOString()
-    });
-    return;
-  }
+    // Direct APK Download
+    if (req.url === '/download-apk' || req.url === '/gamervoice.apk') {
+      const apkCandidates = [
+        path.join(PUBLIC_DIR, 'gamervoice-release.apk'),
+        path.join(__dirname, '../app/build/outputs/apk/release/app-release.apk')
+      ];
+      const apkPath = apkCandidates.find(p => fs.existsSync(p));
+      if (apkPath && serveStaticFile(res, apkPath, 'application/vnd.android.package-archive', 'GamerVoice-v1.0.0.apk')) {
+        console.log(`[APK Download] Triggered from ${clientIp}`);
+        return;
+      } else {
+        sendResponse(res, 404, { error: 'APK release build not found on server' });
+        return;
+      }
+    }
+
+    // Health Check
+    if (req.url === '/health' || req.url === '/api/health') {
+      sendResponse(res, 200, {
+        status: 'ok',
+        service: 'GamerVoice WebRTC Signaling & Security Relay',
+        activeRooms: rooms.size,
+        connectedClients: clients.size,
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // Static Web Assets from server/public/
+    if (req.method === 'GET' && !req.url.startsWith('/api/')) {
+      const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      let pathname = parsedUrl.pathname;
+      if (pathname === '/') pathname = '/index.html';
+
+      const targetStaticPath = path.join(PUBLIC_DIR, pathname);
+      if (serveStaticFile(res, targetStaticPath)) {
+        return;
+      }
+    }
 
   // API 1: Server-Side Welcome Email Relay
   if (req.method === 'POST' && req.url === '/api/send-welcome-email') {
