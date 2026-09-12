@@ -156,7 +156,8 @@ function serveStaticFile(res, filePath, defaultMime = 'application/octet-stream'
       const contentType = MIME_TYPES[ext] || defaultMime;
       const headers = {
         'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Private-Network': 'true'
       };
       if (downloadName) {
         headers['Content-Disposition'] = `attachment; filename="${downloadName}"`;
@@ -181,7 +182,8 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Private-Network': 'true'
       });
       res.end();
       return;

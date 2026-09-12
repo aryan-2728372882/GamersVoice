@@ -238,13 +238,17 @@ window.initiateVipCheckout = async function(planTier, priceInr) {
     return;
   }
 
+  const logoUrl = window.location.protocol === "https:"
+    ? (window.location.origin + "/logo.png")
+    : "https://gamersvoice.onrender.com/logo.png";
+
   const options = {
     key: "rzp_live_SWhlEskNokZ9rR",
     amount: priceInr * 100,
     currency: "INR",
     name: "GamerVoice VIP Clearance",
     description: planTier + " VIP Squad Access",
-    image: "/logo.png",
+    image: logoUrl,
     theme: { color: "#FFD700" },
     prefill: {
       name: currentUser.displayName || "GamerVoice Member",
