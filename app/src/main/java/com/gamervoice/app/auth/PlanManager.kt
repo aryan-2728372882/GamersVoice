@@ -181,34 +181,56 @@ object PlanManager {
     }
 
     /**
-     * Enforces that only accounts with a genuine Razorpay paymentId (pay_*) hold VIP status.
-     * Any unverified or legacy test status is revoked immediately.
+     * Enforces that local VIP matches cloud Firestore status.
+     * Activates VIP granted by administrator or payment, and revokes expired or unpaid access.
      */
     fun enforceValidPaidStatus(callback: (() -> Unit)? = null) {
         val p = prefs ?: return
-        val isVip = p.getBoolean(KEY_IS_VIP, false)
-        val paymentId = p.getString(KEY_PAYMENT_ID, null)
+        val user = AuthManager.getCurrentUser()
 
-        if (isVip && (paymentId.isNullOrEmpty() || !paymentId.startsWith("pay_"))) {
-            Log.w(TAG, "Unverified VIP detected without authentic Razorpay payment ID. Revoking to Free tier.")
-            revokeVip(callback)
+        if (user == null) {
+            checkAndEnforceExpiry()
+            mainHandler.post { callback?.invoke() }
             return
         }
 
-        val user = AuthManager.getCurrentUser()
-        if (user != null) {
-            fetchUserPlanFromFirestore(user.uid, user.idToken) { firestoreVip, _, pid ->
-                if (!firestoreVip || pid.isNullOrEmpty() || !pid.startsWith("pay_")) {
-                    if (isVip) {
-                        Log.i(TAG, "Firestore shows no verified paid VIP for user. Revoking.")
-                        revokeVip(callback)
-                    }
+        fetchUserPlanFromFirestore(user.uid, user.idToken) { firestoreVip, tier, pid, expLabel, expTs ->
+            if (firestoreVip) {
+                val now = System.currentTimeMillis()
+                val isExpired = (tier != PlanTier.LIFETIME && expTs > 0 && now > expTs)
+
+                if (isExpired) {
+                    Log.i(TAG, "Firestore VIP expired for user ${user.uid}. Reverting to Free.")
+                    revokeVip(callback)
+                } else {
+                    Log.i(TAG, "Active VIP detected in Firestore for ${user.uid} ($tier). Activating.")
+                    val finalPid = if (!pid.isNullOrBlank()) pid else "pay_admin_grant"
+                    p.edit()
+                        .putBoolean(KEY_IS_VIP, true)
+                        .putString(KEY_PLAN_TIER, tier.id)
+                        .putString(KEY_EXPIRY_LABEL, expLabel ?: "Active")
+                        .putLong(KEY_EXPIRY_TIMESTAMP, expTs)
+                        .putString(KEY_PAYMENT_ID, finalPid)
+                        .apply()
+                    mainHandler.post { callback?.invoke() }
+                }
+            } else {
+                val isLocalVip = p.getBoolean(KEY_IS_VIP, false)
+                if (isLocalVip) {
+                    Log.i(TAG, "Firestore shows user ${user.uid} is Free. Revoking local VIP.")
+                    revokeVip(callback)
+                } else {
+                    mainHandler.post { callback?.invoke() }
                 }
             }
         }
     }
 
-    fun fetchUserPlanFromFirestore(uid: String, idToken: String, callback: (Boolean, PlanTier, String?) -> Unit) {
+    fun fetchUserPlanFromFirestore(
+        uid: String, 
+        idToken: String, 
+        callback: (Boolean, PlanTier, String?, String?, Long) -> Unit
+    ) {
         val url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/$uid"
         val reqBuilder = Request.Builder().url(url).get()
         if (idToken.isNotEmpty()) {
@@ -217,6 +239,15 @@ object PlanManager {
         httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
             override fun onFailure(call: okhttp3.Call, e: IOException) {
                 // Keep local state on network error
+                mainHandler.post { 
+                    callback(
+                        isVip(), 
+                        getCurrentPlanTier(), 
+                        getPaymentId(), 
+                        getExpiryLabel(), 
+                        prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+                    ) 
+                }
             }
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
                 val body = response.body?.string() ?: ""
@@ -227,11 +258,40 @@ object PlanManager {
                         val isVip = fields?.optJSONObject("isVip")?.optBoolean("booleanValue") ?: false
                         val planTypeStr = fields?.optJSONObject("planType")?.optString("stringValue") ?: PlanTier.FREE.id
                         val paymentId = fields?.optJSONObject("paymentId")?.optString("stringValue")
+                        val expiresAt = fields?.optJSONObject("expiresAt")?.optString("stringValue")
+                        
+                        val expObj = fields?.optJSONObject("expiryTimestamp")
+                        val expiryTimestamp = when {
+                            expObj?.has("integerValue") == true -> expObj.optLong("integerValue", -1L)
+                            expObj?.has("doubleValue") == true -> expObj.optDouble("doubleValue", -1.0).toLong()
+                            expObj?.has("stringValue") == true -> expObj.optString("stringValue").toLongOrNull() ?: -1L
+                            else -> -1L
+                        }
+
                         val tier = PlanTier.values().find { it.id == planTypeStr } ?: PlanTier.FREE
-                        mainHandler.post { callback(isVip, tier, paymentId) }
+                        mainHandler.post { callback(isVip, tier, paymentId, expiresAt, expiryTimestamp) }
+                    } else {
+                        mainHandler.post { 
+                            callback(
+                                isVip(), 
+                                getCurrentPlanTier(), 
+                                getPaymentId(), 
+                                getExpiryLabel(), 
+                                prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+                            ) 
+                        }
                     }
                 } catch (t: Throwable) {
                     Log.e(TAG, "Error parsing Firestore user plan: ${t.message}")
+                    mainHandler.post { 
+                        callback(
+                            isVip(), 
+                            getCurrentPlanTier(), 
+                            getPaymentId(), 
+                            getExpiryLabel(), 
+                            prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+                        ) 
+                    }
                 } finally {
                     response.close()
                 }

@@ -54,6 +54,15 @@ try {
     }
   }
 
+  if (!serviceAccount) {
+    try {
+      const vault = require('./vault');
+      if (vault && vault.getServiceAccount) {
+        serviceAccount = vault.getServiceAccount();
+      }
+    } catch (_) {}
+  }
+
   if (serviceAccount) {
     const admin = require('firebase-admin');
     const { getFirestore } = require('firebase-admin/firestore');
@@ -570,47 +579,65 @@ const server = http.createServer(async (req, res) => {
 
       // Path A: Firebase Auth ID Token verification
       if (idToken) {
-        if (!adminAuth) {
-          sendResponse(res, 500, { authenticated: false, error: 'Firebase Admin SDK is not initialized on server.' });
-          return;
-        }
+        let decodedEmail = null;
+        let decodedUid = null;
 
-        try {
-          const decoded = await adminAuth.verifyIdToken(idToken);
-          const email = (decoded.email || '').toLowerCase().trim();
-
-          if (!ADMIN_ALLOWED_EMAILS.includes(email)) {
-            console.warn(`[Admin Auth] Blocked unauthorized email login attempt: ${email}`);
-            sendResponse(res, 403, {
-              authenticated: false,
-              error: `Access Denied: ${email} is not listed in authorized administrator emails.`
-            });
-            return;
+        if (adminAuth) {
+          try {
+            const decoded = await adminAuth.verifyIdToken(idToken);
+            decodedEmail = (decoded.email || '').toLowerCase().trim();
+            decodedUid = decoded.uid;
+          } catch (verifyErr) {
+            console.warn('[Admin Auth] adminAuth.verifyIdToken warning:', verifyErr.message);
           }
+        }
 
-          const sessionToken = 'gv_adm_' + randomUUID();
-          adminSessions.set(sessionToken, {
-            email,
-            uid: decoded.uid,
-            expireAt: Date.now() + 24 * 60 * 60 * 1000 // 24-hour admin session
-          });
+        // Fallback: Verify token with Google's public OAuth2 tokeninfo endpoint
+        if (!decodedEmail) {
+          try {
+            const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+            if (tokenInfoRes.ok) {
+              const info = await tokenInfoRes.json();
+              if (info && info.email) {
+                decodedEmail = (info.email || '').toLowerCase().trim();
+                decodedUid = info.sub;
+              }
+            }
+          } catch (fetchErr) {
+            console.warn('[Admin Auth] Google tokeninfo fallback warning:', fetchErr.message);
+          }
+        }
 
-          console.log(`[Admin Auth] Admin ${email} authenticated successfully via Firebase.`);
-          sendResponse(res, 200, {
-            authenticated: true,
-            token: sessionToken,
-            email,
-            adminType: 'firebase',
-            timestamp: Date.now()
-          });
+        if (!decodedEmail) {
+          sendResponse(res, 401, { authenticated: false, error: 'Invalid or expired Firebase ID token.' });
           return;
-        } catch (verifyErr) {
-          sendResponse(res, 401, {
+        }
+
+        if (!ADMIN_ALLOWED_EMAILS.includes(decodedEmail)) {
+          console.warn(`[Admin Auth] Blocked unauthorized email login attempt: ${decodedEmail}`);
+          sendResponse(res, 403, {
             authenticated: false,
-            error: 'Invalid Firebase ID token: ' + verifyErr.message
+            error: `Access Denied: ${decodedEmail} is not listed in authorized administrator emails.`
           });
           return;
         }
+
+        const sessionToken = 'gv_adm_' + randomUUID();
+        adminSessions.set(sessionToken, {
+          email: decodedEmail,
+          uid: decodedUid,
+          expireAt: Date.now() + 24 * 60 * 60 * 1000 // 24-hour admin session
+        });
+
+        console.log(`[Admin Auth] Admin ${decodedEmail} authenticated successfully via Firebase.`);
+        sendResponse(res, 200, {
+          authenticated: true,
+          token: sessionToken,
+          email: decodedEmail,
+          adminType: 'firebase',
+          timestamp: Date.now()
+        });
+        return;
       }
 
       // Path B: Master Security Key verification
@@ -778,12 +805,9 @@ const server = http.createServer(async (req, res) => {
         planType: isLifetime ? 'LIFETIME' : (planType || 'MONTHLY'),
         expiresAt,
         expiryTimestamp,
-        purchasedAt: new Date().toISOString()
+        purchasedAt: new Date().toISOString(),
+        paymentId: (paymentId && String(paymentId).trim()) ? String(paymentId).trim() : `pay_admin_grant_${Date.now()}`
       };
-
-      if (paymentId && String(paymentId).trim()) {
-        updates.paymentId = String(paymentId).trim();
-      }
 
       await adminDb.collection('users').doc(userId).set(updates, { merge: true });
       console.log(`[Admin VIP Grant] User ${userId} granted ${isLifetime ? 'LIFETIME' : days + ' days'} by ${authAdmin.user}`);
