@@ -548,6 +548,18 @@ wss.on('close', () => {
 
 // --- Message Handlers ---
 
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  do {
+    code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  } while (rooms.has(code));
+  return code;
+}
+
 function handleCreateRoom(ws, data = {}) {
   // If client is already in a room, leave first
   handleLeaveRoom(ws);
