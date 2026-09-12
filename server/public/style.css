@@ -1287,6 +1287,12 @@ img {
   border-radius: 50%;
   background-color: var(--emerald-primary);
   box-shadow: 0 0 8px var(--emerald-primary);
+  animation: pingPulse 2s infinite ease-in-out;
+}
+
+@keyframes pingPulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--emerald-primary); }
+  50% { opacity: 0.55; transform: scale(1.3); box-shadow: 0 0 14px var(--emerald-primary); }
 }
 
 .telemetry-divider {

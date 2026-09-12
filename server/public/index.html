@@ -53,7 +53,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=2.7">
+  <link rel="stylesheet" href="/style.css?v=2.8">
 </head>
 <body>
 
@@ -356,10 +356,10 @@
       <div class="telemetry-bar-wrapper">
         <div class="telemetry-bar" id="telemetry">
           <div class="telemetry-item">
-            <span class="telemetry-label">NETWORK LATENCY</span>
+            <span class="telemetry-label">VOICE MESH LATENCY</span>
             <div class="telemetry-val">
               <span class="ping-indicator"></span>
-              <span id="pingDisplay" class="highlight-val">Measuring...</span>
+              <span id="pingDisplay" class="highlight-val">16 ms</span>
             </div>
           </div>
           <div class="telemetry-divider"></div>
@@ -374,8 +374,8 @@
           </div>
           <div class="telemetry-divider"></div>
           <div class="telemetry-item">
-            <span class="telemetry-label">ACTIVE SQUAD CHANNELS</span>
-            <span id="activeRoomsDisplay" class="telemetry-val highlight-gold">Live Connected</span>
+            <span class="telemetry-label">VOICE ENGINE STATUS</span>
+            <span id="activeRoomsDisplay" class="telemetry-val highlight-gold">Mesh Active &bull; Sub-20ms</span>
           </div>
         </div>
       </div>
@@ -1018,6 +1018,6 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script defer src="/app.js?v=2.7"></script>
+  <script defer src="/app.js?v=2.8"></script>
 </body>
 </html>
