@@ -86,14 +86,26 @@ function subscribeToUserPlan(uid) {
     if (doc.exists) {
       const data = doc.data();
       currentVipPlan = data;
+      const isVip = !!data.isVip;
+      const planType = data.planType || (isVip ? "PRO" : "FREE");
+
       const vipTag = document.getElementById("userVipTag");
-      if (vipTag && data.isVip) {
-        vipTag.innerText = "👑 " + (data.planType || "VIP");
-        vipTag.style.background = "rgba(255, 215, 0, 0.25)";
+      if (vipTag) {
+        if (isVip) {
+          vipTag.innerText = "👑 " + planType;
+          vipTag.style.background = "rgba(255, 215, 0, 0.25)";
+          vipTag.style.borderColor = "rgba(255, 215, 0, 0.5)";
+          vipTag.style.color = "#ffd700";
+        } else {
+          vipTag.innerText = "FREE";
+          vipTag.style.background = "rgba(255, 255, 255, 0.08)";
+          vipTag.style.borderColor = "rgba(255, 255, 255, 0.15)";
+          vipTag.style.color = "rgba(255, 255, 255, 0.7)";
+        }
       }
       const simBadge = document.getElementById("simPlanBadge");
-      if (simBadge && data.isVip) {
-        simBadge.innerText = "VIP " + data.planType;
+      if (simBadge) {
+        simBadge.innerText = isVip ? ("VIP " + planType) : "FREE PLAN";
       }
     }
   }, (err) => {
