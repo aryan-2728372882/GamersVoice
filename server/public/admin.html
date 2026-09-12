@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GamerVoice | Exclusive Admin Command Center</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+  <!-- 1. Master Security Gate / Passcode Lock Screen -->
+  <div class="auth-lock-overlay" id="authLockOverlay">
+    <div class="auth-lock-card">
+      <span class="lock-badge">🛡️</span>
+      <h1 class="lock-title">GAMERVOICE ADMIN</h1>
+      <p class="lock-desc">Restricted Command Center. Please authenticate with your master security passcode to access user controls and server telemetry.</p>
+      
+      <form onsubmit="submitAdminPasscode(event)">
+        <div class="lock-input-group">
+          <input type="password" id="adminPasscodeInput" class="lock-input" placeholder="••••••••••••" autofocus required>
+          <div class="lock-error-msg" id="lockErrorMsg"></div>
+        </div>
+        <button type="submit" class="btn-admin btn-gold btn-block" style="width: 100%; justify-content: center; padding: 12px;">
+          Unlock Command Center
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Main Navigation Bar -->
+  <header class="admin-navbar">
+    <div class="admin-brand">
+      <img src="/logo.png" alt="GamerVoice" class="admin-logo-img">
+      <div>
+        <div class="admin-brand-title">GAMERVOICE <span class="admin-badge-pill">ADMIN CONSOLE</span></div>
+      </div>
+    </div>
+
+    <div class="admin-nav-actions">
+      <a href="/" target="_blank" class="btn-admin btn-secondary">
+        🌐 View Website
+      </a>
+      <button class="btn-admin btn-danger" onclick="lockAdminSession()">
+        🔒 Lock Console
+      </button>
+    </div>
+  </header>
+
+  <!-- 3. Main Container -->
+  <main class="admin-main">
+    
+    <!-- Top Metrics Ribbon -->
+    <div class="metrics-ribbon">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">TOTAL USERS</span>
+          <span class="metric-icon">👥</span>
+        </div>
+        <div class="metric-val val-cyan" id="statTotalUsers">0</div>
+        <span class="metric-subtext">Registered app &amp; web gamers</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">ACTIVE VIP SQUADS</span>
+          <span class="metric-icon">👑</span>
+        </div>
+        <div class="metric-val val-gold" id="statActiveVips">0</div>
+        <span class="metric-subtext">Valid paid subscriptions</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">ESTIMATED REVENUE</span>
+          <span class="metric-icon">💰</span>
+        </div>
+        <div class="metric-val val-emerald" id="statTotalRevenue">₹0</div>
+        <span class="metric-subtext">Cumulative VIP transactions</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">LIVE SQUAD ROOMS</span>
+          <span class="metric-icon">📡</span>
+        </div>
+        <div class="metric-val val-purple" id="statActiveRooms">0</div>
+        <span class="metric-subtext"><span id="statConnectedPeers">0</span> connected peers</span>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">SERVER UPTIME &amp; HEAP</span>
+          <span class="metric-icon">⚡</span>
+        </div>
+        <div class="metric-val" style="font-size: 1.4rem; color: #FFF;" id="statUptime">0h 0m</div>
+        <span class="metric-subtext">Heap: <span id="statHeapUsage" style="color: var(--emerald-primary);">0 MB</span></span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Header -->
+    <div class="admin-tabs-nav">
+      <button class="admin-tab-btn active" data-tab="users" onclick="switchAdminTab('users')">
+        👥 Users &amp; VIP Subscriptions
+      </button>
+      <button class="admin-tab-btn" data-tab="transactions" onclick="switchAdminTab('transactions')">
+        💳 Transactions &amp; Ledger
+      </button>
+      <button class="admin-tab-btn" data-tab="rooms" onclick="switchAdminTab('rooms')">
+        📡 Active Squad Rooms
+      </button>
+      <button class="admin-tab-btn" data-tab="provision" onclick="switchAdminTab('provision')">
+        ➕ Manual Provision User
+      </button>
+    </div>
+
+    <!-- Tab 1: Users Directory -->
+    <div class="tab-pane active" id="tab-users">
+      <div class="admin-toolbar">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="userSearchInput" placeholder="Search by email, name, or UID...">
+        </div>
+
+        <div class="filter-group">
+          <select id="userTierFilter" class="select-filter">
+            <option value="ALL">All Membership Tiers</option>
+            <option value="VIP">Active VIP Only</option>
+            <option value="FREE">Free Tier Only</option>
+            <option value="EXPIRED">Expired Subscriptions</option>
+          </select>
+          <button class="btn-admin btn-secondary" onclick="exportUsersCsv()">
+            📥 Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>USER &amp; ACCOUNT</th>
+                <th>VIP STATUS</th>
+                <th>EXPIRY DATE</th>
+                <th>PAYMENT ID</th>
+                <th>JOINED / PURCHASED</th>
+                <th style="text-align: right;">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                  Loading user records from Firestore...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Transactions Ledger -->
+    <div class="tab-pane" id="tab-transactions">
+      <div class="admin-toolbar">
+        <h3 style="font-size: 1.1rem; color: var(--gold-primary); font-weight: 800;">
+          Razorpay Transaction Ledger
+        </h3>
+        <div class="filter-group">
+          <button class="btn-admin btn-secondary" onclick="exportTransactionsJson()">
+            📥 Export JSON
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>TRANSACTION / PAYMENT ID</th>
+                <th>SUBSCRIBER EMAIL</th>
+                <th>PLAN TIER</th>
+                <th>AMOUNT</th>
+                <th>TRANSACTION DATE</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                  Loading transactions...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Active Squad Rooms -->
+    <div class="tab-pane" id="tab-rooms">
+      <div class="admin-toolbar">
+        <div>
+          <h3 style="font-size: 1.1rem; color: var(--cyan-primary); font-weight: 800;">
+            Live WebRTC Voice Squad Rooms
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+            Real-time feed from the signaling relay server. Auto-refreshes every 4 seconds.
+          </p>
+        </div>
+        <button class="btn-admin btn-secondary" onclick="loadServerStats()">
+          🔄 Refresh Now
+        </button>
+      </div>
+
+      <div class="rooms-grid" id="activeRoomsContainer">
+        <!-- Injected via admin.js -->
+      </div>
+    </div>
+
+    <!-- Tab 4: Manual User Provisioning -->
+    <div class="tab-pane" id="tab-provision">
+      <div class="table-card" style="max-width: 650px; margin: 0 auto; padding: 28px;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--gold-primary); margin-bottom: 6px;">
+          Manually Provision or Credit a User
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px;">
+          Create a VIP clearance pass directly in Firestore for influencers, tournament winners, or manual offline payments.
+        </p>
+
+        <form id="manualProvisionForm" onsubmit="handleManualProvision(event)">
+          <div class="form-group-admin">
+            <label for="provEmail">USER EMAIL *</label>
+            <input type="email" id="provEmail" placeholder="player@gmail.com" required>
+          </div>
+
+          <div class="form-group-admin">
+            <label for="provName">DISPLAY / SQUAD NAME</label>
+            <input type="text" id="provName" placeholder="e.g. Squad Lead">
+          </div>
+
+          <div class="form-group-admin">
+            <label for="provTier">PLAN TIER</label>
+            <select id="provTier">
+              <option value="WEEKLY">WEEKLY (7 Days Pass)</option>
+              <option value="MONTHLY" selected>MONTHLY (30 Days Pro)</option>
+              <option value="LIFETIME">LIFETIME LEGEND (Permanent)</option>
+              <option value="FREE">FREE (No VIP)</option>
+            </select>
+          </div>
+
+          <div class="form-group-admin">
+            <label for="provDays">CUSTOM DURATION IN DAYS (for non-lifetime)</label>
+            <input type="number" id="provDays" value="30" min="1" max="3650">
+          </div>
+
+          <div class="form-group-admin">
+            <label for="provPaymentId">CUSTOM TRANSACTION / REFERENCE ID</label>
+            <input type="text" id="provPaymentId" placeholder="Optional: e.g. upi_ref_98273412 or comp_winner">
+          </div>
+
+          <button type="submit" id="btnProvSubmit" class="btn-admin btn-gold" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+            Provision &amp; Grant Access
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 4. User Takeover & Management Modal -->
+  <div class="admin-modal-backdrop" id="userActionModal">
+    <div class="admin-modal-box">
+      <button class="modal-close-btn" onclick="closeEditUserModal()">&times;</button>
+      
+      <div class="modal-title-row">
+        <span style="font-size: 1.5rem;">👑</span>
+        <div>
+          <h3>User VIP Takeover</h3>
+          <p id="modalUserEmail" style="font-size: 0.85rem; color: var(--text-muted);"></p>
+        </div>
+      </div>
+
+      <input type="hidden" id="modalUserUid">
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; background: rgba(7, 11, 20, 0.6); padding: 12px; border-radius: var(--radius-sm);">
+        <div>
+          <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 800;">ACTIVE TIER</div>
+          <div id="modalCurrentPlan" style="font-size: 0.95rem; font-weight: 800; color: var(--gold-primary);">FREE</div>
+        </div>
+        <div>
+          <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 800;">EXPIRY DATE</div>
+          <div id="modalCurrentExpiry" style="font-size: 0.95rem; font-weight: 700; color: #FFF;">N/A</div>
+        </div>
+      </div>
+
+      <!-- Quick Grant Buttons -->
+      <div class="form-group-admin">
+        <label>1-CLICK QUICK VIP EXTENSION</label>
+        <div class="quick-grant-pills">
+          <button type="button" class="pill-grant" onclick="quickGrantDays(7, 'WEEKLY')">+7 Days (Weekly)</button>
+          <button type="button" class="pill-grant" onclick="quickGrantDays(30, 'MONTHLY')">+30 Days (Monthly)</button>
+          <button type="button" class="pill-grant" onclick="quickGrantDays(90, 'MONTHLY')">+90 Days (Quarterly)</button>
+          <button type="button" class="pill-grant" style="background: rgba(0, 240, 255, 0.15); color: var(--cyan-primary); border-color: var(--border-cyan);" onclick="quickGrantLifetime()">👑 Lifetime VIP</button>
+        </div>
+      </div>
+
+      <!-- Custom Days Grant -->
+      <div class="form-group-admin" style="display: flex; gap: 8px; align-items: flex-end;">
+        <div style="flex: 1;">
+          <label for="customDaysInput">CUSTOM DAYS</label>
+          <input type="number" id="customDaysInput" placeholder="e.g. 15" min="1">
+        </div>
+        <div style="flex: 1;">
+          <label for="customPlanTier">TIER</label>
+          <select id="customPlanTier">
+            <option value="WEEKLY">WEEKLY</option>
+            <option value="MONTHLY" selected>MONTHLY</option>
+          </select>
+        </div>
+        <button type="button" class="btn-admin btn-gold" onclick="applyCustomGrant()" style="height: 42px;">
+          Apply Days
+        </button>
+      </div>
+
+      <!-- Payment ID Edit -->
+      <div class="form-group-admin">
+        <label for="modalPaymentIdInput">TRANSACTION / RAZORPAY ID</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="modalPaymentIdInput" placeholder="pay_XXXXXXXXXXXXXX">
+          <button type="button" class="btn-admin btn-secondary" onclick="savePaymentIdOverride()">
+            Save ID
+          </button>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-glass); display: flex; justify-content: space-between; gap: 10px;">
+        <button type="button" class="btn-admin btn-danger" onclick="revokeActiveVip()">
+          Revoke VIP
+        </button>
+        <button type="button" class="btn-admin btn-danger" style="background: rgba(255, 71, 87, 0.3);" onclick="deleteUserDocument()">
+          🗑️ Delete User
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Firebase Client SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

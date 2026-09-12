@@ -17,6 +17,7 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SWhlEskNokZ9rR';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'gv-admin-master-2026';
 
 // Replay attack prevention store (persisted to disk)
 const USED_PAYMENTS_FILE = path.join(__dirname, 'used_payments.json');
@@ -252,6 +253,10 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      if (pathname === '/admin' || pathname === '/admin/') {
+        pathname = '/admin.html';
+      }
+
       if (pathname === '/') pathname = '/index.html';
 
       const targetStaticPath = path.join(PUBLIC_DIR, pathname);
@@ -453,8 +458,106 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Not Found
-  sendResponse(res, 404, { error: 'Route not found' });
+  // Admin API: Authentication
+  if (req.method === 'POST' && req.url === '/api/admin/auth') {
+      try {
+        const { key } = await parseJsonBody(req);
+        if (key && key.trim() === ADMIN_SECRET_KEY) {
+          sendResponse(res, 200, {
+            authenticated: true,
+            token: Buffer.from(ADMIN_SECRET_KEY).toString('base64'),
+            timestamp: Date.now()
+          });
+        } else {
+          sendResponse(res, 401, { authenticated: false, error: 'Invalid master passcode' });
+        }
+      } catch (err) {
+        sendResponse(res, 400, { error: err.message });
+      }
+      return;
+    }
+
+    // Admin API: Server Stats & Telemetry
+    if (req.method === 'GET' && req.url === '/api/admin/server-stats') {
+      const authKey = req.headers['x-admin-key'];
+      const expectedToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
+      if (authKey !== ADMIN_SECRET_KEY && authKey !== expectedToken) {
+        sendResponse(res, 401, { error: 'Unauthorized administrative access' });
+        return;
+      }
+
+      const activeRoomsList = [];
+      for (const [code, r] of rooms.entries()) {
+        const peerList = [];
+        for (const [pId, pInfo] of r.peers.entries()) {
+          peerList.push({
+            peerId: pId,
+            name: pInfo.name || 'Gamer',
+            avatar: pInfo.avatar || 'avatar_1'
+          });
+        }
+        activeRoomsList.push({
+          roomCode: code,
+          peerCount: r.peers.size,
+          peers: peerList
+        });
+      }
+
+      const mem = process.memoryUsage();
+      sendResponse(res, 200, {
+        uptimeSeconds: Math.floor(process.uptime()),
+        totalRooms: rooms.size,
+        totalClients: clients.size,
+        usedPaymentsCount: usedPaymentIds.size,
+        memoryUsage: {
+          heapUsedMb: Math.round((mem.heapUsed / (1024 * 1024)) * 100) / 100,
+          heapTotalMb: Math.round((mem.heapTotal / (1024 * 1024)) * 100) / 100,
+          rssMb: Math.round((mem.rss / (1024 * 1024)) * 100) / 100
+        },
+        activeRooms: activeRoomsList
+      });
+      return;
+    }
+
+    // Admin API: Terminate Squad Room
+    if (req.method === 'POST' && req.url === '/api/admin/close-room') {
+      const authKey = req.headers['x-admin-key'];
+      const expectedToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
+      if (authKey !== ADMIN_SECRET_KEY && authKey !== expectedToken) {
+        sendResponse(res, 401, { error: 'Unauthorized' });
+        return;
+      }
+
+      try {
+        const { roomCode } = await parseJsonBody(req);
+        const code = String(roomCode || '').trim().toUpperCase();
+        const room = rooms.get(code);
+        if (!room) {
+          sendResponse(res, 404, { error: `Room ${code} not found or already closed` });
+          return;
+        }
+
+        // Notify and disconnect all peers in room
+        for (const [peerId, peerInfo] of room.peers.entries()) {
+          try {
+            sendJson(peerInfo.ws, {
+              type: 'error',
+              message: 'This squad room was closed by the administrator.'
+            });
+            clients.delete(peerInfo.ws);
+          } catch (_) {}
+        }
+        rooms.delete(code);
+        console.log(`[Admin] Room ${code} was terminated by administrator.`);
+        sendResponse(res, 200, { success: true, message: `Room ${code} successfully terminated` });
+      } catch (err) {
+        sendResponse(res, 500, { error: err.message });
+      }
+      return;
+    }
+
+    // Not Found
+    sendResponse(res, 404, { error: 'Route not found' });
   } catch (fatalErr) {
     console.error('[HTTP Fatal Error]', fatalErr);
     if (!res.headersSent) {
