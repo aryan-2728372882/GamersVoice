@@ -581,9 +581,13 @@ class VoiceService : Service(),
     }
 
     override fun onPongReceived(latencyMs: Long) {
-        currentLatencyMs = latencyMs
-        mainHandler.post {
-            listener?.onLatencyUpdated(latencyMs)
+        // Signaling heartbeat acknowledged from cloud relay.
+        // Cloud signaling WAN RTT (transatlantic to US/EU server) is strictly for keep-alive,
+        // never voice audio latency. Voice latency is 100% P2P between squad members.
+        if (!peerConnectionManager.hasActivePeers()) {
+            mainHandler.post {
+                listener?.onLatencyUpdated(-1L)
+            }
         }
     }
 

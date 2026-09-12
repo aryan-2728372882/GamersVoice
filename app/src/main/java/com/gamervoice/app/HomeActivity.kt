@@ -1400,7 +1400,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onLatencyUpdated(latencyMs: Long) {
         runOnUiThread {
             try {
-                if (latencyMs < 0) {
+                if (latencyMs < 0 || latencyMs > 150) {
                     binding.tvTelemetryPing.text = "P2P Ready"
                     binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
                 } else {

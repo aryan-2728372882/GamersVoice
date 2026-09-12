@@ -506,7 +506,9 @@ wss.on('connection', (ws, req) => {
         break;
 
       case 'ping':
-        sendJson(ws, { type: 'pong', timestamp: data.timestamp });
+        // Cloud signaling heartbeat. Do not echo client timestamp as voice latency
+        // because cloud server WAN round-trip (e.g. India to US/EU, ~350ms) is not P2P voice mesh latency.
+        sendJson(ws, { type: 'pong' });
         break;
 
       case 'tactical-callout':
