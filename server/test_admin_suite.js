@@ -32,13 +32,23 @@ async function runAdminTests() {
   console.log('  GAMERVOICE ADMIN COMMAND CENTER AUTOMATED SUITE');
   console.log('======================================================\n');
 
+  // 0. Service Account Protection & Leak Prevention
+  try {
+    const resSa = await httpRequest('http://localhost:3000/service-account.json');
+    const resAdm = await httpRequest('http://localhost:3000/gamersvoice-ea413-firebase-adminsdk-fbsvc-d941789a8b.json');
+    const protectedSa = (resSa.statusCode === 404 || resSa.statusCode === 403) && (resAdm.statusCode === 404 || resAdm.statusCode === 403);
+    record('Service Account Anti-Leak Protection', protectedSa, `Blocked: /service-account.json (${resSa.statusCode})`);
+  } catch (e) {
+    record('Service Account Anti-Leak Protection', false, e.message);
+  }
+
   // 1. GET /admin
   try {
     const res = await httpRequest('http://localhost:3000/admin');
-    const hasAdminUi = res.body.includes('GAMERVOICE ADMIN') && res.body.includes('authLockOverlay');
-    record('GET /admin Route Delivery', res.statusCode === 200 && hasAdminUi, `Status: ${res.statusCode}, Size: ${res.body.length}b`);
+    const hasAdminUi = res.body.includes('GAMERVOICE ADMIN') && res.body.includes('authLockOverlay') && res.body.includes('Firebase Sign In');
+    record('GET /admin Route Delivery with Dual Auth', res.statusCode === 200 && hasAdminUi, `Status: ${res.statusCode}, Size: ${res.body.length}b`);
   } catch (e) {
-    record('GET /admin Route Delivery', false, e.message);
+    record('GET /admin Route Delivery with Dual Auth', false, e.message);
   }
 
   // 2. Static Assets
@@ -136,6 +146,93 @@ async function runAdminTests() {
     record('Live Room Admin Control', false, e.message);
   }
 
+  // 7.1 Admin SDK: Fetch All Users
+  try {
+    const resUsers = await httpRequest('http://localhost:3000/api/admin/users', {
+      headers: { 'x-admin-key': ADMIN_KEY }
+    });
+    const usersJson = JSON.parse(resUsers.body);
+    record('Admin SDK: Fetch Firestore Users', resUsers.statusCode === 200 && usersJson.success === true && Array.isArray(usersJson.users), `User count: ${usersJson.count}`);
+  } catch (e) {
+    record('Admin SDK: Fetch Firestore Users', false, e.message);
+  }
+
+  // 7.2 Admin SDK: Provision User with VIP
+  let testUserId = null;
+  const testEmail = `admin_suite_${Date.now()}@gamersvoice.test`;
+  try {
+    const resProv = await httpRequest('http://localhost:3000/api/admin/user/provision', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': ADMIN_KEY
+      }
+    }, {
+      email: testEmail,
+      name: 'Automated Suite Tester',
+      tier: 'MONTHLY',
+      days: 30,
+      paymentId: 'pay_suite_test_123'
+    });
+    const provJson = JSON.parse(resProv.body);
+    testUserId = provJson.userId;
+    record('Admin SDK: Provision User VIP', resProv.statusCode === 200 && provJson.success === true && !!testUserId, `Created ID: ${testUserId}`);
+  } catch (e) {
+    record('Admin SDK: Provision User VIP', false, e.message);
+  }
+
+  // 7.3 Admin SDK: Grant Lifetime VIP
+  if (testUserId) {
+    try {
+      const resGrant = await httpRequest('http://localhost:3000/api/admin/user/grant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_KEY
+        }
+      }, {
+        userId: testUserId,
+        days: 0,
+        planType: 'LIFETIME',
+        paymentId: 'pay_lifetime_override_suite'
+      });
+      const grantJson = JSON.parse(resGrant.body);
+      record('Admin SDK: Grant Lifetime VIP', resGrant.statusCode === 200 && grantJson.success === true && grantJson.updates?.planType === 'LIFETIME', 'Lifetime granted');
+    } catch (e) {
+      record('Admin SDK: Grant Lifetime VIP', false, e.message);
+    }
+
+    // 7.4 Admin SDK: Revoke VIP
+    try {
+      const resRevoke = await httpRequest('http://localhost:3000/api/admin/user/revoke', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_KEY
+        }
+      }, { userId: testUserId });
+      const revokeJson = JSON.parse(resRevoke.body);
+      record('Admin SDK: Revoke VIP Access', resRevoke.statusCode === 200 && revokeJson.success === true, 'VIP revoked');
+    } catch (e) {
+      record('Admin SDK: Revoke VIP Access', false, e.message);
+    }
+
+    // 7.5 Admin SDK: Delete User Document
+    try {
+      const resDel = await httpRequest('http://localhost:3000/api/admin/user/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_KEY
+        }
+      }, { userId: testUserId });
+      const delJson = JSON.parse(resDel.body);
+      record('Admin SDK: Delete User Document', resDel.statusCode === 200 && delJson.success === true, 'User cleaned up');
+    } catch (e) {
+      record('Admin SDK: Delete User Document', false, e.message);
+    }
+  }
+
   // 8. Headless Chrome Browser CDP End-to-End Test
   console.log('\n--- Launching Headless Chrome Browser E2E Test ---');
   const chrome = spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', [
@@ -187,6 +284,19 @@ async function runAdminTests() {
     returnByValue: true
   });
   record('Security Gate Lock Screen Active on Arrival', lockVisible.result.value, 'Protected by PIN overlay');
+
+  // Test Dual-Auth Tab Switch to Master Passcode
+  const tabSwitched = await sendCdp('Runtime.evaluate', {
+    expression: `
+      (() => {
+        switchAuthTab('master');
+        return document.getElementById('authPanelMaster')?.classList.contains('active') &&
+               document.getElementById('btnAuthTabMaster')?.classList.contains('active');
+      })()
+    `,
+    returnByValue: true
+  });
+  record('Dual-Auth Tab Switching to Master Passcode', tabSwitched.result.value, 'Tab switched to Master Passcode');
 
   // Submit master passcode
   await sendCdp('Runtime.evaluate', {

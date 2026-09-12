@@ -14,3 +14,8 @@ node_modules/
 *used_payments.json
 *sent_welcome_emails.json
 *.env
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+*.pem
+*.key

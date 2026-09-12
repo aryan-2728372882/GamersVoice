@@ -18,6 +18,96 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SWhlEskNokZ9rR';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'gv-admin-master-2026';
+const ADMIN_ALLOWED_EMAILS = (process.env.ADMIN_ALLOWED_EMAILS || 'prabhakararyan2007@gmail.com,supportgamersvoice@gmail.com')
+  .toLowerCase()
+  .split(',')
+  .map(e => e.trim());
+
+// Firebase Admin SDK Initialization (Ultra-Secure Service Account Integration)
+let adminApp = null;
+let adminDb = null;
+let adminAuth = null;
+
+try {
+  let serviceAccount = null;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+      if (rawEnv.startsWith('{')) {
+        serviceAccount = JSON.parse(rawEnv);
+      } else {
+        const decoded = Buffer.from(rawEnv, 'base64').toString('utf8');
+        serviceAccount = JSON.parse(decoded);
+      }
+    } catch (e) {
+      console.error('[Firebase Admin] Failed parsing FIREBASE_SERVICE_ACCOUNT env var:', e.message);
+    }
+  }
+
+  if (!serviceAccount) {
+    const localSaPath = path.join(__dirname, 'service-account.json');
+    const rootSaPath = path.join(__dirname, '..', 'gamersvoice-ea413-firebase-adminsdk-fbsvc-d941789a8b.json');
+    if (fs.existsSync(localSaPath)) {
+      serviceAccount = JSON.parse(fs.readFileSync(localSaPath, 'utf8'));
+    } else if (fs.existsSync(rootSaPath)) {
+      serviceAccount = JSON.parse(fs.readFileSync(rootSaPath, 'utf8'));
+    }
+  }
+
+  if (serviceAccount) {
+    const admin = require('firebase-admin');
+    const { getFirestore } = require('firebase-admin/firestore');
+    const { getAuth } = require('firebase-admin/auth');
+
+    adminApp = admin.initializeApp({
+      credential: admin.cert(serviceAccount)
+    }, 'GamerVoiceAdminApp');
+
+    adminDb = getFirestore(adminApp);
+    adminAuth = getAuth(adminApp);
+    console.log('[Firebase Admin] Initialized successfully for project:', serviceAccount.project_id);
+  } else {
+    console.warn('[Firebase Admin] No service account credentials found.');
+  }
+} catch (err) {
+  console.error('[Firebase Admin Init Error]', err.message);
+}
+
+// Active admin sessions: token -> { email, expireAt }
+const adminSessions = new Map();
+
+async function isAuthorizedAdmin(req) {
+  const authHeader = req.headers['x-admin-key'] || req.headers['authorization'];
+  if (!authHeader) return false;
+
+  const key = authHeader.replace(/^Bearer\s+/i, '').trim();
+  const expectedMasterToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
+
+  if (key === ADMIN_SECRET_KEY || key === expectedMasterToken) {
+    return { type: 'master', user: 'master_admin' };
+  }
+
+  if (adminSessions.has(key)) {
+    const sess = adminSessions.get(key);
+    if (Date.now() < sess.expireAt) {
+      return { type: 'firebase', user: sess.email };
+    } else {
+      adminSessions.delete(key);
+    }
+  }
+
+  // Direct Firebase ID token verification
+  if (adminAuth) {
+    try {
+      const decoded = await adminAuth.verifyIdToken(key);
+      if (decoded && decoded.email && ADMIN_ALLOWED_EMAILS.includes(decoded.email.toLowerCase())) {
+        return { type: 'firebase', user: decoded.email };
+      }
+    } catch (_) {}
+  }
+
+  return false;
+}
 
 // Replay attack prevention store (persisted to disk)
 const USED_PAYMENTS_FILE = path.join(__dirname, 'used_payments.json');
@@ -148,6 +238,21 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 function serveStaticFile(res, filePath, defaultMime = 'application/octet-stream', downloadName = null) {
   try {
     const safePath = path.normalize(filePath);
+    const filename = path.basename(safePath).toLowerCase();
+
+    // STRICT ANTI-TAMPER / ANTI-MODDER LEAK PROTECTION:
+    // Completely block any service account credentials, private keys, or environment files from being downloaded
+    if (
+      filename.includes('service-account') ||
+      filename.includes('adminsdk') ||
+      filename.includes('firebase') && filename.endsWith('.json') ||
+      filename.endsWith('.key') ||
+      filename.endsWith('.pem') ||
+      filename.endsWith('.env')
+    ) {
+      return false;
+    }
+
     if (!safePath.startsWith(PUBLIC_DIR) && !safePath.startsWith(path.dirname(PUBLIC_DIR))) {
       return false;
     }
@@ -458,106 +563,402 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Admin API: Authentication
-  if (req.method === 'POST' && req.url === '/api/admin/auth') {
-      try {
-        const { key } = await parseJsonBody(req);
-        if (key && key.trim() === ADMIN_SECRET_KEY) {
-          sendResponse(res, 200, {
-            authenticated: true,
-            token: Buffer.from(ADMIN_SECRET_KEY).toString('base64'),
-            timestamp: Date.now()
-          });
-        } else {
-          sendResponse(res, 401, { authenticated: false, error: 'Invalid master passcode' });
-        }
-      } catch (err) {
-        sendResponse(res, 400, { error: err.message });
-      }
-      return;
-    }
+  // Admin API: Authentication (Supports Master Passcode OR Firebase ID Token)
+  if (req.method === 'POST' && (req.url === '/api/admin/auth' || req.url === '/api/admin/verify-token')) {
+    try {
+      const { key, idToken } = await parseJsonBody(req);
 
-    // Admin API: Server Stats & Telemetry
-    if (req.method === 'GET' && req.url === '/api/admin/server-stats') {
-      const authKey = req.headers['x-admin-key'];
-      const expectedToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
-      if (authKey !== ADMIN_SECRET_KEY && authKey !== expectedToken) {
-        sendResponse(res, 401, { error: 'Unauthorized administrative access' });
-        return;
-      }
-
-      const activeRoomsList = [];
-      for (const [code, r] of rooms.entries()) {
-        const peerList = [];
-        for (const [pId, pInfo] of r.peers.entries()) {
-          peerList.push({
-            peerId: pId,
-            name: pInfo.name || 'Gamer',
-            avatar: pInfo.avatar || 'avatar_1'
-          });
-        }
-        activeRoomsList.push({
-          roomCode: code,
-          peerCount: r.peers.size,
-          peers: peerList
-        });
-      }
-
-      const mem = process.memoryUsage();
-      sendResponse(res, 200, {
-        uptimeSeconds: Math.floor(process.uptime()),
-        totalRooms: rooms.size,
-        totalClients: clients.size,
-        usedPaymentsCount: usedPaymentIds.size,
-        memoryUsage: {
-          heapUsedMb: Math.round((mem.heapUsed / (1024 * 1024)) * 100) / 100,
-          heapTotalMb: Math.round((mem.heapTotal / (1024 * 1024)) * 100) / 100,
-          rssMb: Math.round((mem.rss / (1024 * 1024)) * 100) / 100
-        },
-        activeRooms: activeRoomsList
-      });
-      return;
-    }
-
-    // Admin API: Terminate Squad Room
-    if (req.method === 'POST' && req.url === '/api/admin/close-room') {
-      const authKey = req.headers['x-admin-key'];
-      const expectedToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
-      if (authKey !== ADMIN_SECRET_KEY && authKey !== expectedToken) {
-        sendResponse(res, 401, { error: 'Unauthorized' });
-        return;
-      }
-
-      try {
-        const { roomCode } = await parseJsonBody(req);
-        const code = String(roomCode || '').trim().toUpperCase();
-        const room = rooms.get(code);
-        if (!room) {
-          sendResponse(res, 404, { error: `Room ${code} not found or already closed` });
+      // Path A: Firebase Auth ID Token verification
+      if (idToken) {
+        if (!adminAuth) {
+          sendResponse(res, 500, { authenticated: false, error: 'Firebase Admin SDK is not initialized on server.' });
           return;
         }
 
-        // Notify and disconnect all peers in room
-        for (const [peerId, peerInfo] of room.peers.entries()) {
-          try {
-            sendJson(peerInfo.ws, {
-              type: 'error',
-              message: 'This squad room was closed by the administrator.'
+        try {
+          const decoded = await adminAuth.verifyIdToken(idToken);
+          const email = (decoded.email || '').toLowerCase().trim();
+
+          if (!ADMIN_ALLOWED_EMAILS.includes(email)) {
+            console.warn(`[Admin Auth] Blocked unauthorized email login attempt: ${email}`);
+            sendResponse(res, 403, {
+              authenticated: false,
+              error: `Access Denied: ${email} is not listed in authorized administrator emails.`
             });
-            clients.delete(peerInfo.ws);
-          } catch (_) {}
+            return;
+          }
+
+          const sessionToken = 'gv_adm_' + randomUUID();
+          adminSessions.set(sessionToken, {
+            email,
+            uid: decoded.uid,
+            expireAt: Date.now() + 24 * 60 * 60 * 1000 // 24-hour admin session
+          });
+
+          console.log(`[Admin Auth] Admin ${email} authenticated successfully via Firebase.`);
+          sendResponse(res, 200, {
+            authenticated: true,
+            token: sessionToken,
+            email,
+            adminType: 'firebase',
+            timestamp: Date.now()
+          });
+          return;
+        } catch (verifyErr) {
+          sendResponse(res, 401, {
+            authenticated: false,
+            error: 'Invalid Firebase ID token: ' + verifyErr.message
+          });
+          return;
         }
-        rooms.delete(code);
-        console.log(`[Admin] Room ${code} was terminated by administrator.`);
-        sendResponse(res, 200, { success: true, message: `Room ${code} successfully terminated` });
-      } catch (err) {
-        sendResponse(res, 500, { error: err.message });
       }
+
+      // Path B: Master Security Key verification
+      if (key && key.trim() === ADMIN_SECRET_KEY) {
+        const masterToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
+        sendResponse(res, 200, {
+          authenticated: true,
+          token: masterToken,
+          email: 'admin@gamersvoice.internal',
+          adminType: 'master',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      sendResponse(res, 401, { authenticated: false, error: 'Invalid master passcode or missing credentials.' });
+    } catch (err) {
+      sendResponse(res, 400, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Server Stats & Telemetry
+  if (req.method === 'GET' && req.url === '/api/admin/server-stats') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized administrative access' });
       return;
     }
 
-    // Not Found
-    sendResponse(res, 404, { error: 'Route not found' });
+    const activeRoomsList = [];
+    for (const [code, r] of rooms.entries()) {
+      const peerList = [];
+      for (const [pId, pInfo] of r.peers.entries()) {
+        peerList.push({
+          peerId: pId,
+          name: pInfo.name || 'Gamer',
+          avatar: pInfo.avatar || 'avatar_1'
+        });
+      }
+      activeRoomsList.push({
+        roomCode: code,
+        peerCount: r.peers.size,
+        peers: peerList
+      });
+    }
+
+    const mem = process.memoryUsage();
+    sendResponse(res, 200, {
+      uptimeSeconds: Math.floor(process.uptime()),
+      totalRooms: rooms.size,
+      totalClients: clients.size,
+      usedPaymentsCount: usedPaymentIds.size,
+      adminType: authAdmin.type,
+      adminUser: authAdmin.user,
+      memoryUsage: {
+        heapUsedMb: Math.round((mem.heapUsed / (1024 * 1024)) * 100) / 100,
+        heapTotalMb: Math.round((mem.heapTotal / (1024 * 1024)) * 100) / 100,
+        rssMb: Math.round((mem.rss / (1024 * 1024)) * 100) / 100
+      },
+      activeRooms: activeRoomsList
+    });
+    return;
+  }
+
+  // Admin API: Terminate Squad Room
+  if (req.method === 'POST' && req.url === '/api/admin/close-room') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    try {
+      const { roomCode } = await parseJsonBody(req);
+      const code = String(roomCode || '').trim().toUpperCase();
+      const room = rooms.get(code);
+      if (!room) {
+        sendResponse(res, 404, { error: `Room ${code} not found or already closed` });
+        return;
+      }
+
+      // Notify and disconnect all peers in room
+      for (const [peerId, peerInfo] of room.peers.entries()) {
+        try {
+          sendJson(peerInfo.ws, {
+            type: 'error',
+            message: 'This squad room was closed by the administrator.'
+          });
+          clients.delete(peerInfo.ws);
+        } catch (_) {}
+      }
+      rooms.delete(code);
+      console.log(`[Admin] Room ${code} was terminated by administrator (${authAdmin.user}).`);
+      sendResponse(res, 200, { success: true, message: `Room ${code} successfully terminated` });
+    } catch (err) {
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Fetch all Firestore Users via Admin SDK
+  if (req.method === 'GET' && req.url === '/api/admin/users') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized administrative access' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Firebase Admin Database not initialized on server.' });
+      return;
+    }
+
+    try {
+      const snapshot = await adminDb.collection('users').get();
+      const userList = [];
+      snapshot.forEach(doc => {
+        userList.push({ id: doc.id, ...doc.data() });
+      });
+
+      sendResponse(res, 200, {
+        success: true,
+        count: userList.length,
+        users: userList
+      });
+    } catch (err) {
+      console.error('[Admin API Users Error]', err.message);
+      sendResponse(res, 500, { error: 'Failed to query users: ' + err.message });
+    }
+    return;
+  }
+
+  // Admin API: Grant VIP Days / Lifetime via Admin SDK
+  if (req.method === 'POST' && req.url === '/api/admin/user/grant') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Admin database not initialized' });
+      return;
+    }
+
+    try {
+      const { userId, days, planType, paymentId } = await parseJsonBody(req);
+      if (!userId) {
+        sendResponse(res, 400, { error: 'Missing userId' });
+        return;
+      }
+
+      const isLifetime = planType === 'LIFETIME';
+      const now = Date.now();
+      const expiryTimestamp = isLifetime ? -1 : (now + (Number(days || 30) * 24 * 60 * 60 * 1000));
+      const expiresAt = isLifetime ? 'N/A (Permanent)' : new Date(expiryTimestamp).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      const updates = {
+        isVip: true,
+        planType: isLifetime ? 'LIFETIME' : (planType || 'MONTHLY'),
+        expiresAt,
+        expiryTimestamp,
+        purchasedAt: new Date().toISOString()
+      };
+
+      if (paymentId && String(paymentId).trim()) {
+        updates.paymentId = String(paymentId).trim();
+      }
+
+      await adminDb.collection('users').doc(userId).set(updates, { merge: true });
+      console.log(`[Admin VIP Grant] User ${userId} granted ${isLifetime ? 'LIFETIME' : days + ' days'} by ${authAdmin.user}`);
+      sendResponse(res, 200, {
+        success: true,
+        message: `Successfully granted VIP to user ${userId}`,
+        updates
+      });
+    } catch (err) {
+      console.error('[Admin VIP Grant Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Revoke VIP Status
+  if (req.method === 'POST' && req.url === '/api/admin/user/revoke') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Admin database not initialized' });
+      return;
+    }
+
+    try {
+      const { userId } = await parseJsonBody(req);
+      if (!userId) {
+        sendResponse(res, 400, { error: 'Missing userId' });
+        return;
+      }
+
+      await adminDb.collection('users').doc(userId).set({
+        isVip: false,
+        planType: 'FREE',
+        expiresAt: 'Revoked by Administrator',
+        expiryTimestamp: 0
+      }, { merge: true });
+
+      console.log(`[Admin VIP Revoke] User ${userId} VIP revoked by ${authAdmin.user}`);
+      sendResponse(res, 200, { success: true, message: `VIP revoked for user ${userId}` });
+    } catch (err) {
+      console.error('[Admin VIP Revoke Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Delete User Document
+  if (req.method === 'POST' && req.url === '/api/admin/user/delete') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Admin database not initialized' });
+      return;
+    }
+
+    try {
+      const { userId } = await parseJsonBody(req);
+      if (!userId) {
+        sendResponse(res, 400, { error: 'Missing userId' });
+        return;
+      }
+
+      await adminDb.collection('users').doc(userId).delete();
+      console.log(`[Admin User Delete] User ${userId} deleted by ${authAdmin.user}`);
+      sendResponse(res, 200, { success: true, message: `User document ${userId} deleted.` });
+    } catch (err) {
+      console.error('[Admin User Delete Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Provision or Register New User with VIP
+  if (req.method === 'POST' && req.url === '/api/admin/user/provision') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Admin database not initialized' });
+      return;
+    }
+
+    try {
+      const { email, name, tier, days, paymentId } = await parseJsonBody(req);
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        sendResponse(res, 400, { error: 'Valid email address is required' });
+        return;
+      }
+
+      const planTier = tier || 'MONTHLY';
+      const isLifetime = planTier === 'LIFETIME';
+      const now = Date.now();
+      const expiryTimestamp = isLifetime ? -1 : (now + (Number(days || 30) * 24 * 60 * 60 * 1000));
+      const expiresAt = isLifetime ? 'N/A (Permanent)' : new Date(expiryTimestamp).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      // Find if user doc already exists
+      const snap = await adminDb.collection('users').where('userEmail', '==', cleanEmail).limit(1).get();
+      const docRef = !snap.empty ? snap.docs[0].ref : adminDb.collection('users').doc();
+
+      const userDoc = {
+        userEmail: cleanEmail,
+        displayName: (name && name.trim()) || 'Gamer',
+        isVip: planTier !== 'FREE',
+        planType: planTier,
+        paymentId: (paymentId && String(paymentId).trim()) || `manual_adm_${Date.now()}`,
+        purchasedAt: new Date().toISOString(),
+        expiresAt,
+        expiryTimestamp
+      };
+
+      await docRef.set(userDoc, { merge: true });
+      console.log(`[Admin Provision] User ${cleanEmail} provisioned as ${planTier} by ${authAdmin.user}`);
+      sendResponse(res, 200, {
+        success: true,
+        message: `User ${cleanEmail} successfully provisioned.`,
+        userId: docRef.id,
+        user: userDoc
+      });
+    } catch (err) {
+      console.error('[Admin Provision Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Update Payment Transaction ID
+  if (req.method === 'POST' && req.url === '/api/admin/user/update-payment') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+
+    if (!adminDb) {
+      sendResponse(res, 500, { error: 'Admin database not initialized' });
+      return;
+    }
+
+    try {
+      const { userId, paymentId } = await parseJsonBody(req);
+      if (!userId) {
+        sendResponse(res, 400, { error: 'Missing userId' });
+        return;
+      }
+
+      await adminDb.collection('users').doc(userId).set({
+        paymentId: (paymentId && String(paymentId).trim()) || null
+      }, { merge: true });
+
+      sendResponse(res, 200, { success: true, message: 'Transaction ID updated.' });
+    } catch (err) {
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Not Found
+  sendResponse(res, 404, { error: 'Route not found' });
   } catch (fatalErr) {
     console.error('[HTTP Fatal Error]', fatalErr);
     if (!res.headersSent) {

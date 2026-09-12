@@ -24,11 +24,103 @@ try {
 }
 
 let adminToken = sessionStorage.getItem("gv_admin_token") || null;
+let adminEmail = sessionStorage.getItem("gv_admin_email") || null;
 let cachedUsers = [];
 let activeEditingUser = null;
 let telemetryTimer = null;
 
-// 2. Authentication & Passcode Unlock
+// Switch between Firebase Login and Master Passcode tabs
+window.switchAuthTab = function(tab) {
+  const btnFb = document.getElementById("btnAuthTabFirebase");
+  const btnMaster = document.getElementById("btnAuthTabMaster");
+  const panelFb = document.getElementById("authPanelFirebase");
+  const panelMaster = document.getElementById("authPanelMaster");
+
+  if (tab === "firebase") {
+    btnFb?.classList.add("active");
+    btnMaster?.classList.remove("active");
+    panelFb?.classList.add("active");
+    panelMaster?.classList.remove("active");
+  } else {
+    btnMaster?.classList.add("active");
+    btnFb?.classList.remove("active");
+    panelMaster?.classList.add("active");
+    panelFb?.classList.remove("active");
+  }
+};
+
+// 2. Authentication: Firebase Admin Login
+window.submitAdminFirebaseLogin = async function(e) {
+  if (e) e.preventDefault();
+  const emailInput = document.getElementById("adminEmailInput");
+  const passwordInput = document.getElementById("adminPasswordInput");
+  const errorMsg = document.getElementById("firebaseAuthErrorMsg");
+  const submitBtn = document.getElementById("btnFirebaseLoginSubmit");
+
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+  const password = passwordInput ? passwordInput.value : "";
+
+  if (!email || !password) {
+    if (errorMsg) errorMsg.innerText = "Please enter both administrator email and password.";
+    return;
+  }
+
+  if (!auth) {
+    if (errorMsg) errorMsg.innerText = "Firebase Client Auth not ready. Please refresh the page.";
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Verifying Credentials...";
+  }
+  if (errorMsg) errorMsg.innerText = "";
+
+  try {
+    // 1. Authenticate with Firebase Client Auth
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    const idToken = await user.getIdToken(true);
+
+    // 2. Validate token and admin IAM privileges on server
+    const res = await fetch("/api/admin/verify-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.authenticated) {
+      adminToken = data.token;
+      adminEmail = data.email || email;
+      sessionStorage.setItem("gv_admin_token", adminToken);
+      sessionStorage.setItem("gv_admin_email", adminEmail);
+
+      updateAdminSessionBadge(adminEmail);
+      document.getElementById("authLockOverlay").style.display = "none";
+      initAdminDashboard();
+    } else {
+      if (errorMsg) errorMsg.innerText = data.error || "Authentication denied: Not authorized as administrator.";
+      try { await auth.signOut(); } catch (_) {}
+    }
+  } catch (err) {
+    console.error("Firebase Login Error:", err);
+    let friendly = err.message;
+    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+      friendly = "Invalid admin email or password.";
+    } else if (err.code === "auth/too-many-requests") {
+      friendly = "Too many failed attempts. Please wait a moment.";
+    }
+    if (errorMsg) errorMsg.innerText = friendly;
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Sign In to Admin Panel";
+    }
+  }
+};
+
+// Authentication: Master Passcode Unlock
 window.submitAdminPasscode = async function(e) {
   if (e) e.preventDefault();
   const input = document.getElementById("adminPasscodeInput");
@@ -50,7 +142,11 @@ window.submitAdminPasscode = async function(e) {
 
     if (res.ok && data.authenticated) {
       adminToken = data.token;
+      adminEmail = "Root Master Key";
       sessionStorage.setItem("gv_admin_token", adminToken);
+      sessionStorage.setItem("gv_admin_email", adminEmail);
+
+      updateAdminSessionBadge(adminEmail);
       document.getElementById("authLockOverlay").style.display = "none";
       initAdminDashboard();
     } else {
@@ -61,14 +157,41 @@ window.submitAdminPasscode = async function(e) {
   }
 };
 
+function updateAdminSessionBadge(userLabel) {
+  const badge = document.getElementById("adminSessionUserBadge");
+  if (badge) {
+    badge.innerText = "🛡️ " + userLabel;
+    badge.style.display = "inline-block";
+  }
+}
+
 window.lockAdminSession = function() {
   adminToken = null;
+  adminEmail = null;
   sessionStorage.removeItem("gv_admin_token");
+  sessionStorage.removeItem("gv_admin_email");
   if (telemetryTimer) clearInterval(telemetryTimer);
   document.getElementById("authLockOverlay").style.display = "flex";
   const passInput = document.getElementById("adminPasscodeInput");
   if (passInput) passInput.value = "";
+  const emailInput = document.getElementById("adminEmailInput");
+  if (emailInput) emailInput.value = "";
+  const pwdInput = document.getElementById("adminPasswordInput");
+  if (pwdInput) pwdInput.value = "";
+  const badge = document.getElementById("adminSessionUserBadge");
+  if (badge) badge.style.display = "none";
+  try { if (auth) auth.signOut(); } catch (_) {}
 };
+
+// Check if already authenticated on initial load
+document.addEventListener("DOMContentLoaded", () => {
+  if (adminToken) {
+    if (adminEmail) updateAdminSessionBadge(adminEmail);
+    const overlay = document.getElementById("authLockOverlay");
+    if (overlay) overlay.style.display = "none";
+    initAdminDashboard();
+  }
+});
 
 // 3. Initialize Dashboard & Real-Time Sync
 async function initAdminDashboard() {
@@ -179,25 +302,43 @@ window.closeSquadRoom = async function(roomCode) {
   }
 };
 
-// 5. Firestore Users Synchronization
+// 5. Firestore Users Synchronization (via Secure Server Admin SDK)
 async function loadAllFirestoreUsers() {
-  if (!db) {
-    console.error("Firestore not initialized");
-    return;
-  }
+  if (!adminToken) return;
 
   try {
-    const snapshot = await db.collection("users").get();
-    cachedUsers = [];
-    snapshot.forEach(doc => {
-      cachedUsers.push({ id: doc.id, ...doc.data() });
+    const res = await fetch("/api/admin/users", {
+      headers: { "x-admin-key": adminToken }
     });
-
-    calculateAndRenderMetrics();
-    filterAndRenderUsers();
-    renderTransactionsLedger();
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.users)) {
+        cachedUsers = data.users;
+        calculateAndRenderMetrics();
+        filterAndRenderUsers();
+        renderTransactionsLedger();
+        return;
+      }
+    }
   } catch (err) {
-    console.error("Error loading Firestore users:", err);
+    console.warn("Server admin users API failed, checking client SDK fallback:", err);
+  }
+
+  // Fallback to client SDK if available
+  if (db) {
+    try {
+      const snapshot = await db.collection("users").get();
+      cachedUsers = [];
+      snapshot.forEach(doc => {
+        cachedUsers.push({ id: doc.id, ...doc.data() });
+      });
+
+      calculateAndRenderMetrics();
+      filterAndRenderUsers();
+      renderTransactionsLedger();
+    } catch (err) {
+      console.error("Error loading Firestore users:", err);
+    }
   }
 }
 
@@ -357,66 +498,65 @@ window.closeEditUserModal = function() {
   activeEditingUser = null;
 };
 
-window.quickGrantDays = async function(days, planTier) {
-  if (!activeEditingUser || !db) return;
-
-  const now = Date.now();
-  let baseTimestamp = now;
-
-  // If user already has active time left, extend from that time!
-  if (activeEditingUser.isVip && activeEditingUser.expiryTimestamp && activeEditingUser.expiryTimestamp > now) {
-    baseTimestamp = activeEditingUser.expiryTimestamp;
-  }
-
-  const newExpiryTimestamp = baseTimestamp + (days * 24 * 60 * 60 * 1000);
-  const expiryLabel = new Date(newExpiryTimestamp).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
-
-  const updates = {
-    isVip: true,
-    planType: planTier,
-    expiresAt: expiryLabel,
-    expiryTimestamp: newExpiryTimestamp,
-    purchasedAt: new Date().toISOString()
-  };
-
-  const pid = document.getElementById("modalPaymentIdInput").value.trim();
-  if (pid) updates.paymentId = pid;
+window.quickGrantDays = async function(days, planTier = "MONTHLY") {
+  if (!activeEditingUser) return;
+  const pid = document.getElementById("modalPaymentIdInput")?.value?.trim() || activeEditingUser.paymentId || "";
 
   try {
-    await db.collection("users").doc(activeEditingUser.id).set(updates, { merge: true });
-    alert(`✅ Successfully granted +${days} days (${planTier}) to ${activeEditingUser.userEmail || activeEditingUser.id}!`);
-    closeEditUserModal();
-    loadAllFirestoreUsers();
+    const res = await fetch("/api/admin/user/grant", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({
+        userId: activeEditingUser.id,
+        days: days,
+        planType: planTier,
+        paymentId: pid
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`✅ Successfully granted +${days} days (${planTier}) to ${activeEditingUser.userEmail || activeEditingUser.id}!`);
+      closeEditUserModal();
+      loadAllFirestoreUsers();
+    } else {
+      alert("Error updating user: " + (data.error || "Unknown error"));
+    }
   } catch (err) {
-    alert("Error updating user in Firestore: " + err.message);
+    alert("Request error: " + err.message);
   }
 };
 
 window.quickGrantLifetime = async function() {
-  if (!activeEditingUser || !db) return;
-
-  const updates = {
-    isVip: true,
-    planType: "LIFETIME",
-    expiresAt: "N/A (Permanent)",
-    expiryTimestamp: -1,
-    purchasedAt: new Date().toISOString()
-  };
-
-  const pid = document.getElementById("modalPaymentIdInput").value.trim();
-  if (pid) updates.paymentId = pid;
+  if (!activeEditingUser) return;
+  const pid = document.getElementById("modalPaymentIdInput")?.value?.trim() || activeEditingUser.paymentId || "";
 
   try {
-    await db.collection("users").doc(activeEditingUser.id).set(updates, { merge: true });
-    alert(`👑 Successfully granted LIFETIME VIP to ${activeEditingUser.userEmail || activeEditingUser.id}!`);
-    closeEditUserModal();
-    loadAllFirestoreUsers();
+    const res = await fetch("/api/admin/user/grant", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({
+        userId: activeEditingUser.id,
+        days: 0,
+        planType: "LIFETIME",
+        paymentId: pid
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`👑 Successfully granted LIFETIME VIP to ${activeEditingUser.userEmail || activeEditingUser.id}!`);
+      closeEditUserModal();
+      loadAllFirestoreUsers();
+    } else {
+      alert("Error updating user: " + (data.error || "Unknown error"));
+    }
   } catch (err) {
-    alert("Error updating user: " + err.message);
+    alert("Request error: " + err.message);
   }
 };
 
@@ -431,64 +571,94 @@ window.applyCustomGrant = async function() {
 };
 
 window.savePaymentIdOverride = async function() {
-  if (!activeEditingUser || !db) return;
-  const pid = document.getElementById("modalPaymentIdInput").value.trim();
+  if (!activeEditingUser) return;
+  const pid = document.getElementById("modalPaymentIdInput")?.value?.trim();
 
   try {
-    await db.collection("users").doc(activeEditingUser.id).set({
-      paymentId: pid || null
-    }, { merge: true });
-    alert("Transaction ID updated.");
-    loadAllFirestoreUsers();
+    const res = await fetch("/api/admin/user/update-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({
+        userId: activeEditingUser.id,
+        paymentId: pid
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("Transaction ID updated.");
+      loadAllFirestoreUsers();
+    } else {
+      alert("Error updating payment ID: " + (data.error || "Unknown error"));
+    }
   } catch (err) {
-    alert("Error updating payment ID: " + err.message);
+    alert("Request error: " + err.message);
   }
 };
 
 window.revokeActiveVip = async function() {
-  if (!activeEditingUser || !db) return;
+  if (!activeEditingUser) return;
 
   if (!confirm(`Are you sure you want to REVOKE VIP status for ${activeEditingUser.userEmail || activeEditingUser.id}? They will be reverted to Free immediately.`)) {
     return;
   }
 
   try {
-    await db.collection("users").doc(activeEditingUser.id).set({
-      isVip: false,
-      planType: "FREE",
-      expiresAt: "Revoked by Administrator",
-      expiryTimestamp: 0
-    }, { merge: true });
-
-    alert("VIP status revoked.");
-    closeEditUserModal();
-    loadAllFirestoreUsers();
+    const res = await fetch("/api/admin/user/revoke", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({ userId: activeEditingUser.id })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("VIP status revoked.");
+      closeEditUserModal();
+      loadAllFirestoreUsers();
+    } else {
+      alert("Error revoking VIP: " + (data.error || "Unknown error"));
+    }
   } catch (err) {
-    alert("Error revoking VIP: " + err.message);
+    alert("Request error: " + err.message);
   }
 };
 
 window.deleteUserDocument = async function() {
-  if (!activeEditingUser || !db) return;
+  if (!activeEditingUser) return;
 
   if (!confirm(`⚠️ PERMANENT ACTION: Are you sure you want to DELETE user document ${activeEditingUser.id}? This cannot be undone.`)) {
     return;
   }
 
   try {
-    await db.collection("users").doc(activeEditingUser.id).delete();
-    alert("User deleted from Firestore.");
-    closeEditUserModal();
-    loadAllFirestoreUsers();
+    const res = await fetch("/api/admin/user/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({ userId: activeEditingUser.id })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("User deleted from Firestore.");
+      closeEditUserModal();
+      loadAllFirestoreUsers();
+    } else {
+      alert("Error deleting user: " + (data.error || "Unknown error"));
+    }
   } catch (err) {
-    alert("Error deleting user: " + err.message);
+    alert("Request error: " + err.message);
   }
 };
 
 // 7. Manual User Provisioning Form
 window.handleManualProvision = async function(e) {
   e.preventDefault();
-  if (!db) return;
 
   const email = document.getElementById("provEmail").value.trim().toLowerCase();
   const name = document.getElementById("provName").value.trim() || "Gamer";
@@ -501,55 +671,38 @@ window.handleManualProvision = async function(e) {
     return;
   }
 
-  const now = Date.now();
-  let expiryTimestamp = -1;
-  let expiresAt = "N/A (Permanent)";
-
-  if (tier !== "LIFETIME") {
-    expiryTimestamp = now + (days * 24 * 60 * 60 * 1000);
-    expiresAt = new Date(expiryTimestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
+  const submitBtn = document.getElementById("btnProvSubmit");
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Provisioning...";
   }
 
-  const submitBtn = document.getElementById("btnProvSubmit");
-  submitBtn.disabled = true;
-  submitBtn.innerText = "Provisioning...";
-
   try {
-    // Check if user with this email already exists
-    const querySnap = await db.collection("users").where("userEmail", "==", email).get();
-    let targetDocRef;
+    const res = await fetch("/api/admin/user/provision", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({ email, name, tier, days, paymentId })
+    });
+    const data = await res.json();
 
-    if (!querySnap.empty) {
-      targetDocRef = querySnap.docs[0].ref;
+    if (res.ok) {
+      alert(`✅ VIP pass successfully created for ${email}!`);
+      document.getElementById("manualProvisionForm").reset();
+      switchAdminTab("users");
+      loadAllFirestoreUsers();
     } else {
-      // Create new document with generated ID or email slug
-      targetDocRef = db.collection("users").doc();
+      alert("Error provisioning user: " + (data.error || "Unknown error"));
     }
-
-    await targetDocRef.set({
-      userEmail: email,
-      displayName: name,
-      isVip: tier !== "FREE",
-      planType: tier,
-      paymentId: paymentId,
-      purchasedAt: new Date().toISOString(),
-      expiresAt: expiresAt,
-      expiryTimestamp: expiryTimestamp
-    }, { merge: true });
-
-    alert(`✅ VIP pass successfully created for ${email}!`);
-    document.getElementById("manualProvisionForm").reset();
-    switchAdminTab("users");
-    loadAllFirestoreUsers();
   } catch (err) {
     alert("Error provisioning user: " + err.message);
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerText = "Provision & Grant Access";
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "⚡ Provision & Grant Access";
+    }
   }
 };
 

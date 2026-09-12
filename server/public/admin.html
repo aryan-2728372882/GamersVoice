@@ -13,16 +13,43 @@
 </head>
 <body>
 
-  <!-- 1. Master Security Gate / Passcode Lock Screen -->
+  <!-- 1. Master Security Gate / Passcode & Firebase Login Screen -->
   <div class="auth-lock-overlay" id="authLockOverlay">
     <div class="auth-lock-card">
       <span class="lock-badge">🛡️</span>
       <h1 class="lock-title">GAMERVOICE ADMIN</h1>
-      <p class="lock-desc">Restricted Command Center. Please authenticate with your master security passcode to access user controls and server telemetry.</p>
+      <p class="lock-desc">Restricted Command Center. Authenticate with your Firebase administrator credentials or master security key.</p>
       
-      <form onsubmit="submitAdminPasscode(event)">
+      <!-- Dual Auth Switcher Tabs -->
+      <div class="auth-tabs-nav">
+        <button type="button" class="auth-tab-btn active" id="btnAuthTabFirebase" onclick="switchAuthTab('firebase')">
+          🔑 Firebase Sign In
+        </button>
+        <button type="button" class="auth-tab-btn" id="btnAuthTabMaster" onclick="switchAuthTab('master')">
+          ⚡ Master Passcode
+        </button>
+      </div>
+
+      <!-- Tab Panel 1: Firebase Auth Sign In -->
+      <form class="auth-tab-panel active" id="authPanelFirebase" onsubmit="submitAdminFirebaseLogin(event)">
+        <label class="auth-form-label" for="adminEmailInput">ADMINISTRATOR EMAIL</label>
+        <input type="email" id="adminEmailInput" class="auth-text-input" placeholder="admin@gamersvoice.internal" autocomplete="username" required>
+
+        <label class="auth-form-label" for="adminPasswordInput">ADMIN PASSWORD</label>
+        <input type="password" id="adminPasswordInput" class="auth-text-input" placeholder="••••••••••••" autocomplete="current-password" required>
+
+        <div class="lock-error-msg" id="firebaseAuthErrorMsg"></div>
+
+        <button type="submit" id="btnFirebaseLoginSubmit" class="btn-admin btn-gold btn-block" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+          Sign In to Admin Panel
+        </button>
+      </form>
+
+      <!-- Tab Panel 2: Master Passcode -->
+      <form class="auth-tab-panel" id="authPanelMaster" onsubmit="submitAdminPasscode(event)">
+        <label class="auth-form-label" for="adminPasscodeInput">ROOT MASTER SECURITY KEY</label>
         <div class="lock-input-group">
-          <input type="password" id="adminPasscodeInput" class="lock-input" placeholder="••••••••••••" autofocus required>
+          <input type="password" id="adminPasscodeInput" class="lock-input" placeholder="••••••••••••">
           <div class="lock-error-msg" id="lockErrorMsg"></div>
         </div>
         <button type="submit" class="btn-admin btn-gold btn-block" style="width: 100%; justify-content: center; padding: 12px;">
@@ -41,7 +68,8 @@
       </div>
     </div>
 
-    <div class="admin-nav-actions">
+    <div class="admin-nav-actions" style="display: flex; align-items: center; gap: 10px;">
+      <span id="adminSessionUserBadge" style="font-size: 0.8rem; color: var(--gold-primary); font-weight: 600; display: none; padding: 4px 10px; background: rgba(255, 215, 0, 0.1); border: 1px solid var(--border-gold); border-radius: 20px;"></span>
       <a href="/" target="_blank" class="btn-admin btn-secondary">
         🌐 View Website
       </a>
