@@ -120,14 +120,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         RoomPersistenceManager.init(this)
         Checkout.preload(applicationContext)
 
-        // Automatically revoke any unverified / unpaid VIP status on app launch
-        PlanManager.enforceValidPaidStatus {
-            runOnUiThread {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-            }
-        }
-
         if (!AuthManager.isLoggedIn()) {
             val intent = Intent(this, AuthActivity::class.java)
             startActivity(intent)
@@ -144,6 +136,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Automatically sync VIP status from Cloud Firestore on app launch
+        PlanManager.enforceValidPaidStatus {
+            runOnUiThread {
+                updatePlanUI()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+            }
+        }
 
         binding.btnCreateRoom.isEnabled = false
         binding.btnJoinRoom.isEnabled = false
@@ -815,7 +815,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     // --- Monetization & VIP UI ---
 
     private fun verifyPlanExpiry() {
-        val wasExpired = PlanManager.checkAndEnforceExpiry {
+        PlanManager.enforceValidPaidStatus {
             runOnUiThread {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
@@ -831,6 +831,17 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabName.text = user.name
             binding.tvProfileTabEmail.text = user.email
             ImageLoader.loadAvatar(binding.ivProfileTabAvatar, user.avatar)
+        }
+
+        binding.tvProfileTabPlanBadge.setOnClickListener {
+            Toast.makeText(this, "Syncing VIP status from cloud...", Toast.LENGTH_SHORT).show()
+            PlanManager.enforceValidPaidStatus {
+                runOnUiThread {
+                    updatePlanUI()
+                    val status = if (PlanManager.isVip()) "VIP: " + PlanManager.getPlanName() else "Free Plan"
+                    Toast.makeText(this, "Current Status: $status", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         if (isVip) {

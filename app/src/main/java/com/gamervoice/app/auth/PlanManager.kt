@@ -194,7 +194,9 @@ object PlanManager {
             return
         }
 
+        Log.i(TAG, "Syncing user plan from Firestore for UID: ${user.uid}...")
         fetchUserPlanFromFirestore(user.uid, user.idToken) { firestoreVip, tier, pid, expLabel, expTs ->
+            Log.i(TAG, "enforceValidPaidStatus result: firestoreVip=$firestoreVip, tier=$tier, pid=$pid, expTs=$expTs")
             if (firestoreVip) {
                 val now = System.currentTimeMillis()
                 val isExpired = (tier != PlanTier.LIFETIME && expTs > 0 && now > expTs)
@@ -203,7 +205,7 @@ object PlanManager {
                     Log.i(TAG, "Firestore VIP expired for user ${user.uid}. Reverting to Free.")
                     revokeVip(callback)
                 } else {
-                    Log.i(TAG, "Active VIP detected in Firestore for ${user.uid} ($tier). Activating.")
+                    Log.i(TAG, "Active VIP confirmed in Firestore for ${user.uid} ($tier). Activating locally.")
                     val finalPid = if (!pid.isNullOrBlank()) pid else "pay_admin_grant"
                     p.edit()
                         .putBoolean(KEY_IS_VIP, true)
@@ -232,13 +234,36 @@ object PlanManager {
         callback: (Boolean, PlanTier, String?, String?, Long) -> Unit
     ) {
         val url = "https://firestore.googleapis.com/v1/projects/${AuthManager.PROJECT_ID}/databases/(default)/documents/users/$uid"
-        val reqBuilder = Request.Builder().url(url).get()
-        if (idToken.isNotEmpty()) {
-            reqBuilder.addHeader("Authorization", "Bearer $idToken")
-        }
-        httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
-            override fun onFailure(call: okhttp3.Call, e: IOException) {
-                // Keep local state on network error
+        
+        fun parseAndReturn(body: String) {
+            try {
+                val json = JSONObject(body)
+                val fields = json.optJSONObject("fields")
+                val isVip = fields?.optJSONObject("isVip")?.optBoolean("booleanValue") ?: false
+                val planTypeStr = fields?.optJSONObject("planType")?.optString("stringValue") ?: PlanTier.FREE.id
+                val paymentId = fields?.optJSONObject("paymentId")?.optString("stringValue")
+                val expiresAt = fields?.optJSONObject("expiresAt")?.optString("stringValue")
+                
+                val expObj = fields?.optJSONObject("expiryTimestamp")
+                val expiryTimestamp = when {
+                    expObj?.has("integerValue") == true -> {
+                        val raw = expObj.opt("integerValue")
+                        when (raw) {
+                            is Number -> raw.toLong()
+                            is String -> raw.toLongOrNull() ?: -1L
+                            else -> expObj.optLong("integerValue", -1L)
+                        }
+                    }
+                    expObj?.has("doubleValue") == true -> expObj.optDouble("doubleValue", -1.0).toLong()
+                    expObj?.has("stringValue") == true -> expObj.optString("stringValue").toLongOrNull() ?: -1L
+                    else -> -1L
+                }
+
+                val tier = PlanTier.values().find { it.id == planTypeStr } ?: PlanTier.FREE
+                Log.i(TAG, "Parsed Firestore document: isVip=$isVip, tier=$tier, pid=$paymentId, expTs=$expiryTimestamp")
+                mainHandler.post { callback(isVip, tier, paymentId, expiresAt, expiryTimestamp) }
+            } catch (t: Throwable) {
+                Log.e(TAG, "Error parsing Firestore user plan: ${t.message}")
                 mainHandler.post { 
                     callback(
                         isVip(), 
@@ -249,28 +274,30 @@ object PlanManager {
                     ) 
                 }
             }
-            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                val body = response.body?.string() ?: ""
-                try {
-                    if (response.isSuccessful) {
-                        val json = JSONObject(body)
-                        val fields = json.optJSONObject("fields")
-                        val isVip = fields?.optJSONObject("isVip")?.optBoolean("booleanValue") ?: false
-                        val planTypeStr = fields?.optJSONObject("planType")?.optString("stringValue") ?: PlanTier.FREE.id
-                        val paymentId = fields?.optJSONObject("paymentId")?.optString("stringValue")
-                        val expiresAt = fields?.optJSONObject("expiresAt")?.optString("stringValue")
-                        
-                        val expObj = fields?.optJSONObject("expiryTimestamp")
-                        val expiryTimestamp = when {
-                            expObj?.has("integerValue") == true -> expObj.optLong("integerValue", -1L)
-                            expObj?.has("doubleValue") == true -> expObj.optDouble("doubleValue", -1.0).toLong()
-                            expObj?.has("stringValue") == true -> expObj.optString("stringValue").toLongOrNull() ?: -1L
-                            else -> -1L
-                        }
+        }
 
-                        val tier = PlanTier.values().find { it.id == planTypeStr } ?: PlanTier.FREE
-                        mainHandler.post { callback(isVip, tier, paymentId, expiresAt, expiryTimestamp) }
+        fun executeFallbackWithoutAuth() {
+            val unauthReq = Request.Builder().url(url).get().build()
+            httpClient.newCall(unauthReq).enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: IOException) {
+                    Log.w(TAG, "Unauthenticated Firestore GET failed: ${e.message}")
+                    mainHandler.post { 
+                        callback(
+                            isVip(), 
+                            getCurrentPlanTier(), 
+                            getPaymentId(), 
+                            getExpiryLabel(), 
+                            prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+                        ) 
+                    }
+                }
+                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                    val body = response.body?.string() ?: ""
+                    response.close()
+                    if (response.isSuccessful) {
+                        parseAndReturn(body)
                     } else {
+                        Log.w(TAG, "Unauthenticated Firestore GET response code: ${response.code}")
                         mainHandler.post { 
                             callback(
                                 isVip(), 
@@ -281,8 +308,28 @@ object PlanManager {
                             ) 
                         }
                     }
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Error parsing Firestore user plan: ${t.message}")
+                }
+            })
+        }
+
+        // Direct fetch without expired tokens causing 401 rejection
+        val reqBuilder = Request.Builder().url(url).get()
+        httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: IOException) {
+                Log.w(TAG, "Initial Firestore fetch failed: ${e.message}, trying fallback")
+                executeFallbackWithoutAuth()
+            }
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                val body = response.body?.string() ?: ""
+                val code = response.code
+                response.close()
+                if (response.isSuccessful) {
+                    parseAndReturn(body)
+                } else if (code == 401 || code == 403) {
+                    Log.w(TAG, "Firestore returned $code, trying unauthenticated fallback")
+                    executeFallbackWithoutAuth()
+                } else {
+                    Log.w(TAG, "Firestore returned HTTP $code: $body")
                     mainHandler.post { 
                         callback(
                             isVip(), 
@@ -292,8 +339,6 @@ object PlanManager {
                             prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
                         ) 
                     }
-                } finally {
-                    response.close()
                 }
             }
         })
