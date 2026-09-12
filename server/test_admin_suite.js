@@ -285,6 +285,18 @@ async function runAdminTests() {
   });
   record('Security Gate Lock Screen Active on Arrival', lockVisible.result.value, 'Protected by PIN overlay');
 
+  // Check Google Sign-In Button on Lock Screen
+  const googleBtnVisible = await sendCdp('Runtime.evaluate', {
+    expression: `
+      (() => {
+        const btn = document.getElementById('btnAdminGoogleLogin');
+        return btn && btn.innerText.includes('Sign In with Google') && getComputedStyle(btn).display !== 'none';
+      })()
+    `,
+    returnByValue: true
+  });
+  record('Google Sign-In Button Rendered & Active', googleBtnVisible.result.value, 'Sign In with Google available on Admin screen');
+
   // Test Dual-Auth Tab Switch to Master Passcode
   const tabSwitched = await sendCdp('Runtime.evaluate', {
     expression: `
