@@ -671,70 +671,80 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // 1. Verify code exists and fetch its registered owner
-      const refDocRef = adminDb.collection('referrals').doc(cleanCode);
-      const refSnap = await refDocRef.get();
-      if (!refSnap.exists) {
-        sendResponse(res, 404, { error: 'Invalid referral code. This code does not exist.' });
-        return;
-      }
-
-      const refData = refSnap.data();
-      const referrerUid = refData.ownerUid;
-
-      // 2. Prevent self-redemption
-      if (referrerUid === refereeUid) {
-        sendResponse(res, 400, { error: 'You cannot redeem your own referral code!' });
-        return;
-      }
-
-      // 3. Prevent repeated redemption by the same user (Server-side enforcement)
-      const redemptionDocRef = adminDb.collection('referral_redemptions').doc(refereeUid);
-      const redemptionSnap = await redemptionDocRef.get();
-      if (redemptionSnap.exists) {
-        sendResponse(res, 400, { error: 'You have already redeemed a welcome referral code on this account.' });
-        return;
-      }
-
-      const refereeDocRef = adminDb.collection('users').doc(refereeUid);
-      const refereeSnap = await refereeDocRef.get();
-      if (refereeSnap.exists && refereeSnap.data().hasRedeemedReferral) {
-        sendResponse(res, 400, { error: 'You have already redeemed a welcome referral code on this account.' });
-        return;
-      }
-
-      const now = Date.now();
-      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-
-      // 4. Calculate and grant +3 Days VIP to REFEREE
-      let refereeBaseTs = now;
-      if (refereeSnap.exists) {
-        const d = refereeSnap.data();
-        if (d.expiryTimestamp && Number(d.expiryTimestamp) > now) {
-          refereeBaseTs = Number(d.expiryTimestamp);
+      // Execute redemption inside an atomic Firestore transaction
+      await adminDb.runTransaction(async (transaction) => {
+        // 1. All Transaction Reads First
+        const refDocRef = adminDb.collection('referrals').doc(cleanCode);
+        const refSnap = await transaction.get(refDocRef);
+        if (!refSnap.exists) {
+          const err = new Error('Invalid referral code. This code does not exist.');
+          err.statusCode = 404;
+          throw err;
         }
-      }
-      const newRefereeExpTs = refereeBaseTs + threeDaysMs;
-      const refereeExpDate = new Date(newRefereeExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-      await refereeDocRef.set({
-        isVip: true,
-        planType: 'WEEKLY',
-        expiryTimestamp: newRefereeExpTs,
-        expiresAt: refereeExpDate,
-        hasRedeemedReferral: true,
-        redeemedReferralCode: cleanCode,
-        paymentId: `ref_welcome_${cleanCode}`,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+        const refData = refSnap.data();
+        const referrerUid = refData.ownerUid;
 
-      // 5. Calculate and grant +3 Days VIP to REFERRER (The code owner!)
-      if (referrerUid) {
-        try {
-          const referrerDocRef = adminDb.collection('users').doc(referrerUid);
-          const referrerSnap = await referrerDocRef.get();
+        // 2. Prevent self-redemption
+        if (referrerUid === refereeUid) {
+          const err = new Error('You cannot redeem your own referral code!');
+          err.statusCode = 400;
+          throw err;
+        }
+
+        // 3. Prevent repeated redemption by the same user
+        const redemptionDocRef = adminDb.collection('referral_redemptions').doc(refereeUid);
+        const redemptionSnap = await transaction.get(redemptionDocRef);
+        if (redemptionSnap.exists) {
+          const err = new Error('You have already redeemed a welcome referral code on this account.');
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const refereeDocRef = adminDb.collection('users').doc(refereeUid);
+        const refereeSnap = await transaction.get(refereeDocRef);
+        if (refereeSnap.exists && refereeSnap.data().hasRedeemedReferral) {
+          const err = new Error('You have already redeemed a welcome referral code on this account.');
+          err.statusCode = 400;
+          throw err;
+        }
+
+        let referrerSnap = null;
+        let referrerDocRef = null;
+        if (referrerUid) {
+          referrerDocRef = adminDb.collection('users').doc(referrerUid);
+          referrerSnap = await transaction.get(referrerDocRef);
+        }
+
+        // 4. Calculations
+        const now = Date.now();
+        const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+        let refereeBaseTs = now;
+        if (refereeSnap.exists) {
+          const d = refereeSnap.data();
+          if (d.expiryTimestamp && Number(d.expiryTimestamp) > now) {
+            refereeBaseTs = Number(d.expiryTimestamp);
+          }
+        }
+        const newRefereeExpTs = refereeBaseTs + threeDaysMs;
+        const refereeExpDate = new Date(newRefereeExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+        // 5. Transaction Writes (Atomic)
+        transaction.set(refereeDocRef, {
+          isVip: true,
+          planType: 'WEEKLY',
+          expiryTimestamp: newRefereeExpTs,
+          expiresAt: refereeExpDate,
+          hasRedeemedReferral: true,
+          redeemedReferralCode: cleanCode,
+          paymentId: `ref_welcome_${cleanCode}`,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        if (referrerUid && referrerDocRef) {
           let referrerBaseTs = now;
-          if (referrerSnap.exists) {
+          if (referrerSnap && referrerSnap.exists) {
             const rd = referrerSnap.data();
             if (rd.expiryTimestamp && Number(rd.expiryTimestamp) > now) {
               referrerBaseTs = Number(rd.expiryTimestamp);
@@ -743,7 +753,7 @@ const server = http.createServer(async (req, res) => {
           const newReferrerExpTs = referrerBaseTs + threeDaysMs;
           const referrerExpDate = new Date(newReferrerExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-          await referrerDocRef.set({
+          transaction.set(referrerDocRef, {
             isVip: true,
             planType: 'WEEKLY',
             expiryTimestamp: newReferrerExpTs,
@@ -751,29 +761,23 @@ const server = http.createServer(async (req, res) => {
             paymentId: `ref_bonus_${cleanCode}`,
             updatedAt: new Date().toISOString()
           }, { merge: true });
-
-          console.log(`[Referral Engine] Credited +3 Days VIP to referrer ${referrerUid}`);
-        } catch (referrerErr) {
-          console.error('[Referral Engine] Failed crediting referrer:', referrerErr.message);
         }
-      }
 
-      // 6. Record redemption record to lock out replay attacks
-      await redemptionDocRef.set({
-        refereeUid,
-        refereeEmail: authUser.email,
-        referrerUid: referrerUid || '',
-        code: cleanCode,
-        redeemedAt: new Date().toISOString(),
-        timestamp: now
+        transaction.set(redemptionDocRef, {
+          refereeUid,
+          refereeEmail: authUser.email,
+          referrerUid: referrerUid || '',
+          code: cleanCode,
+          redeemedAt: new Date().toISOString(),
+          timestamp: now
+        });
+
+        transaction.set(refDocRef, {
+          redeemedCount: (refData.redeemedCount || 0) + 1,
+          lastRedeemedBy: refereeUid,
+          lastRedeemedAt: new Date().toISOString()
+        }, { merge: true });
       });
-
-      // 7. Update referral stats
-      await refDocRef.set({
-        redeemedCount: (refData.redeemedCount || 0) + 1,
-        lastRedeemedBy: refereeUid,
-        lastRedeemedAt: new Date().toISOString()
-      }, { merge: true });
 
       sendResponse(res, 200, {
         success: true,
@@ -781,7 +785,8 @@ const server = http.createServer(async (req, res) => {
       });
     } catch (err) {
       console.error('[Referral Error]', err.message);
-      sendResponse(res, 500, { error: 'Failed to process referral: ' + err.message });
+      const statusCode = err.statusCode || 500;
+      sendResponse(res, statusCode, { error: err.message || 'Failed to process referral' });
     }
     return;
   }
