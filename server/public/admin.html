@@ -161,6 +161,9 @@
       <button class="admin-tab-btn" data-tab="provision" onclick="switchAdminTab('provision')">
         ➕ Manual Provision User
       </button>
+      <button class="admin-tab-btn" data-tab="broadcast" onclick="switchAdminTab('broadcast')">
+        🚀 Zomato-Style Push Broadcast
+      </button>
     </div>
 
     <!-- Tab 1: Users Directory -->
@@ -312,6 +315,125 @@
             Provision &amp; Grant Access
           </button>
         </form>
+      </div>
+    </div>
+
+    <!-- Tab 5: Zomato-Style Push Broadcast Engine -->
+    <div class="tab-pane" id="tab-broadcast">
+      <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; max-width: 1100px; margin: 0 auto;">
+        
+        <!-- Left: Broadcast Controls -->
+        <div class="table-card" style="padding: 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--gold-primary);">
+              🚀 Zomato-Style Push Broadcast
+            </h3>
+            <span style="font-size: 0.72rem; padding: 4px 8px; border-radius: 4px; background: rgba(0, 255, 136, 0.15); color: #00FF88; font-weight: 700; border: 1px solid rgba(0, 255, 136, 0.3);">
+              100% FREE &bull; FCM
+            </span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px;">
+            Broadcast instant heads-up push notifications to all gamers' mobile devices — even when GamerVoice is completely closed!
+          </p>
+
+          <form id="pushBroadcastForm" onsubmit="handleSendBroadcastPush(event)">
+            <!-- Catchy Preset Selector -->
+            <div class="form-group-admin">
+              <label for="pushPresetSelect">💡 QUICK ZOMATO / SQUAD HOOK PRESETS</label>
+              <select id="pushPresetSelect" onchange="applyPushPreset(this.value)">
+                <option value="">-- Choose a catchy hook or type below --</option>
+                <option value="fomo">💔 "Lobby mein wait ho raha hai..." (Bhai clutch koun karega? Squad ready hai!)</option>
+                <option value="mic">🎙️ "Tera mic bandh kyu hai?" (Rank push ka time ho gaya! Drop in with 0 lag.)</option>
+                <option value="rush">🏆 "Squad up! Pochinki is calling" (BGMI match starts now. 1 tap to rejoin.)</option>
+                <option value="weekend">🔥 "Weekend Clutch Pass Active" (Warm up the mics. Tonight's win streak starts now.)</option>
+                <option value="vip">👑 "Your 3 Days VIP Pass is waiting!" (Squad mates are grinding with Ultra Noise Filter.)</option>
+              </select>
+            </div>
+
+            <!-- Title Input -->
+            <div class="form-group-admin">
+              <div style="display: flex; justify-content: space-between;">
+                <label for="pushTitleInput">NOTIFICATION TITLE *</label>
+                <span id="pushTitleCounter" style="font-size: 0.72rem; color: var(--text-muted);">0 / 50</span>
+              </div>
+              <input type="text" id="pushTitleInput" placeholder="e.g. Lobby mein wait ho raha hai... 💔" required maxlength="50" oninput="updatePushPreview()">
+            </div>
+
+            <!-- Message Body -->
+            <div class="form-group-admin">
+              <div style="display: flex; justify-content: space-between;">
+                <label for="pushBodyInput">MESSAGE BODY (RIZZ &amp; GAMER HOOK) *</label>
+                <span id="pushBodyCounter" style="font-size: 0.72rem; color: var(--text-muted);">0 / 140</span>
+              </div>
+              <textarea id="pushBodyInput" rows="3" placeholder="e.g. Bhai clutch koun karega? Squad ready hai, jaldi room join kar!" required maxlength="140" oninput="updatePushPreview()"></textarea>
+            </div>
+
+            <!-- Optional Squad Room Auto-Join Code -->
+            <div class="form-group-admin">
+              <label for="pushRoomCodeInput">OPTIONAL ROOM AUTO-JOIN CODE</label>
+              <input type="text" id="pushRoomCodeInput" placeholder="e.g. GV-WAR (Optional: 1-tap drops user into room)" maxlength="10" oninput="updatePushPreview()">
+            </div>
+
+            <div id="pushStatusMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 14px;"></div>
+
+            <button type="submit" id="btnPushSubmit" class="btn-admin btn-gold" style="width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem;">
+              🚀 Send Broadcast to All Gamers Now
+            </button>
+          </form>
+        </div>
+
+        <!-- Right: Mobile Device Live Preview -->
+        <div>
+          <div class="table-card" style="padding: 24px; margin-bottom: 20px;">
+            <h4 style="font-size: 0.9rem; font-weight: 700; color: #FFF; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              📱 Live Android Notification Preview
+            </h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+              This is how your heads-up push appears over BGMI / Free Fire on users' phones:
+            </p>
+
+            <!-- Android Notification Banner Mockup -->
+            <div style="background: #1E293B; border-radius: 16px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <!-- Header line -->
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div style="width: 20px; height: 20px; border-radius: 4px; background: #00FF88; display: flex; align-items: center; justify-content: center; font-size: 11px;">🎧</div>
+                  <span style="font-size: 11px; font-weight: 600; color: #94A3B8; letter-spacing: 0.5px;">GAMERVOICE &bull; just now</span>
+                </div>
+                <span style="font-size: 11px; color: #64748B;">&or;</span>
+              </div>
+              
+              <!-- Content -->
+              <div style="margin-left: 28px;">
+                <div id="previewNotifTitle" style="font-size: 13.5px; font-weight: 700; color: #F8FAFC; margin-bottom: 3px;">
+                  Lobby mein wait ho raha hai... 💔
+                </div>
+                <div id="previewNotifBody" style="font-size: 12.5px; color: #CBD5E1; line-height: 1.4;">
+                  Bhai clutch koun karega? Squad ready hai, jaldi room join kar!
+                </div>
+                <div id="previewNotifAction" style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0, 255, 136, 0.4); border-radius: 6px; color: #00FF88; font-size: 11px; font-weight: 700;">
+                  ⚡ JOIN SQUAD 🎮
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Broadcast History Log -->
+          <div class="table-card" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--gold-primary);">
+                📜 Recent Push Broadcasts
+              </h4>
+              <button class="btn-admin btn-secondary" style="padding: 4px 10px; font-size: 0.72rem;" onclick="loadPushHistory()">
+                Refresh
+              </button>
+            </div>
+            <div id="pushHistoryContainer" style="font-size: 0.78rem; color: var(--text-muted);">
+              No push broadcasts sent yet.
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 

@@ -11,6 +11,7 @@ import android.content.ServiceConnection
 import android.graphics.Color
 import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
@@ -156,6 +157,18 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         com.gamervoice.app.util.SquadReplayManager.init(this)
         setupAdMobWithConsent()
         com.gamervoice.app.auth.ReferralManager.registerCodeWithServer(this)
+        com.gamervoice.app.service.GamerVoiceMessagingService.subscribeToGlobalTopic()
+
+        // Android 13+ Notification Permission Prompt
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
+            }
+        }
 
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)

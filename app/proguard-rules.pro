@@ -53,4 +53,10 @@
 -keep class com.gamervoice.app.auth.PlanTier { *; }
 -keep enum com.gamervoice.app.auth.PlanTier { *; }
 
+# Firebase Cloud Messaging & Google Play Services
+-keep class com.google.firebase.messaging.** { *; }
+-dontwarn com.google.firebase.messaging.**
+-keep class com.gamervoice.app.service.GamerVoiceMessagingService { *; }
+
+
 

@@ -787,6 +787,177 @@ window.switchAdminTab = function(tabName) {
   document.querySelectorAll(".tab-pane").forEach(pane => {
     pane.classList.toggle("active", pane.id === `tab-${tabName}`);
   });
+  if (tabName === "broadcast") {
+    loadPushHistory();
+  }
+};
+
+// 8b. Zomato-Style Push Broadcast Engine
+const PUSH_PRESETS = {
+  fomo: {
+    title: "Lobby mein wait ho raha hai... 💔",
+    body: "Bhai clutch koun karega? Squad ready hai, jaldi room join kar!",
+    room: ""
+  },
+  mic: {
+    title: "Tera mic bandh kyu hai? 🎙️",
+    body: "Rank push ka time ho gaya! Drop in with 0 lag on GamerVoice.",
+    room: ""
+  },
+  rush: {
+    title: "Squad up! Pochinki is calling 🏆",
+    body: "BGMI match starts now. 1 tap to rejoin your squad voice room.",
+    room: ""
+  },
+  weekend: {
+    title: "Weekend Clutch Pass Active 🔥",
+    body: "Warm up the mics. Tonight's win streak starts now with your crew.",
+    room: ""
+  },
+  vip: {
+    title: "Your 3 Days VIP Pass is waiting! 👑",
+    body: "Squad mates are grinding with Ultra Noise Filter. Claim & join now!",
+    room: ""
+  }
+};
+
+window.applyPushPreset = function(presetKey) {
+  if (!presetKey || !PUSH_PRESETS[presetKey]) return;
+  const preset = PUSH_PRESETS[presetKey];
+  const titleEl = document.getElementById("pushTitleInput");
+  const bodyEl = document.getElementById("pushBodyInput");
+  const roomEl = document.getElementById("pushRoomCodeInput");
+  if (titleEl) titleEl.value = preset.title;
+  if (bodyEl) bodyEl.value = preset.body;
+  if (roomEl && preset.room) roomEl.value = preset.room;
+  updatePushPreview();
+};
+
+window.updatePushPreview = function() {
+  const titleVal = document.getElementById("pushTitleInput")?.value || "";
+  const bodyVal = document.getElementById("pushBodyInput")?.value || "";
+  const roomVal = document.getElementById("pushRoomCodeInput")?.value || "";
+
+  const titleCounter = document.getElementById("pushTitleCounter");
+  const bodyCounter = document.getElementById("pushBodyCounter");
+  if (titleCounter) titleCounter.innerText = `${titleVal.length} / 50`;
+  if (bodyCounter) bodyCounter.innerText = `${bodyVal.length} / 140`;
+
+  const prevTitle = document.getElementById("previewNotifTitle");
+  const prevBody = document.getElementById("previewNotifBody");
+  const prevAction = document.getElementById("previewNotifAction");
+
+  if (prevTitle) prevTitle.innerText = titleVal.trim() || "Lobby mein wait ho raha hai... 💔";
+  if (prevBody) prevBody.innerText = bodyVal.trim() || "Bhai clutch koun karega? Squad ready hai, jaldi room join kar!";
+  if (prevAction) {
+    if (roomVal.trim()) {
+      prevAction.innerText = `⚡ JOIN ${roomVal.trim().toUpperCase()} 🎮`;
+    } else {
+      prevAction.innerText = "⚡ JOIN SQUAD 🎮";
+    }
+  }
+};
+
+window.handleSendBroadcastPush = async function(e) {
+  if (e) e.preventDefault();
+  const title = document.getElementById("pushTitleInput")?.value?.trim();
+  const body = document.getElementById("pushBodyInput")?.value?.trim();
+  const roomCode = document.getElementById("pushRoomCodeInput")?.value?.trim();
+  const statusMsg = document.getElementById("pushStatusMsg");
+  const submitBtn = document.getElementById("btnPushSubmit");
+
+  if (!title || !body) {
+    alert("Please provide both a Title and Message Body.");
+    return;
+  }
+
+  if (!confirm(`🚀 Ready to blast notification to ALL GamerVoice users?\n\nTitle: "${title}"\nBody: "${body}"${roomCode ? `\nRoom: ${roomCode}` : ''}`)) {
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = "📡 Dispatching via Firebase Cloud Messaging...";
+  }
+  if (statusMsg) {
+    statusMsg.style.display = "none";
+  }
+
+  try {
+    const res = await fetch("/api/admin/broadcast-push", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": adminToken
+      },
+      body: JSON.stringify({ title, body, roomCode })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      if (statusMsg) {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(0, 255, 136, 0.15)";
+        statusMsg.style.color = "#00FF88";
+        statusMsg.style.border = "1px solid rgba(0, 255, 136, 0.4)";
+        statusMsg.innerText = `✅ Dispatched successfully to topic 'all_gamers'! (ID: ${data.messageId})`;
+      }
+      loadPushHistory();
+    } else {
+      if (statusMsg) {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(255, 75, 75, 0.15)";
+        statusMsg.style.color = "#FF4B4B";
+        statusMsg.style.border = "1px solid rgba(255, 75, 75, 0.4)";
+        statusMsg.innerText = `❌ Error: ${data.error || "Failed to broadcast"}`;
+      }
+    }
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.style.background = "rgba(255, 75, 75, 0.15)";
+      statusMsg.style.color = "#FF4B4B";
+      statusMsg.style.border = "1px solid rgba(255, 75, 75, 0.4)";
+      statusMsg.innerText = `❌ Network Error: ${err.message}`;
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = "🚀 Send Broadcast to All Gamers Now";
+    }
+  }
+};
+
+window.loadPushHistory = async function() {
+  const container = document.getElementById("pushHistoryContainer");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/admin/push-history", {
+      headers: { "x-admin-key": adminToken }
+    });
+    const data = await res.json();
+
+    if (res.ok && Array.isArray(data.history) && data.history.length > 0) {
+      container.innerHTML = data.history.map(item => `
+        <div style="padding: 10px 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <strong style="color: #FFF; font-size: 0.82rem;">${escapeHtml(item.title)}</strong>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">${item.sentAt ? new Date(item.sentAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recently'}</span>
+          </div>
+          <div style="color: #CBD5E1; font-size: 0.78rem; margin-bottom: 4px;">${escapeHtml(item.body)}</div>
+          <div style="display: flex; gap: 8px; font-size: 0.7rem; color: var(--text-muted);">
+            ${item.roomCode ? `<span style="color: #00FF88; font-weight: 600;">Room: ${escapeHtml(item.roomCode)}</span> &bull;` : ''}
+            <span>Sent by: ${escapeHtml(item.sentBy || 'Admin')}</span>
+          </div>
+        </div>
+      `).join("");
+    } else {
+      container.innerHTML = `<p style="color: var(--text-muted); margin: 0;">No broadcast history found.</p>`;
+    }
+  } catch (err) {
+    container.innerHTML = `<p style="color: #FF6B6B; margin: 0;">Failed to load history: ${escapeHtml(err.message)}</p>`;
+  }
 };
 
 // 9. Data Exports

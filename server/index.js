@@ -69,6 +69,7 @@ function timingSafeEqualStr(a, b) {
 let adminApp = null;
 let adminDb = null;
 let adminAuth = null;
+let adminMessaging = null;
 
 try {
   let serviceAccount = null;
@@ -111,6 +112,7 @@ try {
     const admin = require('firebase-admin');
     const { getFirestore } = require('firebase-admin/firestore');
     const { getAuth } = require('firebase-admin/auth');
+    const { getMessaging } = require('firebase-admin/messaging');
 
     adminApp = admin.initializeApp({
       credential: admin.cert(serviceAccount)
@@ -118,7 +120,8 @@ try {
 
     adminDb = getFirestore(adminApp);
     adminAuth = getAuth(adminApp);
-    console.log('[Firebase Admin] Initialized successfully for project:', serviceAccount.project_id);
+    adminMessaging = getMessaging(adminApp);
+    console.log('[Firebase Admin] Initialized Firestore, Auth, and Cloud Messaging for:', serviceAccount.project_id);
   } else {
     console.warn('[Firebase Admin] No service account credentials found. Set FIREBASE_SERVICE_ACCOUNT env var in Render.');
   }
@@ -1035,6 +1038,116 @@ const server = http.createServer(async (req, res) => {
       rooms.delete(code);
       console.log(`[Admin] Room ${code} was terminated by administrator (${authAdmin.user}).`);
       sendResponse(res, 200, { success: true, message: `Room ${code} successfully terminated` });
+    } catch (err) {
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // Admin API: Zomato-Style Push Notification Broadcast
+  if (req.method === 'POST' && req.url === '/api/admin/broadcast-push') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized administrative access' });
+      return;
+    }
+
+    try {
+      if (!adminMessaging) {
+        sendResponse(res, 503, {
+          error: 'Firebase Cloud Messaging is not active on this server. Ensure service account is configured.'
+        });
+        return;
+      }
+
+      const { title, body, roomCode } = await parseJsonBody(req);
+      if (!title || !body) {
+        sendResponse(res, 400, { error: 'Both Title and Message Body are required for broadcast.' });
+        return;
+      }
+
+      const cleanTitle = String(title).trim();
+      const cleanBody = String(body).trim();
+      const cleanRoom = roomCode ? String(roomCode).trim().toUpperCase() : '';
+
+      const messagePayload = {
+        topic: 'all_gamers',
+        notification: {
+          title: cleanTitle,
+          body: cleanBody
+        },
+        data: {
+          title: cleanTitle,
+          body: cleanBody,
+          roomCode: cleanRoom,
+          timestamp: String(Date.now())
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'squad_broadcast_alerts',
+            sound: 'default',
+            priority: 'high',
+            defaultVibrateTimings: true,
+            defaultSound: true,
+            icon: 'ic_notification',
+            color: '#00FF88'
+          }
+        }
+      };
+
+      const fcmResponse = await adminMessaging.send(messagePayload);
+      console.log(`[FCM Broadcast] Push dispatched to topic 'all_gamers' by ${authAdmin.user}: ${fcmResponse}`);
+
+      if (adminDb) {
+        try {
+          await adminDb.collection('admin_push_history').add({
+            title: cleanTitle,
+            body: cleanBody,
+            roomCode: cleanRoom,
+            sentBy: authAdmin.user,
+            fcmMessageId: fcmResponse,
+            sentAt: new Date().toISOString(),
+            timestamp: Date.now()
+          });
+        } catch (_) {}
+      }
+
+      sendResponse(res, 200, {
+        success: true,
+        messageId: fcmResponse,
+        message: '🚀 Push notification dispatched to all gamers successfully!'
+      });
+    } catch (err) {
+      console.error('[FCM Broadcast Error]', err.message);
+      sendResponse(res, 500, { error: 'Failed to broadcast push notification: ' + err.message });
+    }
+    return;
+  }
+
+  // Admin API: Fetch Recent Push Broadcast History
+  if (req.method === 'GET' && req.url === '/api/admin/push-history') {
+    const authAdmin = await isAuthorizedAdmin(req);
+    if (!authAdmin) {
+      sendResponse(res, 401, { error: 'Unauthorized administrative access' });
+      return;
+    }
+
+    try {
+      if (!adminDb) {
+        sendResponse(res, 200, { history: [] });
+        return;
+      }
+      const snapshot = await adminDb.collection('admin_push_history')
+        .orderBy('timestamp', 'desc')
+        .limit(10)
+        .get();
+
+      const history = [];
+      snapshot.forEach(doc => {
+        history.push({ id: doc.id, ...doc.data() });
+      });
+      sendResponse(res, 200, { history });
     } catch (err) {
       sendResponse(res, 500, { error: err.message });
     }
