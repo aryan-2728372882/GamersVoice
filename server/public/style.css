@@ -2401,6 +2401,286 @@ select.form-input option:checked {
   align-items: center;
 }
 
+/* --- Feature Spotlight Sections (Clutch Highlights, Moderation, Referrals) --- */
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 36px;
+}
+
+.showcase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.showcase-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--border-gold);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.showcase-card.featured-showcase {
+  border-color: var(--gold-primary);
+  background: linear-gradient(145deg, rgba(20, 32, 58, 0.85) 0%, rgba(13, 21, 39, 0.95) 100%);
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.12);
+}
+
+.showcase-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--border-gold);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.5px;
+}
+
+.showcase-icon {
+  font-size: 2.2rem;
+  margin-bottom: 18px;
+}
+
+.showcase-card h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.showcase-card p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.showcase-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cyan-primary);
+}
+
+/* Moderation Grid */
+.moderation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 36px;
+}
+
+.mod-feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  transition: var(--transition);
+}
+
+.mod-feature-card:hover {
+  border-color: var(--cyan-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 229, 255, 0.1);
+}
+
+.mod-icon {
+  font-size: 2.2rem;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mod-content h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.mod-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.mod-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--emerald-primary);
+  background: rgba(0, 255, 136, 0.1);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+/* Viral Referral Box */
+.referral-box {
+  background: linear-gradient(160deg, rgba(17, 27, 49, 0.9) 0%, rgba(9, 14, 26, 0.95) 100%);
+  border: 1.5px solid var(--border-gold);
+  border-radius: var(--radius-xl);
+  padding: 40px 32px;
+  margin-top: 36px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 215, 0, 0.2);
+}
+
+.referral-flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.ref-step {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  transition: var(--transition);
+}
+
+.ref-step:hover {
+  border-color: var(--border-gold);
+  background: rgba(255, 215, 0, 0.03);
+}
+
+.ref-step.highlight-step {
+  border-color: var(--gold-primary);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+.ref-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gold-gradient);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.ref-step h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.ref-step p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.ref-step code {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--gold-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.ref-arrow {
+  font-size: 1.5rem;
+  color: var(--gold-primary);
+  font-weight: 900;
+}
+
+.referral-perks-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 28px;
+}
+
+.ref-perk {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ref-perk-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.ref-perk strong {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ref-perk p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Simulator Custom Controls */
+.sim-mute-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  margin-left: auto;
+}
+
+.sim-mute-btn:hover {
+  background: rgba(255, 71, 87, 0.2);
+  border-color: var(--danger-primary);
+}
+
+.btn-clutch-highlight {
+  background: rgba(255, 215, 0, 0.15) !important;
+  border-color: var(--gold-primary) !important;
+  color: var(--gold-primary) !important;
+  font-weight: 800 !important;
+}
+
 /* ==========================================================================
    Responsive Auto-Resize Breakpoints
    ========================================================================== */
@@ -2537,6 +2817,16 @@ select.form-input option:checked {
   .comparison-table th.col-ingame, .comparison-table td.col-ingame,
   .comparison-table th.col-whatsapp, .comparison-table td.col-whatsapp {
     min-width: 135px;
+  }
+
+  .referral-flow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ref-arrow {
+    transform: rotate(90deg);
+    margin: 0 auto;
   }
 }
 

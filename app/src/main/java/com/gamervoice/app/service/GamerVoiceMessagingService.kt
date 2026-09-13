@@ -59,11 +59,19 @@ class GamerVoiceMessagingService : FirebaseMessagingService() {
             ?: "Your squad is waiting in the lobby!"
 
         val roomCode = remoteMessage.data["roomCode"]
+        val imageUrl = remoteMessage.notification?.imageUrl?.toString() ?: remoteMessage.data["imageUrl"]
+        val actionLabel = remoteMessage.data["actionLabel"] ?: "JOIN SQUAD 🎮"
 
-        showHeadsUpNotification(title, body, roomCode)
+        showHeadsUpNotification(title, body, roomCode, imageUrl, actionLabel)
     }
 
-    private fun showHeadsUpNotification(title: String, body: String, roomCode: String?) {
+    private fun showHeadsUpNotification(
+        title: String,
+        body: String,
+        roomCode: String?,
+        imageUrl: String? = null,
+        actionLabel: String = "JOIN SQUAD 🎮"
+    ) {
         val intent = Intent(this, HomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (!roomCode.isNullOrEmpty()) {
@@ -96,14 +104,29 @@ class GamerVoiceMessagingService : FirebaseMessagingService() {
         }
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val largeAppIcon = BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+        val defaultAppLogo = BitmapFactory.decodeResource(resources, R.drawable.app_logo)
+        var bannerBitmap: android.graphics.Bitmap? = null
+
+        if (!imageUrl.isNullOrBlank()) {
+            try {
+                val url = java.net.URL(imageUrl)
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.doInput = true
+                connection.connectTimeout = 3000
+                connection.readTimeout = 3000
+                connection.connect()
+                val inputStream = connection.inputStream
+                bannerBitmap = BitmapFactory.decodeStream(inputStream)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Could not download push image banner: ${t.message}")
+            }
+        }
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(largeAppIcon)
+            .setLargeIcon(defaultAppLogo)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setVibrate(longArrayOf(0, 150, 80, 150))
@@ -111,10 +134,23 @@ class GamerVoiceMessagingService : FirebaseMessagingService() {
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(pendingIntent)
 
-        if (!roomCode.isNullOrEmpty()) {
+        if (bannerBitmap != null) {
+            notificationBuilder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(bannerBitmap)
+                    .bigLargeIcon(null as android.graphics.Bitmap?)
+                    .setSummaryText(body)
+            )
+        } else {
+            notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        }
+
+        if (!roomCode.isNullOrEmpty() || actionLabel.isNotEmpty()) {
             val joinActionIntent = Intent(this, HomeActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("auto_join_room", roomCode)
+                if (!roomCode.isNullOrEmpty()) {
+                    putExtra("auto_join_room", roomCode)
+                }
             }
             val joinPendingIntent = PendingIntent.getActivity(
                 this,
@@ -124,7 +160,7 @@ class GamerVoiceMessagingService : FirebaseMessagingService() {
             )
             notificationBuilder.addAction(
                 R.drawable.ic_lightning_bolt,
-                "JOIN SQUAD 🎮",
+                actionLabel,
                 joinPendingIntent
             )
         }

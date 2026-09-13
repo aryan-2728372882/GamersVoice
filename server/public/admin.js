@@ -797,27 +797,58 @@ const PUSH_PRESETS = {
   fomo: {
     title: "Lobby mein wait ho raha hai... 💔",
     body: "Bhai clutch koun karega? Squad ready hai, jaldi room join kar!",
-    room: ""
+    room: "",
+    actionLabel: "JOIN SQUAD 🎮",
+    imageUrl: ""
   },
   mic: {
     title: "Tera mic bandh kyu hai? 🎙️",
     body: "Rank push ka time ho gaya! Drop in with 0 lag on GamerVoice.",
-    room: ""
+    room: "",
+    actionLabel: "UNMUTE & PLAY ⚡",
+    imageUrl: ""
   },
   rush: {
-    title: "Squad up! Pochinki is calling 🏆",
-    body: "BGMI match starts now. 1 tap to rejoin your squad voice room.",
-    room: ""
+    title: "Pochinki is calling! Drop now 🏆",
+    body: "BGMI squad match starts now. 1 tap drops you straight into tactical voice.",
+    room: "",
+    actionLabel: "DROP IN 🪂",
+    imageUrl: ""
+  },
+  freefire: {
+    title: "Clock Tower Rush! Squad Ready 🔥",
+    body: "CS Ranked season reset ho gaya! Mic on kar aur booyah nikaal.",
+    room: "",
+    actionLabel: "BOOYAH NOW 🎯",
+    imageUrl: ""
+  },
+  rizz_late: {
+    title: "Itni raat ko kiske saath voice pe ho? 🌙",
+    body: "Humein pata hai squad ke saath hi hoge! Room is active, drop in.",
+    room: "",
+    actionLabel: "JOIN CALL 🎧",
+    imageUrl: ""
   },
   weekend: {
-    title: "Weekend Clutch Pass Active 🔥",
+    title: "Weekend Clutch Pass Active ⚡",
     body: "Warm up the mics. Tonight's win streak starts now with your crew.",
-    room: ""
+    room: "",
+    actionLabel: "START STREAK 🔥",
+    imageUrl: ""
   },
-  vip: {
-    title: "Your 3 Days VIP Pass is waiting! 👑",
-    body: "Squad mates are grinding with Ultra Noise Filter. Claim & join now!",
-    room: ""
+  vip_invite: {
+    title: "Free 3 Days VIP Pass Waiting! 🎁",
+    body: "A squadmate invited you! Enjoy 100% Studio AI Noise Filter & zero lag.",
+    room: "",
+    actionLabel: "CLAIM VIP 👑",
+    imageUrl: ""
+  },
+  chicken_crave: {
+    title: "Yeh Chicken Dinner kiska hai? 🍗",
+    body: "Zomato biryani delivery ho chuki hai, ab squad ke saath chicken dinner le!",
+    room: "",
+    actionLabel: "GET DINNER 🍗",
+    imageUrl: ""
   }
 };
 
@@ -827,9 +858,15 @@ window.applyPushPreset = function(presetKey) {
   const titleEl = document.getElementById("pushTitleInput");
   const bodyEl = document.getElementById("pushBodyInput");
   const roomEl = document.getElementById("pushRoomCodeInput");
+  const actionEl = document.getElementById("pushActionLabelInput");
+  const imageEl = document.getElementById("pushImageUrlInput");
+
   if (titleEl) titleEl.value = preset.title;
   if (bodyEl) bodyEl.value = preset.body;
-  if (roomEl && preset.room) roomEl.value = preset.room;
+  if (roomEl) roomEl.value = preset.room || "";
+  if (actionEl) actionEl.value = preset.actionLabel || "";
+  if (imageEl) imageEl.value = preset.imageUrl || "";
+
   updatePushPreview();
 };
 
@@ -837,6 +874,8 @@ window.updatePushPreview = function() {
   const titleVal = document.getElementById("pushTitleInput")?.value || "";
   const bodyVal = document.getElementById("pushBodyInput")?.value || "";
   const roomVal = document.getElementById("pushRoomCodeInput")?.value || "";
+  const actionVal = document.getElementById("pushActionLabelInput")?.value || "";
+  const imageUrlVal = document.getElementById("pushImageUrlInput")?.value || "";
 
   const titleCounter = document.getElementById("pushTitleCounter");
   const bodyCounter = document.getElementById("pushBodyCounter");
@@ -846,14 +885,28 @@ window.updatePushPreview = function() {
   const prevTitle = document.getElementById("previewNotifTitle");
   const prevBody = document.getElementById("previewNotifBody");
   const prevAction = document.getElementById("previewNotifAction");
+  const prevImage = document.getElementById("previewNotifImage");
 
   if (prevTitle) prevTitle.innerText = titleVal.trim() || "Lobby mein wait ho raha hai... 💔";
   if (prevBody) prevBody.innerText = bodyVal.trim() || "Bhai clutch koun karega? Squad ready hai, jaldi room join kar!";
+  
   if (prevAction) {
-    if (roomVal.trim()) {
+    if (actionVal.trim()) {
+      prevAction.innerText = actionVal.trim();
+    } else if (roomVal.trim()) {
       prevAction.innerText = `⚡ JOIN ${roomVal.trim().toUpperCase()} 🎮`;
     } else {
       prevAction.innerText = "⚡ JOIN SQUAD 🎮";
+    }
+  }
+
+  if (prevImage) {
+    const imgEl = prevImage.querySelector("img");
+    if (imageUrlVal.trim()) {
+      if (imgEl) imgEl.src = imageUrlVal.trim();
+      prevImage.style.display = "block";
+    } else {
+      prevImage.style.display = "none";
     }
   }
 };
@@ -863,6 +916,8 @@ window.handleSendBroadcastPush = async function(e) {
   const title = document.getElementById("pushTitleInput")?.value?.trim();
   const body = document.getElementById("pushBodyInput")?.value?.trim();
   const roomCode = document.getElementById("pushRoomCodeInput")?.value?.trim();
+  const actionLabel = document.getElementById("pushActionLabelInput")?.value?.trim();
+  const imageUrl = document.getElementById("pushImageUrlInput")?.value?.trim();
   const statusMsg = document.getElementById("pushStatusMsg");
   const submitBtn = document.getElementById("btnPushSubmit");
 
@@ -871,7 +926,7 @@ window.handleSendBroadcastPush = async function(e) {
     return;
   }
 
-  if (!confirm(`🚀 Ready to blast notification to ALL GamerVoice users?\n\nTitle: "${title}"\nBody: "${body}"${roomCode ? `\nRoom: ${roomCode}` : ''}`)) {
+  if (!confirm(`🚀 Ready to blast notification to ALL GamerVoice users?\n\nTitle: "${title}"\nBody: "${body}"${roomCode ? `\nRoom: ${roomCode}` : ''}${actionLabel ? `\nAction: ${actionLabel}` : ''}`)) {
     return;
   }
 
@@ -890,7 +945,7 @@ window.handleSendBroadcastPush = async function(e) {
         "Content-Type": "application/json",
         "x-admin-key": adminToken
       },
-      body: JSON.stringify({ title, body, roomCode })
+      body: JSON.stringify({ title, body, roomCode, actionLabel, imageUrl })
     });
     const data = await res.json();
 

@@ -420,6 +420,35 @@ window.updateSimNoise = function(val) {
   }
 };
 
+window.toggleSimPeerMute = function(btn) {
+  if (!btn) return;
+  const isMuted = btn.innerText === "🔇";
+  if (isMuted) {
+    btn.innerText = "🔊";
+    btn.style.color = "var(--text-primary)";
+    btn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+    btn.style.background = "rgba(255, 255, 255, 0.08)";
+  } else {
+    btn.innerText = "🔇";
+    btn.style.color = "var(--danger-primary)";
+    btn.style.borderColor = "var(--danger-primary)";
+    btn.style.background = "rgba(255, 71, 87, 0.15)";
+  }
+};
+
+window.triggerSimClutchSave = function() {
+  const btn = document.querySelector(".btn-clutch-highlight");
+  if (btn) {
+    btn.innerText = "⏳ Saving...";
+    setTimeout(() => {
+      btn.innerText = "✅ Saved!";
+      setTimeout(() => {
+        btn.innerText = "💾 Clutch";
+      }, 2000);
+    }, 600);
+  }
+};
+
 // Web Audio API Synthesizer for Tactical Soundboard Cues
 let audioCtx = null;
 window.playTacticalCue = function(type) {

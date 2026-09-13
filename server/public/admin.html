@@ -344,9 +344,12 @@
                 <option value="">-- Choose a catchy hook or type below --</option>
                 <option value="fomo">💔 "Lobby mein wait ho raha hai..." (Bhai clutch koun karega? Squad ready hai!)</option>
                 <option value="mic">🎙️ "Tera mic bandh kyu hai?" (Rank push ka time ho gaya! Drop in with 0 lag.)</option>
-                <option value="rush">🏆 "Squad up! Pochinki is calling" (BGMI match starts now. 1 tap to rejoin.)</option>
-                <option value="weekend">🔥 "Weekend Clutch Pass Active" (Warm up the mics. Tonight's win streak starts now.)</option>
-                <option value="vip">👑 "Your 3 Days VIP Pass is waiting!" (Squad mates are grinding with Ultra Noise Filter.)</option>
+                <option value="rush">🏆 "Pochinki is calling! Drop now" (BGMI match starts now. 1 tap drops you straight into tactical voice.)</option>
+                <option value="freefire">🔥 "Clock Tower Rush! Squad Ready" (CS Ranked season reset ho gaya! Mic on kar aur booyah nikaal.)</option>
+                <option value="rizz_late">🌙 "Itni raat ko kiske saath voice pe ho?" (Humein pata hai squad ke saath hi hoge! Room is active.)</option>
+                <option value="weekend">⚡ "Weekend Clutch Pass Active" (Warm up the mics. Tonight's win streak starts now with your crew.)</option>
+                <option value="vip_invite">🎁 "Free 3 Days VIP Pass Waiting!" (A squadmate invited you! Enjoy 100% Studio AI Noise Filter.)</option>
+                <option value="chicken_crave">🍗 "Yeh Chicken Dinner kiska hai?" (Zomato biryani delivery ho chuki hai, ab squad ke saath chicken dinner le!)</option>
               </select>
             </div>
 
@@ -354,7 +357,7 @@
             <div class="form-group-admin">
               <div style="display: flex; justify-content: space-between;">
                 <label for="pushTitleInput">NOTIFICATION TITLE *</label>
-                <span id="pushTitleCounter" style="font-size: 0.72rem; color: var(--text-muted);">0 / 50</span>
+                <span id="pushTitleCounter" style="font-size: 0.72rem; color: var(--gold-primary); font-weight: 700;">0 / 50</span>
               </div>
               <input type="text" id="pushTitleInput" placeholder="e.g. Lobby mein wait ho raha hai... 💔" required maxlength="50" oninput="updatePushPreview()">
             </div>
@@ -363,15 +366,27 @@
             <div class="form-group-admin">
               <div style="display: flex; justify-content: space-between;">
                 <label for="pushBodyInput">MESSAGE BODY (RIZZ &amp; GAMER HOOK) *</label>
-                <span id="pushBodyCounter" style="font-size: 0.72rem; color: var(--text-muted);">0 / 140</span>
+                <span id="pushBodyCounter" style="font-size: 0.72rem; color: var(--gold-primary); font-weight: 700;">0 / 140</span>
               </div>
-              <textarea id="pushBodyInput" rows="3" placeholder="e.g. Bhai clutch koun karega? Squad ready hai, jaldi room join kar!" required maxlength="140" oninput="updatePushPreview()"></textarea>
+              <textarea id="pushBodyInput" rows="3" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); color: #F8FAFC; border-radius: 8px; padding: 12px 14px; font-family: inherit; font-size: 0.9rem; width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.4;" placeholder="e.g. Bhai clutch koun karega? Squad ready hai, jaldi room join kar!" required maxlength="140" oninput="updatePushPreview()"></textarea>
             </div>
 
-            <!-- Optional Squad Room Auto-Join Code -->
+            <!-- Optional Squad Room Auto-Join Code and Action Button Label -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div class="form-group-admin">
+                <label for="pushRoomCodeInput">ROOM AUTO-JOIN CODE</label>
+                <input type="text" id="pushRoomCodeInput" placeholder="e.g. ALPHA" maxlength="10" oninput="updatePushPreview()">
+              </div>
+              <div class="form-group-admin">
+                <label for="pushActionLabelInput">ACTION BUTTON TEXT</label>
+                <input type="text" id="pushActionLabelInput" placeholder="e.g. JOIN SQUAD 🎮" maxlength="25" oninput="updatePushPreview()">
+              </div>
+            </div>
+
+            <!-- Optional Rich Banner Image URL -->
             <div class="form-group-admin">
-              <label for="pushRoomCodeInput">OPTIONAL ROOM AUTO-JOIN CODE</label>
-              <input type="text" id="pushRoomCodeInput" placeholder="e.g. GV-WAR (Optional: 1-tap drops user into room)" maxlength="10" oninput="updatePushPreview()">
+              <label for="pushImageUrlInput">BANNER IMAGE URL (OPTIONAL EXPANDABLE PUSH)</label>
+              <input type="url" id="pushImageUrlInput" placeholder="https://example.com/banner.jpg (BigPicture style)" oninput="updatePushPreview()">
             </div>
 
             <div id="pushStatusMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 14px;"></div>
@@ -389,7 +404,7 @@
               📱 Live Android Notification Preview
             </h4>
             <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
-              This is how your heads-up push appears over BGMI / Free Fire on users' phones:
+              This is how your heads-up push appears over BGMI / Free Fire on users' phones (with official app emblem):
             </p>
 
             <!-- Android Notification Banner Mockup -->
@@ -397,20 +412,26 @@
               <!-- Header line -->
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <div style="width: 20px; height: 20px; border-radius: 4px; background: #00FF88; display: flex; align-items: center; justify-content: center; font-size: 11px;">🎧</div>
-                  <span style="font-size: 11px; font-weight: 600; color: #94A3B8; letter-spacing: 0.5px;">GAMERVOICE &bull; just now</span>
+                  <img src="/logo.png" alt="GamerVoice Logo" style="width: 22px; height: 22px; border-radius: 5px; object-fit: contain; box-shadow: 0 0 6px rgba(0,255,136,0.3);">
+                  <span style="font-size: 11px; font-weight: 700; color: #94A3B8; letter-spacing: 0.5px;">GAMERVOICE &bull; just now</span>
                 </div>
                 <span style="font-size: 11px; color: #64748B;">&or;</span>
               </div>
               
               <!-- Content -->
-              <div style="margin-left: 28px;">
+              <div style="margin-left: 30px;">
                 <div id="previewNotifTitle" style="font-size: 13.5px; font-weight: 700; color: #F8FAFC; margin-bottom: 3px;">
                   Lobby mein wait ho raha hai... 💔
                 </div>
                 <div id="previewNotifBody" style="font-size: 12.5px; color: #CBD5E1; line-height: 1.4;">
                   Bhai clutch koun karega? Squad ready hai, jaldi room join kar!
                 </div>
+                
+                <!-- Expandable Banner Preview -->
+                <div id="previewNotifImage" style="display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 140px; border: 1px solid rgba(255,255,255,0.1);">
+                  <img src="" style="width: 100%; height: auto; display: block; object-fit: cover;" alt="Banner Preview">
+                </div>
+
                 <div id="previewNotifAction" style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0, 255, 136, 0.4); border-radius: 6px; color: #00FF88; font-size: 11px; font-weight: 700;">
                   ⚡ JOIN SQUAD 🎮
                 </div>

@@ -1060,7 +1060,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const { title, body, roomCode } = await parseJsonBody(req);
+      const { title, body, roomCode, imageUrl, actionLabel } = await parseJsonBody(req);
       if (!title || !body) {
         sendResponse(res, 400, { error: 'Both Title and Message Body are required for broadcast.' });
         return;
@@ -1069,17 +1069,22 @@ const server = http.createServer(async (req, res) => {
       const cleanTitle = String(title).trim();
       const cleanBody = String(body).trim();
       const cleanRoom = roomCode ? String(roomCode).trim().toUpperCase() : '';
+      const cleanImage = imageUrl ? String(imageUrl).trim() : '';
+      const cleanAction = actionLabel ? String(actionLabel).trim() : 'JOIN SQUAD 🎮';
 
       const messagePayload = {
         topic: 'all_gamers',
         notification: {
           title: cleanTitle,
-          body: cleanBody
+          body: cleanBody,
+          ...(cleanImage ? { imageUrl: cleanImage } : {})
         },
         data: {
           title: cleanTitle,
           body: cleanBody,
           roomCode: cleanRoom,
+          actionLabel: cleanAction,
+          ...(cleanImage ? { imageUrl: cleanImage } : {}),
           timestamp: String(Date.now())
         },
         android: {
@@ -1091,7 +1096,8 @@ const server = http.createServer(async (req, res) => {
             defaultVibrateTimings: true,
             defaultSound: true,
             icon: 'ic_notification',
-            color: '#00FF88'
+            color: '#00FF88',
+            ...(cleanImage ? { imageUrl: cleanImage } : {})
           }
         }
       };
@@ -1105,6 +1111,8 @@ const server = http.createServer(async (req, res) => {
             title: cleanTitle,
             body: cleanBody,
             roomCode: cleanRoom,
+            imageUrl: cleanImage,
+            actionLabel: cleanAction,
             sentBy: authAdmin.user,
             fcmMessageId: fcmResponse,
             sentAt: new Date().toISOString(),
