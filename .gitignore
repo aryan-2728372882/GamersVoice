@@ -1,3 +1,4 @@
+﻿# Android & Gradle Build Artifacts
 *.iml
 .gradle/
 **/build/
@@ -9,13 +10,43 @@ local.properties
 /captures
 .externalNativeBuild
 .cxx
+*.apk
+*.aab
+
+# Node & Dependencies
 node_modules/
-*.pdf
-*used_payments.json
-*sent_welcome_emails.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Secrets, Environment Files & Keys (NEVER COMMIT)
+.env
+.env.*
 *.env
-*firebase-adminsdk*.json
-*service-account*.json
-*serviceAccount*.json
+*.env.local
+*.env.production
 *.pem
 *.key
+*.jks
+*.keystore
+
+# Service Accounts & Firebase Credentials (STRICTLY LOCAL ONLY)
+*service-account*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+*adminsdk*.json
+service-account.json
+gamersvoice-*.json
+server/vault.js
+vault.js
+
+# Server runtime data & persistent caches
+*used_payments.json
+*sent_welcome_emails.json
+server/used_payments.json
+server/sent_welcome_emails.json
+benchmark_ram_results.csv
+
+# Temporary test / scratch files
+*.log
+scratch/

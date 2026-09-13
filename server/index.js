@@ -2,28 +2,45 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { WebSocketServer, WebSocket } = require('ws');
-const { randomUUID } = require('crypto');
+const crypto = require('crypto');
+const { randomUUID } = crypto;
 
 const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3000;
 
-// Configuration from environment variables
-const SMTP_USER = process.env.SMTP_USER || 'supportgamersvoice@gmail.com';
-const SMTP_PASS = (process.env.SMTP_PASS || 'ennawlvrlygkkefe').replace(/\s+/g, '');
+// Configuration strictly from environment variables (No hardcoded secrets)
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SWhlEskNokZ9rR';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
-const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'gv-admin-master-2026';
+
+// If ADMIN_SECRET_KEY is not set in Render environment, auto-generate an ephemeral 256-bit key at boot
+const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || crypto.randomBytes(32).toString('hex');
+if (!process.env.ADMIN_SECRET_KEY) {
+  console.warn('[Security Notice] ADMIN_SECRET_KEY env var not set. Auto-generated ephemeral admin secret for this session:');
+  console.warn(`[Security Notice] >>> ${ADMIN_SECRET_KEY} <<<`);
+}
+
 const ADMIN_ALLOWED_EMAILS = (process.env.ADMIN_ALLOWED_EMAILS || 'prabhakararyan2007@gmail.com,supportgamersvoice@gmail.com')
   .toLowerCase()
   .split(',')
   .map(e => e.trim());
 
-// Firebase Admin SDK Initialization (Ultra-Secure Service Account Integration)
+// Constant-time string comparison to prevent timing attacks
+function timingSafeEqualStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// Firebase Admin SDK Initialization (Loaded strictly from env or gitignored local file)
 let adminApp = null;
 let adminDb = null;
 let adminAuth = null;
@@ -44,23 +61,16 @@ try {
     }
   }
 
+  // Local development fallback only (strictly gitignored)
   if (!serviceAccount) {
     const localSaPath = path.join(__dirname, 'service-account.json');
-    const rootSaPath = path.join(__dirname, '..', 'gamersvoice-ea413-firebase-adminsdk-fbsvc-d941789a8b.json');
     if (fs.existsSync(localSaPath)) {
-      serviceAccount = JSON.parse(fs.readFileSync(localSaPath, 'utf8'));
-    } else if (fs.existsSync(rootSaPath)) {
-      serviceAccount = JSON.parse(fs.readFileSync(rootSaPath, 'utf8'));
-    }
-  }
-
-  if (!serviceAccount) {
-    try {
-      const vault = require('./vault');
-      if (vault && vault.getServiceAccount) {
-        serviceAccount = vault.getServiceAccount();
+      try {
+        serviceAccount = JSON.parse(fs.readFileSync(localSaPath, 'utf8'));
+      } catch (e) {
+        console.error('[Firebase Admin] Failed to parse local service-account.json:', e.message);
       }
-    } catch (_) {}
+    }
   }
 
   if (serviceAccount) {
@@ -76,13 +86,13 @@ try {
     adminAuth = getAuth(adminApp);
     console.log('[Firebase Admin] Initialized successfully for project:', serviceAccount.project_id);
   } else {
-    console.warn('[Firebase Admin] No service account credentials found.');
+    console.warn('[Firebase Admin] No service account credentials found. Set FIREBASE_SERVICE_ACCOUNT env var in Render.');
   }
 } catch (err) {
   console.error('[Firebase Admin Init Error]', err.message);
 }
 
-// Active admin sessions: token -> { email, expireAt }
+// Active admin sessions: token -> { email, type, expireAt }
 const adminSessions = new Map();
 
 async function isAuthorizedAdmin(req) {
@@ -90,22 +100,23 @@ async function isAuthorizedAdmin(req) {
   if (!authHeader) return false;
 
   const key = authHeader.replace(/^Bearer\s+/i, '').trim();
-  const expectedMasterToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
 
-  if (key === ADMIN_SECRET_KEY || key === expectedMasterToken) {
+  // 1. Direct master key match (timing-safe)
+  if (ADMIN_SECRET_KEY && timingSafeEqualStr(key, ADMIN_SECRET_KEY)) {
     return { type: 'master', user: 'master_admin' };
   }
 
+  // 2. Active admin session check (expires after 24 hours)
   if (adminSessions.has(key)) {
     const sess = adminSessions.get(key);
     if (Date.now() < sess.expireAt) {
-      return { type: 'firebase', user: sess.email };
+      return { type: sess.type || 'firebase', user: sess.email || 'master_admin' };
     } else {
       adminSessions.delete(key);
     }
   }
 
-  // Direct Firebase ID token verification
+  // 3. Direct Firebase ID token verification
   if (adminAuth) {
     try {
       const decoded = await adminAuth.verifyIdToken(key);
@@ -118,7 +129,7 @@ async function isAuthorizedAdmin(req) {
   return false;
 }
 
-// Replay attack prevention store (persisted to disk)
+// Replay attack prevention store (dual-layer: memory cache + Firestore persistence)
 const USED_PAYMENTS_FILE = path.join(__dirname, 'used_payments.json');
 let usedPaymentIds = new Set();
 try {
@@ -133,16 +144,39 @@ try {
   console.error('[Storage Error] Failed to read used payments file:', err.message);
 }
 
-function recordUsedPayment(paymentId) {
+async function recordUsedPayment(paymentId) {
   usedPaymentIds.add(paymentId);
   try {
     fs.writeFileSync(USED_PAYMENTS_FILE, JSON.stringify(Array.from(usedPaymentIds), null, 2), 'utf8');
-  } catch (err) {
-    console.error('[Storage Error] Failed to write used payments file:', err.message);
+  } catch (_) {}
+  if (adminDb) {
+    try {
+      await adminDb.collection('system_processed_payments').doc(paymentId).set({
+        paymentId,
+        redeemedAt: new Date().toISOString(),
+        timestamp: Date.now()
+      });
+    } catch (e) {
+      console.warn('[Firestore] Could not sync used payment to Firestore:', e.message);
+    }
   }
 }
 
-// Welcome email deduplication store (persisted to disk)
+async function isPaymentUsed(paymentId) {
+  if (usedPaymentIds.has(paymentId)) return true;
+  if (adminDb) {
+    try {
+      const snap = await adminDb.collection('system_processed_payments').doc(paymentId).get();
+      if (snap.exists) {
+        usedPaymentIds.add(paymentId);
+        return true;
+      }
+    } catch (_) {}
+  }
+  return false;
+}
+
+// Welcome email deduplication store (dual-layer: memory cache + Firestore persistence)
 const SENT_EMAILS_FILE = path.join(__dirname, 'sent_welcome_emails.json');
 let sentWelcomeEmails = new Set();
 try {
@@ -157,14 +191,38 @@ try {
   console.error('[Storage Error] Failed to read sent welcome emails file:', err.message);
 }
 
-function recordSentWelcomeEmail(email) {
+async function recordSentWelcomeEmail(email) {
   const cleanEmail = email.trim().toLowerCase();
   sentWelcomeEmails.add(cleanEmail);
   try {
     fs.writeFileSync(SENT_EMAILS_FILE, JSON.stringify(Array.from(sentWelcomeEmails), null, 2), 'utf8');
-  } catch (err) {
-    console.error('[Storage Error] Failed to write sent welcome emails file:', err.message);
+  } catch (_) {}
+  if (adminDb) {
+    try {
+      await adminDb.collection('system_welcome_emails').doc(cleanEmail).set({
+        email: cleanEmail,
+        sentAt: new Date().toISOString(),
+        timestamp: Date.now()
+      });
+    } catch (e) {
+      console.warn('[Firestore] Could not sync sent email to Firestore:', e.message);
+    }
   }
+}
+
+async function isWelcomeEmailSent(email) {
+  const cleanEmail = email.trim().toLowerCase();
+  if (sentWelcomeEmails.has(cleanEmail)) return true;
+  if (adminDb) {
+    try {
+      const snap = await adminDb.collection('system_welcome_emails').doc(cleanEmail).get();
+      if (snap.exists) {
+        sentWelcomeEmails.add(cleanEmail);
+        return true;
+      }
+    } catch (_) {}
+  }
+  return false;
 }
 
 // In-memory data structures
@@ -242,32 +300,35 @@ const MIME_TYPES = {
   '.apk': 'application/vnd.android.package-archive'
 };
 
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = path.resolve(__dirname, 'public');
 
 function serveStaticFile(res, filePath, defaultMime = 'application/octet-stream', downloadName = null) {
   try {
-    const safePath = path.normalize(filePath);
-    const filename = path.basename(safePath).toLowerCase();
+    const resolvedPath = path.resolve(filePath);
+    const rel = path.relative(PUBLIC_DIR, resolvedPath);
 
-    // STRICT ANTI-TAMPER / ANTI-MODDER LEAK PROTECTION:
-    // Completely block any service account credentials, private keys, or environment files from being downloaded
+    // Strict path boundary validation: Target MUST reside inside PUBLIC_DIR
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      return false;
+    }
+
+    const filename = path.basename(resolvedPath).toLowerCase();
+
+    // Defense-in-depth: completely reject any sensitive files or credential patterns
     if (
       filename.includes('service-account') ||
       filename.includes('adminsdk') ||
-      filename.includes('firebase') && filename.endsWith('.json') ||
+      filename.includes('vault') ||
       filename.endsWith('.key') ||
       filename.endsWith('.pem') ||
-      filename.endsWith('.env')
+      filename.endsWith('.env') ||
+      (filename.endsWith('.json') && (filename.includes('firebase') || filename.includes('payment') || filename.includes('email')))
     ) {
       return false;
     }
 
-    if (!safePath.startsWith(PUBLIC_DIR) && !safePath.startsWith(path.dirname(PUBLIC_DIR))) {
-      return false;
-    }
-
-    if (fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
-      const ext = path.extname(safePath).toLowerCase();
+    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+      const ext = path.extname(resolvedPath).toLowerCase();
       const contentType = MIME_TYPES[ext] || defaultMime;
       const headers = {
         'Content-Type': contentType,
@@ -278,7 +339,7 @@ function serveStaticFile(res, filePath, defaultMime = 'application/octet-stream'
         headers['Content-Disposition'] = `attachment; filename="${downloadName}"`;
       }
       res.writeHead(200, headers);
-      fs.createReadStream(safePath).pipe(res);
+      fs.createReadStream(resolvedPath).pipe(res);
       return true;
     }
   } catch (err) {
@@ -312,14 +373,8 @@ const server = http.createServer(async (req, res) => {
 
     // Serve Brand Logo
     if (req.url === '/logo.png') {
-      const candidates = [
-        path.join(PUBLIC_DIR, 'logo.png'),
-        path.join(__dirname, 'logo.png'),
-        path.join(__dirname, '../logo.png'),
-        path.join(__dirname, '../app/src/main/res/drawable/app_logo.png')
-      ];
-      const logoPath = candidates.find(p => fs.existsSync(p));
-      if (logoPath && serveStaticFile(res, logoPath, 'image/png')) {
+      const logoPath = path.join(PUBLIC_DIR, 'logo.png');
+      if (serveStaticFile(res, logoPath, 'image/png')) {
         return;
       } else {
         sendResponse(res, 404, { error: 'Logo not found' });
@@ -329,12 +384,8 @@ const server = http.createServer(async (req, res) => {
 
     // Direct APK Download
     if (req.url === '/download-apk' || req.url === '/gamervoice.apk') {
-      const apkCandidates = [
-        path.join(PUBLIC_DIR, 'gamervoice-release.apk'),
-        path.join(__dirname, '../app/build/outputs/apk/release/app-release.apk')
-      ];
-      const apkPath = apkCandidates.find(p => fs.existsSync(p));
-      if (apkPath && serveStaticFile(res, apkPath, 'application/vnd.android.package-archive', 'GamerVoice-v1.0.0.apk')) {
+      const apkPath = path.join(PUBLIC_DIR, 'gamervoice-release.apk');
+      if (serveStaticFile(res, apkPath, 'application/vnd.android.package-archive', 'GamerVoice-v1.0.0.apk')) {
         console.log(`[APK Download] Triggered from ${clientIp}`);
         return;
       } else {
@@ -382,17 +433,24 @@ const server = http.createServer(async (req, res) => {
   // API 1: Server-Side Welcome Email Relay
   if (req.method === 'POST' && req.url === '/api/send-welcome-email') {
     try {
+      // Stricter rate limit on welcome email dispatch (10 requests per 10 minutes per IP)
+      if (isRateLimited(ipRateLimits, 'email_' + clientIp, 10, 600000)) {
+        sendResponse(res, 429, { error: 'Too many welcome email requests. Please slow down.' });
+        return;
+      }
+
       const { email, name } = await parseJsonBody(req);
-      if (!email || !email.includes('@')) {
-        sendResponse(res, 400, { error: 'Invalid recipient email address' });
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email.trim())) {
+        sendResponse(res, 400, { error: 'Invalid recipient email address format' });
         return;
       }
 
       const displayName = name && name.trim() ? name.trim() : 'Gamer';
       const cleanEmail = email.trim().toLowerCase();
 
-      // Deduplication: Check if welcome email was already dispatched to this email (from web or mobile app)
-      if (sentWelcomeEmails.has(cleanEmail)) {
+      // Deduplication: Check if welcome email was already dispatched (memory + Firestore persistence)
+      if (await isWelcomeEmailSent(cleanEmail)) {
         console.log(`[Email Deduplication] Welcome email already sent to ${cleanEmail}. Bypassing duplicate dispatch.`);
         sendResponse(res, 200, {
           success: true,
@@ -402,9 +460,9 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      if (!SMTP_PASS) {
-        console.log(`[SMTP Notice] Server SMTP_PASS not set in environment. Mocking dispatch to: ${cleanEmail}`);
-        recordSentWelcomeEmail(cleanEmail);
+      if (!SMTP_PASS || !SMTP_USER) {
+        console.log(`[SMTP Notice] Server SMTP credentials not set in environment. Mocking dispatch to: ${cleanEmail}`);
+        await recordSentWelcomeEmail(cleanEmail);
         sendResponse(res, 200, {
           success: true,
           message: 'Email request received (SMTP pending server environment variable)'
@@ -503,8 +561,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Replay Attack Protection: Check if paymentId was already redeemed
-      if (usedPaymentIds.has(paymentId)) {
+      // Replay Attack Protection: Check if paymentId was already redeemed (memory + Firestore)
+      if (await isPaymentUsed(paymentId)) {
         console.warn(`[Payment Replay Attack] Blocked reused payment ID: ${paymentId} by ${userId}`);
         sendResponse(res, 400, {
           verified: false,
@@ -554,8 +612,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Commit to persistent used payment IDs store to prevent replay attacks
-      recordUsedPayment(paymentId);
+      // Commit to persistent used payment IDs store to prevent replay attacks (memory + Firestore)
+      await recordUsedPayment(paymentId);
 
       console.log(`[Payment Verified] Razorpay payment ${paymentId} verified for ${userId} (${planTier})`);
       sendResponse(res, 200, {
@@ -640,12 +698,17 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Path B: Master Security Key verification
-      if (key && key.trim() === ADMIN_SECRET_KEY) {
-        const masterToken = Buffer.from(ADMIN_SECRET_KEY).toString('base64');
+      // Path B: Master Security Key verification (timing-safe check & random 24h session token)
+      if (key && ADMIN_SECRET_KEY && timingSafeEqualStr(key.trim(), ADMIN_SECRET_KEY)) {
+        const masterSessionToken = 'gv_adm_master_' + randomUUID();
+        adminSessions.set(masterSessionToken, {
+          email: 'admin@gamersvoice.internal',
+          type: 'master',
+          expireAt: Date.now() + 24 * 60 * 60 * 1000 // 24-hour expiration
+        });
         sendResponse(res, 200, {
           authenticated: true,
-          token: masterToken,
+          token: masterSessionToken,
           email: 'admin@gamersvoice.internal',
           adminType: 'master',
           timestamp: Date.now()

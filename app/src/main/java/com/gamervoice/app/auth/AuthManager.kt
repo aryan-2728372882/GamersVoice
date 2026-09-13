@@ -33,6 +33,8 @@ object AuthManager {
     private const val KEY_PHONE = "auth_phone"
     private const val KEY_AVATAR = "auth_avatar"
     private const val KEY_ID_TOKEN = "auth_id_token"
+    private const val KEY_REFRESH_TOKEN = "auth_refresh_token"
+    private const val KEY_EXPIRE_AT = "auth_token_expire_at"
 
     // Firebase Config provided by User
     const val API_KEY = "AIzaSyDqJWP-j_YmbqY1I-jMqQjsluQYWE7pdGM"
@@ -129,8 +131,10 @@ object AuthManager {
                     // 3. Save User Profile in Firestore database
                     saveFirestoreProfile(uid, name, email, phone, avatar, idToken)
 
+                    val refreshToken = json.optString("refreshToken", "")
+                    val expiresInSec = json.optLong("expiresIn", 3600L)
                     val user = UserProfile(uid, name, email, phone, avatar, idToken, isNewUser = true)
-                    saveUserToCache(user)
+                    saveUserToCache(user, refreshToken, expiresInSec)
                     postResult(callback, Result.success(user))
                 } catch (t: Throwable) {
                     postResult(callback, Result.failure(Exception("Sign up parsing error: ${t.localizedMessage}")))
@@ -176,6 +180,9 @@ object AuthManager {
                     val authName = json.optString("displayName", "")
                     val authAvatar = json.optString("photoUrl", "avatar_1")
 
+                    val refreshToken = json.optString("refreshToken", "")
+                    val expiresInSec = json.optLong("expiresIn", 3600L)
+
                     // Attempt to fetch richer Firestore details (Phone, custom name)
                     fetchFirestoreProfile(uid, idToken) { firestoreResult ->
                         val name = if (firestoreResult?.name.isNullOrEmpty()) {
@@ -188,7 +195,7 @@ object AuthManager {
 
                         // Sign in is strictly NOT a new user (isNewUser = false)
                         val user = UserProfile(uid, name, email, phone, avatar, idToken, isNewUser = false)
-                        saveUserToCache(user)
+                        saveUserToCache(user, refreshToken, expiresInSec)
                         postResult(callback, Result.success(user))
                     }
                 } catch (t: Throwable) {
@@ -240,6 +247,8 @@ object AuthManager {
                         if (response.isSuccessful && !json.has("error")) {
                             val fbUid = json.getString("localId")
                             val fbToken = json.getString("idToken")
+                            val fbRefreshToken = json.optString("refreshToken", "")
+                            val fbExpiresIn = json.optLong("expiresIn", 3600L)
                             val fbName = json.optString("displayName", googleName)
                             val fbAvatar = json.optString("photoUrl", googleAvatar)
                             val isNewUser = json.optBoolean("isNewUser", false)
@@ -248,7 +257,7 @@ object AuthManager {
                             val finalAvatar = if (fbAvatar.isNotEmpty()) fbAvatar else googleAvatar
 
                             val user = UserProfile(fbUid, finalName, googleEmail, "", finalAvatar, fbToken, isNewUser = isNewUser)
-                            saveUserToCache(user)
+                            saveUserToCache(user, fbRefreshToken, fbExpiresIn)
                             saveFirestoreProfile(fbUid, finalName, googleEmail, "", finalAvatar, fbToken)
                             postResult(callback, Result.success(user))
                             return
@@ -381,16 +390,84 @@ object AuthManager {
         }
     }
 
-    private fun saveUserToCache(user: UserProfile) {
+    private fun saveUserToCache(user: UserProfile, refreshToken: String = "", expiresInSec: Long = 3600L) {
         currentUser = user
-        prefs?.edit()
+        val editor = prefs?.edit()
             ?.putString(KEY_UID, user.uid)
             ?.putString(KEY_NAME, user.name)
             ?.putString(KEY_EMAIL, user.email)
             ?.putString(KEY_PHONE, user.phone)
             ?.putString(KEY_AVATAR, user.avatar)
             ?.putString(KEY_ID_TOKEN, user.idToken)
-            ?.apply()
+        if (refreshToken.isNotEmpty()) {
+            editor?.putString(KEY_REFRESH_TOKEN, refreshToken)
+            editor?.putLong(KEY_EXPIRE_AT, System.currentTimeMillis() + (expiresInSec * 1000L))
+        }
+        editor?.apply()
+    }
+
+    fun getValidIdToken(callback: (String?) -> Unit) {
+        val p = prefs
+        val idToken = currentUser?.idToken ?: p?.getString(KEY_ID_TOKEN, "") ?: ""
+        val expireAt = p?.getLong(KEY_EXPIRE_AT, 0L) ?: 0L
+        val refreshToken = p?.getString(KEY_REFRESH_TOKEN, "") ?: ""
+
+        val now = System.currentTimeMillis()
+        // If token expires in less than 5 minutes or is empty, and we have a refresh token, refresh it
+        if ((expireAt == 0L || now >= expireAt - (5 * 60 * 1000L)) && refreshToken.isNotEmpty()) {
+            refreshIdToken(callback)
+        } else {
+            callback(if (idToken.isNotEmpty()) idToken else null)
+        }
+    }
+
+    fun refreshIdToken(callback: (String?) -> Unit) {
+        val refreshToken = prefs?.getString(KEY_REFRESH_TOKEN, "") ?: ""
+        if (refreshToken.isEmpty()) {
+            callback(currentUser?.idToken)
+            return
+        }
+
+        val url = "https://securetoken.googleapis.com/v1/token?key=$API_KEY"
+        val formBody = "grant_type=refresh_token&refresh_token=$refreshToken"
+        val req = Request.Builder()
+            .url(url)
+            .post(formBody.toRequestBody("application/x-www-form-urlencoded".toMediaType()))
+            .build()
+
+        httpClient.newCall(req).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: IOException) {
+                Log.w(TAG, "Token refresh network failed: ${e.message}")
+                mainHandler.post { callback(currentUser?.idToken) }
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                val body = response.body?.string() ?: ""
+                try {
+                    val json = JSONObject(body)
+                    if (response.isSuccessful && json.has("id_token")) {
+                        val newIdToken = json.getString("id_token")
+                        val newRefreshToken = json.optString("refresh_token", refreshToken)
+                        val expiresInSec = json.optLong("expires_in", 3600L)
+                        val expireAt = System.currentTimeMillis() + (expiresInSec * 1000L)
+
+                        prefs?.edit()
+                            ?.putString(KEY_ID_TOKEN, newIdToken)
+                            ?.putString(KEY_REFRESH_TOKEN, newRefreshToken)
+                            ?.putLong(KEY_EXPIRE_AT, expireAt)
+                            ?.apply()
+
+                        currentUser = currentUser?.copy(idToken = newIdToken)
+                        Log.i(TAG, "Firebase ID token successfully auto-refreshed!")
+                        mainHandler.post { callback(newIdToken) }
+                        return
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Token refresh JSON parse error: ${t.message}")
+                }
+                mainHandler.post { callback(currentUser?.idToken) }
+            }
+        })
     }
 
     private fun parseFirebaseError(json: JSONObject): String {

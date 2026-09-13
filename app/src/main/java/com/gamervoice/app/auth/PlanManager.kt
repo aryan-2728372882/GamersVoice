@@ -312,36 +312,41 @@ object PlanManager {
             })
         }
 
-        // Direct fetch without expired tokens causing 401 rejection
-        val reqBuilder = Request.Builder().url(url).get()
-        httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
-            override fun onFailure(call: okhttp3.Call, e: IOException) {
-                Log.w(TAG, "Initial Firestore fetch failed: ${e.message}, trying fallback")
-                executeFallbackWithoutAuth()
+        // Fetch fresh valid token from AuthManager (auto-refreshed if nearing expiry)
+        AuthManager.getValidIdToken { token ->
+            val reqBuilder = Request.Builder().url(url).get()
+            if (!token.isNullOrEmpty()) {
+                reqBuilder.addHeader("Authorization", "Bearer $token")
             }
-            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                val body = response.body?.string() ?: ""
-                val code = response.code
-                response.close()
-                if (response.isSuccessful) {
-                    parseAndReturn(body)
-                } else if (code == 401 || code == 403) {
-                    Log.w(TAG, "Firestore returned $code, trying unauthenticated fallback")
+            httpClient.newCall(reqBuilder.build()).enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: IOException) {
+                    Log.w(TAG, "Initial Firestore fetch failed: ${e.message}, trying fallback")
                     executeFallbackWithoutAuth()
-                } else {
-                    Log.w(TAG, "Firestore returned HTTP $code: $body")
-                    mainHandler.post { 
-                        callback(
-                            isVip(), 
-                            getCurrentPlanTier(), 
-                            getPaymentId(), 
-                            getExpiryLabel(), 
-                            prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
-                        ) 
+                }
+                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                    val body = response.body?.string() ?: ""
+                    val code = response.code
+                    response.close()
+                    if (response.isSuccessful) {
+                        parseAndReturn(body)
+                    } else if (code == 401 || code == 403) {
+                        Log.w(TAG, "Firestore returned $code, trying fallback")
+                        executeFallbackWithoutAuth()
+                    } else {
+                        Log.w(TAG, "Firestore returned HTTP $code: $body")
+                        mainHandler.post { 
+                            callback(
+                                isVip(), 
+                                getCurrentPlanTier(), 
+                                getPaymentId(), 
+                                getExpiryLabel(), 
+                                prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+                            ) 
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     /**
