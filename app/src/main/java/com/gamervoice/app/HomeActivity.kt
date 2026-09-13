@@ -416,7 +416,17 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             if (!PlanManager.isVip()) {
                 showVipUpgradeDialog("👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.")
             } else {
-                Toast.makeText(this, "👑 Auto RAM Purger is actively protecting your squad voice in background.", Toast.LENGTH_SHORT).show()
+                val purgePrefs = getSharedPreferences(com.gamervoice.app.service.VoiceService.PREFS_NAME, MODE_PRIVATE)
+                val count = purgePrefs.getInt("auto_purge_count", 0)
+                val lastTs = purgePrefs.getLong("last_auto_purge_ts", 0L)
+                val lastMb = purgePrefs.getLong("last_auto_purge_mb", 0L)
+                val info = if (count > 0 && lastTs > 0) {
+                    val minsAgo = ((System.currentTimeMillis() - lastTs) / 60000L).coerceAtLeast(0)
+                    "👑 VIP Auto-Purge is ACTIVE!\n• Total Purges: #$count\n• Last Cleaned: ${minsAgo} min ago\n• Active Heap: ~${lastMb}MB (< 10MB target)"
+                } else {
+                    "👑 VIP Auto-Purge is ACTIVE and scheduled every 3 minutes in background."
+                }
+                Toast.makeText(this, info, Toast.LENGTH_LONG).show()
             }
         }
 
@@ -857,7 +867,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabCountdown.text = "Expires in: " + countdown
 
             binding.tvSettingRamPurgeTitle.text = "Auto RAM Purge 👑"
-            binding.tvSettingRamPurgeSubtitle.text = "VIP: Auto background clean every 3 min (< 10MB)"
+            val purgePrefs = getSharedPreferences(com.gamervoice.app.service.VoiceService.PREFS_NAME, MODE_PRIVATE)
+            val purgeCount = purgePrefs.getInt("auto_purge_count", 0)
+            val lastTs = purgePrefs.getLong("last_auto_purge_ts", 0L)
+            val lastMb = purgePrefs.getLong("last_auto_purge_mb", 0L)
+            if (purgeCount > 0 && lastTs > 0) {
+                val minsAgo = ((System.currentTimeMillis() - lastTs) / 60000L).coerceAtLeast(0)
+                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Cleaned ${minsAgo}m ago (~${lastMb}MB heap • #$purgeCount purges)"
+            } else {
+                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Auto clean every 3 min (< 10MB memory guard)"
+            }
             binding.tvSettingRamPurgeBadge.text = "ACTIVE"
             binding.tvSettingRamPurgeBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)

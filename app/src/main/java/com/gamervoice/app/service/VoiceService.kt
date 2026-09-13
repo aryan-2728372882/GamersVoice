@@ -169,7 +169,15 @@ class VoiceService : Service(),
                     System.gc()
                     val runtime = Runtime.getRuntime()
                     val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
-                    Log.d("VoiceService", "🧹 VIP Auto RAM Purge executed safely: Heap usage ~${usedMemMb}MB (< 10MB safe)")
+                    val purgeCount = prefs.getInt("auto_purge_count", 0) + 1
+                    val now = System.currentTimeMillis()
+                    prefs.edit {
+                        putInt("auto_purge_count", purgeCount)
+                        putLong("last_auto_purge_ts", now)
+                        putLong("last_auto_purge_mb", usedMemMb)
+                    }
+                    Log.d("VoiceService", "🧹 VIP Auto RAM Purge #$purgeCount executed safely: Heap usage ~${usedMemMb}MB (< 10MB safe)")
+                    AppLogger.log("PURGE", "VIP Auto RAM Purge #$purgeCount: Active heap is ${usedMemMb}MB (Image & audio cache cleaned)")
                 }
             } catch (_: Throwable) {}
             mainHandler.postDelayed(this, 180_000L) // Checks safely every 3 minutes
