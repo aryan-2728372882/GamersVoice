@@ -1036,9 +1036,11 @@ wss.on('connection', (ws, req) => {
         break;
 
       case 'ping':
-        // Cloud signaling heartbeat. Do not echo client timestamp as voice latency
-        // because cloud server WAN round-trip (e.g. India to US/EU, ~350ms) is not P2P voice mesh latency.
-        sendJson(ws, { type: 'pong' });
+        // Cloud signaling heartbeat with echoed client timestamp for live latency measurement
+        sendJson(ws, { 
+          type: 'pong',
+          timestamp: data.timestamp || Date.now()
+        });
         break;
 
       case 'tactical-callout':
@@ -1148,7 +1150,8 @@ function handleJoinRoom(ws, data = {}) {
     if (/^[A-Z0-9]{5}$/.test(roomCode)) {
       room = {
         code: roomCode,
-        peers: new Map()
+        peers: new Map(),
+        cleanupTimer: null
       };
       rooms.set(roomCode, room);
       console.log(`[Rejoin] Persistent room ${roomCode} re-opened in memory`);
@@ -1156,6 +1159,10 @@ function handleJoinRoom(ws, data = {}) {
       sendError(ws, 'Room not found');
       return;
     }
+  } else if (room.cleanupTimer) {
+    clearTimeout(room.cleanupTimer);
+    room.cleanupTimer = null;
+    console.log(`[Grace Period Cancelled] Peer joined room ${roomCode} — cancelling idle cleanup timer`);
   }
 
   if (room.peers.size >= 5) {
@@ -1286,10 +1293,16 @@ function handleLeaveRoom(ws) {
 
     console.log(`[Leave] Peer ${peerId} left room ${roomCode} (${room.peers.size} remaining)`);
 
-    // Clean up empty room
+    // Clean up empty room with 3-minute grace period for network recovery and airplane mode toggles
     if (room.peers.size === 0) {
-      rooms.delete(roomCode);
-      console.log(`[Clean] Room ${roomCode} deleted (empty)`);
+      if (room.cleanupTimer) clearTimeout(room.cleanupTimer);
+      room.cleanupTimer = setTimeout(() => {
+        if (room.peers.size === 0) {
+          rooms.delete(roomCode);
+          console.log(`[Clean] Room ${roomCode} deleted after 3-minute idle grace period`);
+        }
+      }, 180000); // 3 minutes = 180,000ms
+      console.log(`[Grace Period] Room ${roomCode} empty — keeping alive for 3 minutes for player reconnect`);
     }
   }
 }

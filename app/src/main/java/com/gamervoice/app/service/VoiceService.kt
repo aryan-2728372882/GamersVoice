@@ -81,6 +81,52 @@ class VoiceService : Service(),
 
     var currentLatencyMs: Long = 0L
         private set
+    var lastServerPingMs: Long = 0L
+        private set
+
+    var isReconnecting: Boolean = false
+        private set
+    private var reconnectDeadlineMs: Long = 0L
+    private var savedRoomCodeForReconnect: String? = null
+
+    private val reconnectRunnable = object : Runnable {
+        override fun run() {
+            if (!isReconnecting || savedRoomCodeForReconnect == null) return
+
+            val now = System.currentTimeMillis()
+            if (now > reconnectDeadlineMs) {
+                // 3 minutes elapsed! Cleanly exit
+                AppLogger.log("SERVICE", "Reconnect timeout after 3 minutes. Exiting room.")
+                isReconnecting = false
+                val roomToExit = savedRoomCodeForReconnect
+                savedRoomCodeForReconnect = null
+                mainHandler.post {
+                    listener?.onConnectedStateChanged("Status: Disconnected (3m timeout)")
+                    listener?.onError("Connection lost after 3 minutes. Room $roomToExit closed.")
+                }
+                leaveRoom()
+                return
+            }
+
+            val remainingSec = ((reconnectDeadlineMs - now) / 1000).coerceAtLeast(0)
+            mainHandler.post {
+                listener?.onConnectedStateChanged("Reconnecting (${remainingSec}s)...")
+            }
+
+            if (!signalingClient.isConnected) {
+                AppLogger.log("SERVICE", "Attempting reconnect to signaling server (${remainingSec}s remaining)...")
+                signalingClient.connect()
+            } else {
+                val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+                val myName = user?.name ?: "Gamer"
+                val myAvatar = user?.avatar ?: "avatar_1"
+                AppLogger.log("SERVICE", "Reconnected to server, re-joining room $savedRoomCodeForReconnect...")
+                signalingClient.joinRoom(savedRoomCodeForReconnect!!, myName, myAvatar)
+            }
+
+            mainHandler.postDelayed(this, 3000)
+        }
+    }
 
     private val pingRunnable = object : Runnable {
         override fun run() {
@@ -93,11 +139,13 @@ class VoiceService : Service(),
                     }
                 }
             } else if (signalingClient.isConnected) {
-                // If waiting alone in room, indicate ready status
-                mainHandler.post {
-                    listener?.onLatencyUpdated(-1L)
-                }
+                // Measure live signaling server round-trip latency when alone in room
                 signalingClient.sendPing()
+                if (lastServerPingMs > 0 && currentRoomCode != null) {
+                    mainHandler.post {
+                        listener?.onLatencyUpdated(lastServerPingMs)
+                    }
+                }
             }
             mainHandler.postDelayed(this, 2500)
         }
@@ -245,6 +293,9 @@ class VoiceService : Service(),
 
     fun leaveRoom() {
         AppLogger.log("SERVICE", "leaveRoom() called on VoiceService")
+        isReconnecting = false
+        savedRoomCodeForReconnect = null
+        mainHandler.removeCallbacks(reconnectRunnable)
         executor.execute {
             try {
                 signalingClient.leaveRoom()
@@ -418,12 +469,30 @@ class VoiceService : Service(),
                 signalingClient.sendPing()
             }
         }
+        if (isReconnecting && savedRoomCodeForReconnect != null) {
+            val user = com.gamervoice.app.auth.AuthManager.getCurrentUser()
+            val myName = user?.name ?: "Gamer"
+            val myAvatar = user?.avatar ?: "avatar_1"
+            AppLogger.log("SERVICE", "Signaling reconnected, auto-rejoining room $savedRoomCodeForReconnect")
+            signalingClient.joinRoom(savedRoomCodeForReconnect!!, myName, myAvatar)
+        }
     }
 
     override fun onDisconnected() {
         mainHandler.post {
             listener?.onConnectedStateChanged("Status: Server Disconnected")
             listener?.onLatencyUpdated(-1L)
+        }
+
+        if (currentRoomCode != null && !isReconnecting) {
+            savedRoomCodeForReconnect = currentRoomCode
+            isReconnecting = true
+            reconnectDeadlineMs = System.currentTimeMillis() + 180_000L // 3 minutes = 180s
+            AppLogger.log("SERVICE", "Network disconnection detected in room $currentRoomCode. Starting 3-minute reconnect loop.")
+            mainHandler.post {
+                listener?.onConnectedStateChanged("Reconnecting to squad (180s remaining)...")
+            }
+            mainHandler.postDelayed(reconnectRunnable, 2000)
         }
     }
 
@@ -483,6 +552,15 @@ class VoiceService : Service(),
             } catch (t: Throwable) {
                 AppLogger.log("ERROR", "Error connecting to peers after joining: ${t.message}")
                 Log.e(TAG, "Error connecting to peers after joining", t)
+            }
+        }
+        if (isReconnecting) {
+            isReconnecting = false
+            savedRoomCodeForReconnect = null
+            mainHandler.removeCallbacks(reconnectRunnable)
+            AppLogger.log("SERVICE", "Successfully reconnected and restored squad room $roomCode!")
+            mainHandler.post {
+                listener?.onConnectedStateChanged("Status: Reconnected to Room")
             }
         }
         mainHandler.post {
@@ -581,12 +659,11 @@ class VoiceService : Service(),
     }
 
     override fun onPongReceived(latencyMs: Long) {
-        // Signaling heartbeat acknowledged from cloud relay.
-        // Cloud signaling WAN RTT (transatlantic to US/EU server) is strictly for keep-alive,
-        // never voice audio latency. Voice latency is 100% P2P between squad members.
-        if (!peerConnectionManager.hasActivePeers()) {
+        lastServerPingMs = latencyMs
+        if (!peerConnectionManager.hasActivePeers() && (currentRoomCode != null || isReconnecting)) {
+            currentLatencyMs = latencyMs
             mainHandler.post {
-                listener?.onLatencyUpdated(-1L)
+                listener?.onLatencyUpdated(latencyMs)
             }
         }
     }

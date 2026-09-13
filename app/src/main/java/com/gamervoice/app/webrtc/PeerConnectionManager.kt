@@ -220,10 +220,12 @@ class PeerConnectionManager(
                 val vipKeys = listOf(
                     "googEchoCancellation" to "true",
                     "googEchoCancellation2" to "true",
+                    "googDAEchoCancellation" to "true",
                     "googAutoGainControl" to "true",
                     "googAutoGainControl2" to "true",
                     "googNoiseSuppression" to "true",
                     "googNoiseSuppression2" to "true",
+                    "googNoiseSuppressionLevel" to "3",
                     "googExperimentalNoiseSuppression" to "true",
                     "googHighpassFilter" to "true",
                     "googVeryHighpassFilter" to "true",
@@ -329,13 +331,14 @@ class PeerConnectionManager(
                 regex.replace(sdp) { match ->
                     val existing = match.groupValues[1]
                     if (isLowDataMode) {
-                        // 3G WEAK SIGNAL: Extreme data compression (12kbps), Discontinuous Transmission (zero packets when silent), In-Band FEC
-                        "a=fmtp:111 minptime=20;useinbandfec=1;maxaveragebitrate=12000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
+                        // 3G WEAK SIGNAL: Extreme data compression (8kbps SILK Speech), Discontinuous Transmission (zero packets when silent), In-Band Forward Error Correction (FEC), and packet grouping up to 60ms to cut radio overhead
+                        "a=fmtp:111 minptime=20;ptime=20;maxptime=60;useinbandfec=1;maxaveragebitrate=8000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
                     } else if (isVip) {
-                        // VIP: 64kbps HD 48kHz Studio Voice + DTX
+                        // VIP: 64kbps HD 48kHz Studio Voice + DTX + In-Band FEC
                         "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=48000;sprop-maxcapturerate=48000;$existing"
                     } else {
-                        "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=20000;stereo=0;sprop-stereo=0;usedtx=0;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
+                        // STANDARD: 20kbps Speech + DTX
+                        "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=20000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
                     }
                 }
             } else {

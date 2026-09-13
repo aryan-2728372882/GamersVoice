@@ -1411,14 +1411,15 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onLatencyUpdated(latencyMs: Long) {
         runOnUiThread {
             try {
-                if (latencyMs < 0 || latencyMs > 150) {
-                    binding.tvTelemetryPing.text = "P2P Ready"
-                    binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
+                if (latencyMs <= 0) {
+                    binding.tvTelemetryPing.text = "— ms"
+                    binding.tvTelemetryPing.setTextColor(Color.parseColor("#888888"))
                 } else {
                     binding.tvTelemetryPing.text = "${latencyMs}ms"
                     when {
                         latencyMs < 60 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
                         latencyMs < 120 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FFD700"))
+                        latencyMs < 180 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FF9100"))
                         else -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FF5252"))
                     }
                 }
