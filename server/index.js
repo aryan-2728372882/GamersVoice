@@ -7,6 +7,31 @@ const { randomUUID } = crypto;
 
 const nodemailer = require('nodemailer');
 
+// Automatically load local .env if present (strictly gitignored and kept on your PC only)
+const envPaths = [path.join(__dirname, '.env'), path.join(__dirname, '..', '.env')];
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    try {
+      const rawEnv = fs.readFileSync(envPath, 'utf8');
+      rawEnv.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx > 0) {
+            const k = trimmed.substring(0, eqIdx).trim();
+            const v = trimmed.substring(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+            if (process.env[k] === undefined) {
+              process.env[k] = v;
+            }
+          }
+        }
+      });
+      console.log(`[Env Loader] Loaded local configuration from ${path.basename(envPath)}`);
+      break;
+    } catch (_) {}
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 
 // Configuration strictly from environment variables (No hardcoded secrets)
