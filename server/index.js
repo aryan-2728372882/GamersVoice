@@ -1788,6 +1788,27 @@ function buildWelcomeHtml(name, email) {
 
 server.listen(PORT, () => {
   console.log(`GamerVoice signaling & security server listening on port ${PORT}`);
+
+  // Render Free-Tier Keep-Alive Engine: Prevents container from sleeping after 15 min idle
+  const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+  const HOST_URL = process.env.RENDER_EXTERNAL_URL || 'https://gamersvoice.onrender.com';
+
+  if (process.env.ENABLE_KEEP_ALIVE !== 'false') {
+    setInterval(() => {
+      try {
+        const pingUrl = `${HOST_URL}/health`;
+        const client = pingUrl.startsWith('https') ? require('https') : require('http');
+        client.get(pingUrl, (res) => {
+          res.on('data', () => {}); // Consume stream
+        }).on('error', (err) => {
+          console.log('[Keep-Alive Self-Ping]', err.message);
+        });
+      } catch (e) {
+        console.warn('[Keep-Alive Ping]', e.message);
+      }
+    }, PING_INTERVAL_MS);
+    console.log(`[Keep-Alive Engine] Active: self-pinging every 10 min at ${HOST_URL}/health`);
+  }
 });
 
 // Process resilience: prevent uncaught async errors from terminating voice sessions

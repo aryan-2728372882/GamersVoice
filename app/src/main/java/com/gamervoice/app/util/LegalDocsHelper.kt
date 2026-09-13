@@ -11,16 +11,19 @@ object LegalDocsHelper {
         1. INTRODUCTION & SCOPE
         GamerVoice ("we", "our", or "the App") is committed to safeguarding the digital privacy of users in compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act 2023) of the Republic of India, the Information Technology Act, 2000, and applicable international privacy frameworks. This document outlines how your data is processed, secured, and respected.
 
-        2. ZERO AUDIO SURVEILLANCE & ZERO LOGGING GUARANTEE
+        2. REAL-TIME AUDIO ARCHITECTURE & CLUTCH HIGHLIGHTS BUFFER
         - Pure Peer-to-Peer Real-Time Audio: Voice packets are streamed directly between squad room participants using WebRTC with industry-standard DTLS-SRTP 128-bit encryption.
-        - Strict Zero Storage: Microphone audio is NEVER recorded, NEVER eavesdropped, NEVER transcribed, NEVER analyzed for advertising, and NEVER stored on our servers or third-party cloud buckets. Section 43A and Section 72A of the IT Act, 2000 (Protection of Sensitive Personal Data) are strictly adhered to.
+        - Strict Zero Cloud Storage: Microphone audio is NEVER uploaded to, eavesdropped on, transcribed, or stored on our servers or third-party cloud storage buckets. Section 43A and Section 72A of the IT Act, 2000 (Protection of Sensitive Personal Data) are strictly adhered to.
+        - Optional Personal Clutch Mic Highlights (Local Buffer Only): If and only if you explicitly enable the "Personal Clutch Mic Highlights" toggle in Settings, the App maintains a rolling 120-second circular buffer of your personal microphone input in volatile on-device device memory (RAM). When you tap "CLUTCH CLIP", this buffer is exported directly to your local device storage (Music/GamerVoice_Clips). Your teammates' incoming audio is never recorded, and no audio is ever transmitted off your device. If this feature is disabled (default setting), no recording or memory buffering occurs.
         - When an active call ends or you mute your microphone, hardware audio access is instantly severed by the Android operating system.
 
-        3. PERSONAL DATA PROCESSED
+        3. PERSONAL DATA PROCESSED & ADVERTISING DISCLOSURES
         We adhere to the principle of strict data minimization under the DPDP Act 2023:
         - Account Credentials: User email address and gamer display name (provided via Google Sign-In or manual registration) to identify you to squad members in your rooms.
         - Room Signaling & Session Tokens: Ephemeral session identifiers exchanged over secure WebSockets (WSS with TLS 1.3) solely to establish peer connections. These are discarded upon room teardown.
-        - No Ad Tracking: GamerVoice contains 0 third-party ad tracking SDKs, 0 data broker beacons, and 0 behavioral profiling software. We do not sell or monetize personal data.
+        - Advertising Disclosures (Google AdMob SDK): For users on the Free Tier, GamerVoice displays banner advertisements powered by Google AdMob. Google AdMob may process pseudonymous device identifiers, advertising IDs, and diagnostic data in accordance with Google's Privacy Policy and your explicit consent choices gathered via the Google User Messaging Platform (UMP) consent flow.
+        - Ad-Free VIP Experience: VIP Pass subscribers enjoy a 100% ad-free experience. When VIP is active, all ad requests and third-party advertising SDK operations are completely halted.
+        - We do not sell or trade personal data with data brokers.
 
         4. RIGHTS OF DATA PRINCIPALS (INDIA DPDP ACT 2023)
         As a Data Principal under Indian law, you possess:

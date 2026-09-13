@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -27,10 +30,34 @@ android {
         }
     }
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
+    signingConfigs {
+        create("release") {
+            val sFile = keystoreProperties.getProperty("storeFile")
+            val sPass = keystoreProperties.getProperty("storePassword")
+            val kAlias = keystoreProperties.getProperty("keyAlias")
+            val kPass = keystoreProperties.getProperty("keyPassword")
+            if (keystorePropertiesFile.exists() && !sFile.isNullOrBlank()) {
+                storeFile = file(sFile.trim())
+                storePassword = sPass?.trim()
+                keyAlias = kAlias?.trim()
+                keyPassword = kPass?.trim()
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

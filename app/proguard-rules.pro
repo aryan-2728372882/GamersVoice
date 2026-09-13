@@ -38,3 +38,19 @@
 -optimizations !method/inlining/*
 -keepclasseswithmembers class * { public void onPayment*(...); }
 
+# Google Mobile Ads & User Messaging Platform (UMP)
+-keep class com.google.android.gms.ads.** { *; }
+-keep interface com.google.android.gms.ads.** { *; }
+-keep class com.google.android.ump.** { *; }
+-keep interface com.google.android.ump.** { *; }
+-dontwarn com.google.android.gms.ads.**
+-dontwarn com.google.android.ump.**
+
+# GamerVoice Data Models & Auth Entities (prevent JSON field stripping)
+-keep class com.gamervoice.app.model.** { *; }
+-keepclassmembers class com.gamervoice.app.model.** { *; }
+-keep class com.gamervoice.app.auth.UserProfile { *; }
+-keep class com.gamervoice.app.auth.PlanTier { *; }
+-keep enum com.gamervoice.app.auth.PlanTier { *; }
+
+

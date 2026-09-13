@@ -29,6 +29,7 @@ yarn-error.log*
 *.key
 *.jks
 *.keystore
+keystore.properties
 
 # Service Accounts & Firebase Credentials (STRICTLY LOCAL ONLY)
 *service-account*.json
