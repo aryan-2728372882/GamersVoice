@@ -41,6 +41,8 @@ class PeerConnectionManager(
     // Mesh Topology Map: targetPeerId -> PeerConnection
     private val peerConnections = ConcurrentHashMap<String, PeerConnection>()
     private val peerObservers = ConcurrentHashMap<String, PeerConnection.Observer>()
+    private val remoteAudioTracks = ConcurrentHashMap<String, AudioTrack>()
+    private val locallyMutedPeers = ConcurrentHashMap.newKeySet<String>()
 
     // Pending ICE candidates queue per peer
     private val pendingIceCandidates = ConcurrentHashMap<String, MutableList<IceCandidate>>()
@@ -373,6 +375,26 @@ class PeerConnectionManager(
 
     fun isMicTransmitting(): Boolean = isMicTransmitting
 
+    fun setPeerMuted(peerId: String, muted: Boolean) {
+        if (muted) {
+            locallyMutedPeers.add(peerId)
+        } else {
+            locallyMutedPeers.remove(peerId)
+        }
+        val track = remoteAudioTracks[peerId]
+        if (track != null) {
+            try {
+                track.setEnabled(!muted)
+                track.setVolume(if (muted) 0.0 else 1.0)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to toggle remote audio track for $peerId", e)
+            }
+        }
+        listener.onLog("Peer $peerId audio ${if (muted) "MUTED locally" else "UNMUTED"}")
+    }
+
+    fun isPeerMuted(peerId: String): Boolean = locallyMutedPeers.contains(peerId)
+
     fun connectToPeer(targetPeerId: String) {
         try {
             if (peerConnections.size >= MAX_PEERS) {
@@ -496,6 +518,7 @@ class PeerConnectionManager(
             val pc = peerConnections.remove(peerId)
             peerObservers.remove(peerId)
             pendingIceCandidates.remove(peerId)
+            remoteAudioTracks.remove(peerId)
             try {
                 pc?.dispose()
             } catch (e: Throwable) {
@@ -521,6 +544,7 @@ class PeerConnectionManager(
             peerConnections.clear()
             peerObservers.clear()
             pendingIceCandidates.clear()
+            remoteAudioTracks.clear()
 
             // Keep factory alive, but clean up active audio tracks/sources
             localAudioTrack?.setEnabled(false)
@@ -629,9 +653,11 @@ class PeerConnectionManager(
                     try {
                         val track = receiver?.track()
                         if (track is AudioTrack) {
-                            track.setEnabled(true)
-                            track.setVolume(1.0)
-                            listener.onLog("🔊 Remote Audio Track Received & Enabled at 100% volume for $targetPeerId")
+                            remoteAudioTracks[targetPeerId] = track
+                            val isMuted = locallyMutedPeers.contains(targetPeerId)
+                            track.setEnabled(!isMuted)
+                            track.setVolume(if (isMuted) 0.0 else 1.0)
+                            listener.onLog("🔊 Remote Audio Track Received & ${if (isMuted) "MUTED locally" else "Enabled at 100% volume"} for $targetPeerId")
                         } else {
                             listener.onLog("🔊 Remote Audio Track Received from $targetPeerId")
                         }

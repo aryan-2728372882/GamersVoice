@@ -58,5 +58,12 @@
 -dontwarn com.google.firebase.messaging.**
 -keep class com.gamervoice.app.service.GamerVoiceMessagingService { *; }
 
+# Firebase Crashlytics
+-keepattributes *Annotation*,SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+
 
 

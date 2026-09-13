@@ -83,8 +83,18 @@ object AppLogger {
         val logLine = entry.toString()
 
         when (tag) {
-            "ERROR", "FATAL_CRASH", "AUDIO_ERR" -> Log.e("GamerVoice", "[$tag] $message: $details")
-            "WARN" -> Log.w("GamerVoice", "[$tag] $message: $details")
+            "ERROR", "FATAL_CRASH", "AUDIO_ERR" -> {
+                Log.e("GamerVoice", "[$tag] $message: $details")
+                try {
+                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("[$tag] $message ${details ?: ""}")
+                } catch (_: Throwable) {}
+            }
+            "WARN" -> {
+                Log.w("GamerVoice", "[$tag] $message: $details")
+                try {
+                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("[$tag] $message")
+                } catch (_: Throwable) {}
+            }
             else -> Log.i("GamerVoice", "[$tag] $message: $details")
         }
 
@@ -110,6 +120,16 @@ object AppLogger {
         }
     }
 
+    fun recordNonFatal(throwable: Throwable, contextTag: String = "AppLogger") {
+        try {
+            com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().apply {
+                setCustomKey("context_tag", contextTag)
+                recordException(throwable)
+            }
+        } catch (_: Throwable) {}
+        log("ERROR", "Non-fatal exception in $contextTag: ${throwable.message}", Log.getStackTraceString(throwable))
+    }
+
     /**
      * Synchronously write to log file during uncaught crash before process dies
      */
@@ -117,6 +137,13 @@ object AppLogger {
         val time = dateFormat.format(Date())
         val stackTrace = Log.getStackTraceString(throwable)
         val crashText = "\n\n*** FATAL CRASH in Thread [$threadName] at $time ***\n${throwable.javaClass.name}: ${throwable.message}\n$stackTrace\n***************************************************\n"
+
+        try {
+            com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().apply {
+                setCustomKey("crash_thread", threadName)
+                recordException(throwable)
+            }
+        } catch (_: Throwable) {}
 
         val entry = LogEntry(time, "FATAL_CRASH", "Crash in $threadName: ${throwable.message}", stackTrace)
         logBuffer.add(entry)

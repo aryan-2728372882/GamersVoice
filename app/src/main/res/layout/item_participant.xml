@@ -39,6 +39,21 @@
                 tools:text="ShadowNinja" />
 
             <TextView
+                android:id="@+id/tvHostBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_badge_aggressive"
+                android:fontFamily="sans-serif-black"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="1dp"
+                android:text="LEADER"
+                android:textColor="@color/neon_gold"
+                android:textSize="10sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
                 android:id="@+id/tvYouBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -69,8 +84,36 @@
         android:id="@+id/ivSpeakingIndicator"
         android:layout_width="14dp"
         android:layout_height="14dp"
+        android:layout_marginEnd="8dp"
         android:contentDescription="Voice Status"
         android:src="@drawable/ic_notification"
         android:tint="@color/accent_green" />
+
+    <!-- In-Room Moderation Actions: Local Mute -->
+    <ImageView
+        android:id="@+id/btnMutePeer"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Mute Audio For Me"
+        android:padding="6dp"
+        android:src="@drawable/ic_volume_up"
+        android:tint="@color/text_secondary"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- In-Room Moderation Actions: Report / Kick Options Menu -->
+    <ImageView
+        android:id="@+id/btnPeerOptions"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Participant Options"
+        android:padding="6dp"
+        android:src="@drawable/ic_more_vert"
+        android:tint="@color/text_secondary"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
 </LinearLayout>

@@ -5,5 +5,7 @@ data class RoomParticipant(
     val name: String,
     val avatar: String,
     val isMe: Boolean = false,
-    var isSpeaking: Boolean = false
+    var isSpeaking: Boolean = false,
+    var isMutedLocally: Boolean = false,
+    var isHost: Boolean = false
 )

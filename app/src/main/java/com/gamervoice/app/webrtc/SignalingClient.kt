@@ -21,7 +21,8 @@ class SignalingClient(private val listener: SignalingListener) {
     data class PeerMetadata(
         val peerId: String,
         val name: String = "Gamer",
-        val avatar: String = "avatar_1"
+        val avatar: String = "avatar_1",
+        val isHost: Boolean = false
     )
 
     interface SignalingListener {
@@ -37,6 +38,8 @@ class SignalingClient(private val listener: SignalingListener) {
         fun onError(message: String)
         fun onTacticalCalloutReceived(senderPeerId: String, senderName: String, calloutId: String, calloutText: String) {}
         fun onPongReceived(latencyMs: Long) {}
+        fun onKickedFromRoom(reason: String) {}
+        fun onServerRestarting(message: String) {}
     }
 
     private val client = OkHttpClient.Builder()
@@ -123,6 +126,15 @@ class SignalingClient(private val listener: SignalingListener) {
         }
         send(payload.toString())
         currentRoomCode = null
+    }
+
+    fun kickPeer(targetPeerId: String, reason: String = "Removed by squad leader") {
+        val payload = JSONObject().apply {
+            put("type", "kick-peer")
+            put("targetPeerId", targetPeerId)
+            put("reason", reason)
+        }
+        send(payload.toString())
     }
 
     fun sendTacticalCallout(calloutId: String, calloutText: String) {
@@ -252,6 +264,17 @@ class SignalingClient(private val listener: SignalingListener) {
                         val cId = json.optString("calloutId", "")
                         val cText = json.optString("calloutText", "")
                         listener.onTacticalCalloutReceived(senderId, senderName, cId, cText)
+                    }
+
+                    "kicked-from-room" -> {
+                        val reason = json.optString("reason", "You were removed from the room by the squad host.")
+                        currentRoomCode = null
+                        listener.onKickedFromRoom(reason)
+                    }
+
+                    "server-restarting" -> {
+                        val message = json.optString("message", "Signaling server cycling for health maintenance. Auto-reconnecting...")
+                        listener.onServerRestarting(message)
                     }
 
                     "error" -> {

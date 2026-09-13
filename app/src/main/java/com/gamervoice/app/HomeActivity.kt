@@ -1603,6 +1603,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             try {
                 binding.llParticipantsContainer.removeAllViews()
                 val myId = voiceService?.signalingClient?.myPeerId
+                val myParticipant = participants.find { it.isMe || (it.peerId == myId) }
+                val iAmHost = myParticipant?.isHost == true
 
                 val header = android.widget.TextView(this).apply {
                     text = "MEMBERS IN SQUAD (${participants.size}/5)"
@@ -1624,7 +1626,35 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     itemBinding.tvParticipantName.text = p.name
                     ImageLoader.loadAvatar(itemBinding.ivParticipantAvatar, p.avatar)
                     itemBinding.tvYouBadge.visibility = if (isMe) View.VISIBLE else View.GONE
-                    itemBinding.tvParticipantStatus.text = if (isMe) "Host / You" else "Connected"
+                    itemBinding.tvHostBadge.visibility = if (p.isHost && !isMe) View.VISIBLE else View.GONE
+
+                    if (isMe) {
+                        itemBinding.tvParticipantStatus.text = if (p.isHost) "Leader (You)" else "Connected (You)"
+                        itemBinding.btnMutePeer.visibility = View.GONE
+                        itemBinding.btnPeerOptions.visibility = View.GONE
+                    } else {
+                        itemBinding.btnMutePeer.visibility = View.VISIBLE
+                        itemBinding.btnPeerOptions.visibility = View.VISIBLE
+
+                        val isMuted = voiceService?.isPeerMutedLocally(p.peerId) == true
+                        itemBinding.btnMutePeer.setImageResource(if (isMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up)
+                        itemBinding.btnMutePeer.setColorFilter(if (isMuted) Color.parseColor("#FF5252") else Color.parseColor("#8E9BAE"))
+                        itemBinding.tvParticipantStatus.text = if (isMuted) "Muted (Local)" else "Connected"
+
+                        itemBinding.btnMutePeer.setOnClickListener {
+                            val willMute = !isMuted
+                            voiceService?.setPeerMutedLocally(p.peerId, willMute)
+                            Toast.makeText(
+                                this,
+                                if (willMute) "🔇 Muted ${p.name} for you" else "🔊 Unmuted ${p.name}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        itemBinding.btnPeerOptions.setOnClickListener {
+                            showPeerModerationDialog(p, iAmHost)
+                        }
+                    }
 
                     binding.llParticipantsContainer.addView(itemBinding.root)
                 }
@@ -1632,6 +1662,70 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 Log.e("HomeActivity", "Error updating participants UI", t)
             }
         }
+    }
+
+    private fun showPeerModerationDialog(peer: RoomParticipant, iAmHost: Boolean) {
+        val options = mutableListOf<String>()
+        options.add("🚩 Report ${peer.name}")
+        if (iAmHost) {
+            options.add("🚫 Kick ${peer.name} from Squad")
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Squad Moderation: ${peer.name}")
+            .setItems(options.toTypedArray()) { _, which ->
+                when (options[which]) {
+                    "🚩 Report ${peer.name}" -> showReportPeerDialog(peer)
+                    "🚫 Kick ${peer.name} from Squad" -> {
+                        androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("Kick Player?")
+                            .setMessage("Remove ${peer.name} from the room?")
+                            .setPositiveButton("Kick") { _, _ ->
+                                voiceService?.kickPeerFromRoom(peer.peerId)
+                                Toast.makeText(this, "Removed ${peer.name} from squad", Toast.LENGTH_SHORT).show()
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showReportPeerDialog(peer: RoomParticipant) {
+        val reasons = arrayOf(
+            "Toxic / Abusive Behavior",
+            "Harassment or Hate Speech",
+            "Mic Spamming / Screaming",
+            "Cheating / Teaming"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Report ${peer.name}")
+            .setItems(reasons) { _, which ->
+                val reason = reasons[which]
+                val roomCode = voiceService?.currentRoomCode ?: "UNKNOWN"
+                val user = AuthManager.getCurrentUser()
+                val submission = SupportTicketManager.TicketSubmission(
+                    userEmail = user?.email ?: "guest@gamervoice.app",
+                    category = "Report Bad Actor",
+                    subject = "Player Report: ${peer.name} in Room $roomCode",
+                    description = "Reporting player ${peer.name} (PeerID: ${peer.peerId}) in Room $roomCode for: $reason.",
+                    isVip = PlanManager.isVip()
+                )
+                SupportTicketManager.submitTicket(this, submission) { success, _ ->
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            if (success) "Report submitted to moderators. Thank you for keeping GamerVoice safe."
+                            else "Failed to submit report. Please check your connection.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun updateMicModeUI(isPtt: Boolean) {

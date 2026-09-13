@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -88,6 +89,7 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.user.messaging.platform)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.crashlytics)
     implementation("com.razorpay:checkout:1.6.41")
 
     testImplementation(libs.junit)

@@ -377,6 +377,22 @@ class VoiceService : Service(),
         return participants.size.coerceAtLeast(1)
     }
 
+    fun setPeerMutedLocally(peerId: String, muted: Boolean) {
+        peerConnectionManager.setPeerMuted(peerId, muted)
+        participants[peerId]?.isMutedLocally = muted
+        mainHandler.post {
+            listener?.onParticipantsUpdated(participants.values.toList())
+        }
+    }
+
+    fun isPeerMutedLocally(peerId: String): Boolean {
+        return peerConnectionManager.isPeerMuted(peerId)
+    }
+
+    fun kickPeerFromRoom(peerId: String, reason: String = "Removed by squad leader") {
+        signalingClient.kickPeer(peerId, reason)
+    }
+
     fun startForegroundNotification() {
         mainHandler.post {
             try {
@@ -564,7 +580,7 @@ class VoiceService : Service(),
         val myName = user?.name ?: "Gamer"
         val myAvatar = user?.avatar ?: "avatar_1"
         participants.clear()
-        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true)
+        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true, isHost = true)
         SquadReplayManager.startSession()
         SquadStatsTracker.onSessionStarted(this)
         startForegroundNotification()
@@ -595,13 +611,13 @@ class VoiceService : Service(),
         val myName = user?.name ?: "Gamer"
         val myAvatar = user?.avatar ?: "avatar_1"
         participants.clear()
-        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true)
+        participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true, isHost = false)
         for (m in existingMembers) {
-            participants[m.peerId] = com.gamervoice.app.model.RoomParticipant(m.peerId, m.name, m.avatar, isMe = false)
+            participants[m.peerId] = com.gamervoice.app.model.RoomParticipant(m.peerId, m.name, m.avatar, isMe = false, isHost = m.isHost)
         }
         for (peer in existingPeers) {
             if (!participants.containsKey(peer)) {
-                participants[peer] = com.gamervoice.app.model.RoomParticipant(peer, "Gamer", "avatar_1", isMe = false)
+                participants[peer] = com.gamervoice.app.model.RoomParticipant(peer, "Gamer", "avatar_1", isMe = false, isHost = false)
             }
         }
         SquadReplayManager.startSession()
@@ -736,6 +752,21 @@ class VoiceService : Service(),
     override fun onError(message: String) {
         mainHandler.post {
             listener?.onError(message)
+        }
+    }
+
+    override fun onKickedFromRoom(reason: String) {
+        AppLogger.log("SERVICE", "Kicked from room: $reason")
+        mainHandler.post {
+            leaveRoom()
+            listener?.onError("Kicked from squad: $reason")
+        }
+    }
+
+    override fun onServerRestarting(message: String) {
+        AppLogger.log("SERVICE", "Server restart notice: $message")
+        mainHandler.post {
+            listener?.onConnectedStateChanged("Server cycling: auto-reconnecting...")
         }
     }
 

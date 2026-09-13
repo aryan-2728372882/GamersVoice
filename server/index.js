@@ -1462,6 +1462,10 @@ wss.on('connection', (ws, req) => {
         handleBroadcastRoom(ws, data);
         break;
 
+      case 'kick-peer':
+        handleKickPeer(ws, data);
+        break;
+
       default:
         sendError(ws, `Unknown message type: ${data.type}`);
         break;
@@ -1518,19 +1522,21 @@ function handleCreateRoom(ws, data = {}) {
 
   const room = {
     code: roomCode,
+    hostPeerId: peerId,
     peers: new Map()
   };
 
-  room.peers.set(peerId, { ws, peerId, name, avatar });
+  room.peers.set(peerId, { ws, peerId, name, avatar, isHost: true });
   rooms.set(roomCode, room);
-  clients.set(ws, { peerId, roomCode, name, avatar });
+  clients.set(ws, { peerId, roomCode, name, avatar, isHost: true });
 
   sendJson(ws, {
     type: 'room-created',
     roomCode,
     peerId,
     name,
-    avatar
+    avatar,
+    isHost: true
   });
 
   console.log(`[Create] Room ${roomCode} created by ${name} (${peerId})`);
@@ -1611,15 +1617,22 @@ function handleJoinRoom(ws, data = {}) {
     }
   }
 
+  if (!room.hostPeerId) {
+    room.hostPeerId = existingPeerIds[0] || peerId;
+  }
+  const isHost = room.hostPeerId === peerId;
+
   // Add new peer to room
-  room.peers.set(peerId, { ws, peerId, name, avatar });
-  clients.set(ws, { peerId, roomCode, name, avatar });
+  room.peers.set(peerId, { ws, peerId, name, avatar, isHost });
+  clients.set(ws, { peerId, roomCode, name, avatar, isHost });
 
   // Send confirmation, peer IDs, and rich member info to joiner
   sendJson(ws, {
     type: 'room-joined',
     roomCode,
     peerId,
+    hostPeerId: room.hostPeerId,
+    isHost,
     peers: existingPeerIds,
     members: existingMembers
   });
@@ -1682,6 +1695,41 @@ function handleBroadcastRoom(ws, data) {
         senderName: senderName || 'Gamer'
       });
     }
+  }
+}
+
+function handleKickPeer(ws, data = {}) {
+  const clientInfo = clients.get(ws);
+  if (!clientInfo) {
+    sendError(ws, 'You are not in a room');
+    return;
+  }
+
+  const { peerId: senderPeerId, roomCode, name: senderName } = clientInfo;
+  const room = rooms.get(roomCode);
+  if (!room) {
+    sendError(ws, 'Room not found');
+    return;
+  }
+
+  // Only the squad host who created the room can kick members
+  if (room.hostPeerId && room.hostPeerId !== senderPeerId) {
+    sendError(ws, 'Only the squad leader/host can kick participants from this room.');
+    return;
+  }
+
+  const targetPeerId = data.targetPeerId;
+  if (!targetPeerId || targetPeerId === senderPeerId) return;
+
+  const targetPeer = room.peers.get(targetPeerId);
+  if (targetPeer && targetPeer.ws) {
+    console.log(`[Kick] ${targetPeer.name} (${targetPeerId}) kicked from room ${roomCode} by host ${senderName}`);
+    sendJson(targetPeer.ws, {
+      type: 'kicked-from-room',
+      roomCode,
+      reason: data.reason || 'You were removed from the room by the squad host.'
+    });
+    handleLeaveRoom(targetPeer.ws);
   }
 }
 
@@ -1899,36 +1947,89 @@ function buildWelcomeHtml(name, email) {
 </html>`;
 }
 
-server.listen(PORT, () => {
-  console.log(`GamerVoice signaling & security server listening on port ${PORT}`);
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`GamerVoice signaling & security server listening on port ${PORT}`);
 
-  // Render Free-Tier Keep-Alive Engine: Prevents container from sleeping after 15 min idle
-  const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-  const HOST_URL = process.env.RENDER_EXTERNAL_URL || 'https://gamersvoice.onrender.com';
+    // Render Free-Tier Keep-Alive Engine: Prevents container from sleeping after 15 min idle
+    const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    const HOST_URL = process.env.RENDER_EXTERNAL_URL || 'https://gamersvoice.onrender.com';
 
-  if (process.env.ENABLE_KEEP_ALIVE !== 'false') {
-    setInterval(() => {
-      try {
-        const pingUrl = `${HOST_URL}/health`;
-        const client = pingUrl.startsWith('https') ? require('https') : require('http');
-        client.get(pingUrl, (res) => {
-          res.on('data', () => {}); // Consume stream
-        }).on('error', (err) => {
-          console.log('[Keep-Alive Self-Ping]', err.message);
-        });
-      } catch (e) {
-        console.warn('[Keep-Alive Ping]', e.message);
-      }
-    }, PING_INTERVAL_MS);
-    console.log(`[Keep-Alive Engine] Active: self-pinging every 10 min at ${HOST_URL}/health`);
+    if (process.env.ENABLE_KEEP_ALIVE !== 'false') {
+      setInterval(() => {
+        try {
+          const pingUrl = `${HOST_URL}/health`;
+          const client = pingUrl.startsWith('https') ? require('https') : require('http');
+          client.get(pingUrl, (res) => {
+            res.on('data', () => {}); // Consume stream
+          }).on('error', (err) => {
+            console.log('[Keep-Alive Self-Ping]', err.message);
+          });
+        } catch (e) {
+          console.warn('[Keep-Alive Ping]', e.message);
+        }
+      }, PING_INTERVAL_MS);
+      console.log(`[Keep-Alive Engine] Active: self-pinging every 10 min at ${HOST_URL}/health`);
+    }
+  });
+}
+
+// Process resilience: crash logging, client auto-reconnect broadcast, and graceful restart
+let isShuttingDown = false;
+
+async function handleFatalProcessError(type, err) {
+  console.error(`[FATAL PROCESS ${type}]`, err?.stack || err);
+
+  if (adminDb) {
+    try {
+      await adminDb.collection('server_errors').add({
+        type,
+        message: err?.message || String(err),
+        stack: err?.stack || null,
+        timestamp: Date.now(),
+        iso: new Date().toISOString()
+      });
+    } catch (_) {}
   }
-});
 
-// Process resilience: prevent uncaught async errors from terminating voice sessions
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  // Broadcast graceful restart notice to connected WebSockets so clients auto-reconnect cleanly
+  try {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        sendJson(client, {
+          type: 'server-restarting',
+          message: 'Signaling server cycling for health maintenance. Auto-reconnecting...'
+        });
+      }
+    });
+  } catch (_) {}
+
+  // 1.5-second grace period to flush pending sockets and logs, then clean fail-fast exit
+  setTimeout(() => {
+    try { server.close(); } catch (_) {}
+    process.exit(1);
+  }, 1500);
+}
+
 process.on('uncaughtException', (err) => {
-  console.error('[FATAL PROCESS UNCAUGHT EXCEPTION]', err.stack || err);
+  handleFatalProcessError('UNCAUGHT_EXCEPTION', err);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[FATAL PROCESS UNHANDLED REJECTION]', reason);
+  handleFatalProcessError('UNHANDLED_REJECTION', reason);
 });
+
+module.exports = {
+  server,
+  rooms,
+  clients,
+  isPaymentUsed,
+  recordUsedPayment
+};
