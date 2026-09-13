@@ -86,14 +86,23 @@ try {
     }
   }
 
-  // Local development fallback only (strictly gitignored)
+  // Local file or Render Secret File fallback (strictly gitignored)
   if (!serviceAccount) {
-    const localSaPath = path.join(__dirname, 'service-account.json');
-    if (fs.existsSync(localSaPath)) {
-      try {
-        serviceAccount = JSON.parse(fs.readFileSync(localSaPath, 'utf8'));
-      } catch (e) {
-        console.error('[Firebase Admin] Failed to parse local service-account.json:', e.message);
+    const candidatePaths = [
+      path.join(__dirname, 'service-account.json'),
+      path.join(__dirname, '..', 'gamersvoice-ea413-firebase-adminsdk-fbsvc-d941789a8b.json'),
+      path.join('/etc/secrets', 'service-account.json'),
+      path.join('/etc/secrets', 'FIREBASE_SERVICE_ACCOUNT')
+    ];
+    for (const saPath of candidatePaths) {
+      if (fs.existsSync(saPath)) {
+        try {
+          serviceAccount = JSON.parse(fs.readFileSync(saPath, 'utf8'));
+          console.log(`[Firebase Admin] Loaded service account from ${saPath}`);
+          break;
+        } catch (e) {
+          console.error(`[Firebase Admin] Failed parsing ${saPath}:`, e.message);
+        }
       }
     }
   }
