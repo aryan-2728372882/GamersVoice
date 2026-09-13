@@ -1745,6 +1745,46 @@
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
+                    <!-- Personal Clutch Mic Highlights Replay Consent Toggle -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_terminal_box"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="🎬 CLUTCH MIC HIGHLIGHTS (120S)"
+                                android:textColor="@color/neon_cyan"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Rolling 120s personal mic buffer to save clutch shoutouts"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchSettingReplayBuffer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
                     <!-- VIP Plan Selection Cards (3 Cards) -->
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -2094,7 +2134,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:fontFamily="sans-serif-medium"
-                        android:text="🎙️ Squad Replay Active (120s buffer)"
+                        android:text="🎙️ Clutch Mic Highlights (120s buffer)"
                         android:textColor="@color/neon_cyan"
                         android:textSize="10.5sp" />
 

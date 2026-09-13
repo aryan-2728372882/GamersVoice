@@ -1,4 +1,4 @@
-﻿package com.gamervoice.app.util
+package com.gamervoice.app.util
 
 import android.content.Context
 import android.media.MediaScannerConnection
@@ -29,15 +29,39 @@ object SquadReplayManager {
     private const val BUFFER_DURATION_SEC = 120 // 2 minutes rolling buffer
     private const val MAX_BUFFER_SIZE = BYTES_PER_SECOND * BUFFER_DURATION_SEC // 3,840,000 bytes (~3.6MB)
 
+    private const val PREFS_NAME = "gamervoice_audio_prefs"
+    private const val KEY_CLUTCH_CONSENT = "pref_clutch_replay_enabled"
+
     private val lock = ReentrantLock()
     private val circularBuffer = ByteArray(MAX_BUFFER_SIZE)
     private var writePos = 0
     private var isBufferFull = false
 
-    var isReplayConsentActive: Boolean = true
+    var isReplayConsentActive: Boolean = false
     var isRecordingActive: Boolean = false
 
+    fun init(context: Context) {
+        isReplayConsentActive = isConsentGranted(context)
+    }
+
+    fun isConsentGranted(context: Context): Boolean {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_CLUTCH_CONSENT, false)
+    }
+
+    fun setConsentGranted(context: Context, granted: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_CLUTCH_CONSENT, granted)
+            .apply()
+        isReplayConsentActive = granted
+        if (!granted) {
+            stopSession()
+        }
+    }
+
     fun startSession() {
+        if (!isReplayConsentActive) return
         lock.withLock {
             writePos = 0
             isBufferFull = false
@@ -51,7 +75,8 @@ object SquadReplayManager {
             isRecordingActive = false
             writePos = 0
             isBufferFull = false
-            Log.i(TAG, "Squad Replay session stopped")
+            circularBuffer.fill(0)
+            Log.i(TAG, "Squad Replay session stopped and buffer cleared")
         }
     }
 
@@ -81,8 +106,13 @@ object SquadReplayManager {
     }
 
     fun saveClutchClip(context: Context, callback: (Boolean, String) -> Unit) {
+        if (!isConsentGranted(context)) {
+            callback(false, "⚠️ Personal Clutch Highlights is disabled. Please enable it in Settings first.")
+            return
+        }
+
         if (!com.gamervoice.app.auth.PlanManager.isVip()) {
-            callback(false, "👑 Squad Replay is a VIP exclusive feature! Upgrade to save your clutch clips.")
+            callback(false, "👑 Personal Clutch Highlights is a VIP exclusive feature! Upgrade to save your clutch clips.")
             return
         }
 

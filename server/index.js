@@ -163,6 +163,25 @@ async function isAuthorizedAdmin(req) {
   return false;
 }
 
+// Authenticates Firebase user tokens from Authorization Bearer header
+async function verifyUserAuth(req) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+
+  if (adminAuth) {
+    try {
+      const decoded = await adminAuth.verifyIdToken(token);
+      if (decoded && decoded.uid) {
+        return { uid: decoded.uid, email: decoded.email || '' };
+      }
+    } catch (e) {
+      console.warn('[User Auth] verifyIdToken failed:', e.message);
+    }
+  }
+  return null;
+}
+
 // Replay attack prevention store (dual-layer: memory cache + Firestore persistence)
 const USED_PAYMENTS_FILE = path.join(__dirname, 'used_payments.json');
 let usedPaymentIds = new Set();
@@ -588,58 +607,177 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API 2B: Viral Squad Referral Code Redemption (+3 Days VIP)
+  // API 2B: Register Referral Code Owner
+  if (req.method === 'POST' && req.url === '/api/referral/register-code') {
+    try {
+      const authUser = await verifyUserAuth(req);
+      if (!authUser) {
+        sendResponse(res, 401, { error: 'Authentication required' });
+        return;
+      }
+      const { referralCode } = await parseJsonBody(req);
+      if (!referralCode || referralCode.length < 5) {
+        sendResponse(res, 400, { error: 'Valid referral code required (e.g. GV-XXXX)' });
+        return;
+      }
+      const cleanCode = referralCode.trim().toUpperCase();
+      if (adminDb) {
+        const refDocRef = adminDb.collection('referrals').doc(cleanCode);
+        const snap = await refDocRef.get();
+        if (snap.exists && snap.data().ownerUid !== authUser.uid) {
+          sendResponse(res, 409, { error: 'Referral code is already claimed by another squad member' });
+          return;
+        }
+        await refDocRef.set({
+          code: cleanCode,
+          ownerUid: authUser.uid,
+          ownerEmail: authUser.email,
+          createdAt: snap.exists ? snap.data().createdAt : new Date().toISOString()
+        }, { merge: true });
+
+        await adminDb.collection('users').doc(authUser.uid).set({
+          referralCode: cleanCode
+        }, { merge: true });
+      }
+      sendResponse(res, 200, { success: true, code: cleanCode });
+    } catch (err) {
+      console.error('[Referral Register Error]', err.message);
+      sendResponse(res, 500, { error: 'Failed registering referral code: ' + err.message });
+    }
+    return;
+  }
+
+  // API 2C: Viral Squad Referral Code Redemption (+3 Days VIP for BOTH players)
   if (req.method === 'POST' && req.url === '/api/referral/redeem') {
     try {
-      const { referralCode, refereeUid, refereeEmail, refereeName } = await parseJsonBody(req);
-      if (!referralCode || !refereeUid) {
-        sendResponse(res, 400, { error: 'Referral code and referee ID are required' });
+      const authUser = await verifyUserAuth(req);
+      if (!authUser) {
+        sendResponse(res, 401, { error: 'Authentication required. Please sign in to redeem referral codes.' });
+        return;
+      }
+      const refereeUid = authUser.uid;
+
+      const { referralCode } = await parseJsonBody(req);
+      if (!referralCode || referralCode.trim().length < 5) {
+        sendResponse(res, 400, { error: 'Valid referral code required (e.g. GV-XXXX)' });
         return;
       }
 
       const cleanCode = referralCode.trim().toUpperCase();
-      console.log(`[Referral Engine] Processing redemption of code ${cleanCode} for referee ${refereeUid}`);
+      console.log(`[Referral Engine] Authenticated redemption of code ${cleanCode} by referee ${refereeUid}`);
 
-      if (adminDb) {
+      if (!adminDb) {
+        sendResponse(res, 503, { error: 'Database service temporarily unavailable. Please try again later.' });
+        return;
+      }
+
+      // 1. Verify code exists and fetch its registered owner
+      const refDocRef = adminDb.collection('referrals').doc(cleanCode);
+      const refSnap = await refDocRef.get();
+      if (!refSnap.exists) {
+        sendResponse(res, 404, { error: 'Invalid referral code. This code does not exist.' });
+        return;
+      }
+
+      const refData = refSnap.data();
+      const referrerUid = refData.ownerUid;
+
+      // 2. Prevent self-redemption
+      if (referrerUid === refereeUid) {
+        sendResponse(res, 400, { error: 'You cannot redeem your own referral code!' });
+        return;
+      }
+
+      // 3. Prevent repeated redemption by the same user (Server-side enforcement)
+      const redemptionDocRef = adminDb.collection('referral_redemptions').doc(refereeUid);
+      const redemptionSnap = await redemptionDocRef.get();
+      if (redemptionSnap.exists) {
+        sendResponse(res, 400, { error: 'You have already redeemed a welcome referral code on this account.' });
+        return;
+      }
+
+      const refereeDocRef = adminDb.collection('users').doc(refereeUid);
+      const refereeSnap = await refereeDocRef.get();
+      if (refereeSnap.exists && refereeSnap.data().hasRedeemedReferral) {
+        sendResponse(res, 400, { error: 'You have already redeemed a welcome referral code on this account.' });
+        return;
+      }
+
+      const now = Date.now();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+      // 4. Calculate and grant +3 Days VIP to REFEREE
+      let refereeBaseTs = now;
+      if (refereeSnap.exists) {
+        const d = refereeSnap.data();
+        if (d.expiryTimestamp && Number(d.expiryTimestamp) > now) {
+          refereeBaseTs = Number(d.expiryTimestamp);
+        }
+      }
+      const newRefereeExpTs = refereeBaseTs + threeDaysMs;
+      const refereeExpDate = new Date(newRefereeExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+      await refereeDocRef.set({
+        isVip: true,
+        planType: 'WEEKLY',
+        expiryTimestamp: newRefereeExpTs,
+        expiresAt: refereeExpDate,
+        hasRedeemedReferral: true,
+        redeemedReferralCode: cleanCode,
+        paymentId: `ref_welcome_${cleanCode}`,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      // 5. Calculate and grant +3 Days VIP to REFERRER (The code owner!)
+      if (referrerUid) {
         try {
-          const userDocRef = adminDb.collection('users').doc(refereeUid);
-          const userSnap = await userDocRef.get();
-          const now = Date.now();
-          let baseTs = now;
-          if (userSnap.exists) {
-            const data = userSnap.data();
-            if (data.expiryTimestamp && Number(data.expiryTimestamp) > now) {
-              baseTs = Number(data.expiryTimestamp);
+          const referrerDocRef = adminDb.collection('users').doc(referrerUid);
+          const referrerSnap = await referrerDocRef.get();
+          let referrerBaseTs = now;
+          if (referrerSnap.exists) {
+            const rd = referrerSnap.data();
+            if (rd.expiryTimestamp && Number(rd.expiryTimestamp) > now) {
+              referrerBaseTs = Number(rd.expiryTimestamp);
             }
           }
-          const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-          const newExpTs = baseTs + threeDaysMs;
-          const expDate = new Date(newExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          const newReferrerExpTs = referrerBaseTs + threeDaysMs;
+          const referrerExpDate = new Date(newReferrerExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-          await userDocRef.set({
+          await referrerDocRef.set({
             isVip: true,
             planType: 'WEEKLY',
-            expiryTimestamp: newExpTs,
-            expiresAt: expDate,
-            paymentId: `ref_${cleanCode}`,
+            expiryTimestamp: newReferrerExpTs,
+            expiresAt: referrerExpDate,
+            paymentId: `ref_bonus_${cleanCode}`,
             updatedAt: new Date().toISOString()
           }, { merge: true });
 
-          // Also record in referrals collection
-          const refDoc = adminDb.collection('referrals').doc(cleanCode);
-          await refDoc.set({
-            code: cleanCode,
-            lastRedeemedBy: refereeUid,
-            lastRedeemedAt: new Date().toISOString()
-          }, { merge: true });
-        } catch (dbErr) {
-          console.warn('[Referral DB Warning]', dbErr.message);
+          console.log(`[Referral Engine] Credited +3 Days VIP to referrer ${referrerUid}`);
+        } catch (referrerErr) {
+          console.error('[Referral Engine] Failed crediting referrer:', referrerErr.message);
         }
       }
 
+      // 6. Record redemption record to lock out replay attacks
+      await redemptionDocRef.set({
+        refereeUid,
+        refereeEmail: authUser.email,
+        referrerUid: referrerUid || '',
+        code: cleanCode,
+        redeemedAt: new Date().toISOString(),
+        timestamp: now
+      });
+
+      // 7. Update referral stats
+      await refDocRef.set({
+        redeemedCount: (refData.redeemedCount || 0) + 1,
+        lastRedeemedBy: refereeUid,
+        lastRedeemedAt: new Date().toISOString()
+      }, { merge: true });
+
       sendResponse(res, 200, {
         success: true,
-        message: '🎉 Referral code verified! 3 Days of VIP pass added to your squad profile.'
+        message: '🎉 Referral code verified! 3 Days of VIP Pass unlocked for BOTH you and your squad mate!'
       });
     } catch (err) {
       console.error('[Referral Error]', err.message);

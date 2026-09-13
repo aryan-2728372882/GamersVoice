@@ -30,12 +30,23 @@ class GamerVoiceTileService : TileService() {
             }
         }
 
-        if (isLocked) {
-            unlockAndRun {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            startActivityAndCollapse(pendingIntent)
+        } else {
+            @Suppress("DEPRECATION")
+            if (isLocked) {
+                unlockAndRun {
+                    startActivityAndCollapse(launchIntent)
+                }
+            } else {
                 startActivityAndCollapse(launchIntent)
             }
-        } else {
-            startActivityAndCollapse(launchIntent)
         }
 
         updateTileState()

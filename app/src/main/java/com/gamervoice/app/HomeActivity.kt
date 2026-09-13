@@ -153,11 +153,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         setupUI()
         setupConsoleUI()
 
-        try {
-            com.google.android.gms.ads.MobileAds.initialize(this) {}
-        } catch (e: Throwable) {
-            Log.w("HomeActivity", "AdMob initialization error", e)
-        }
+        com.gamervoice.app.util.SquadReplayManager.init(this)
+        setupAdMobWithConsent()
+        com.gamervoice.app.auth.ReferralManager.registerCodeWithServer(this)
 
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
@@ -328,8 +326,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         // Save Clutch Clip (120s rolling audio buffer export)
         AnimationHelper.attachPressAnimation(binding.btnSaveClutchClip) {
+            if (!com.gamervoice.app.util.SquadReplayManager.isConsentGranted(this)) {
+                Toast.makeText(this, "⚠️ Please enable 'Personal Clutch Mic Highlights' in Profile / Settings first!", Toast.LENGTH_LONG).show()
+                return@attachPressAnimation
+            }
             if (!PlanManager.isVip()) {
-                showVipUpgradeDialog("👑 Squad Replay is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.")
+                showVipUpgradeDialog("👑 Personal Clutch Highlights is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.")
                 return@attachPressAnimation
             }
             Toast.makeText(this, "Exporting 120s clutch audio clip...", Toast.LENGTH_SHORT).show()
@@ -359,6 +361,18 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 Toast.makeText(this, "Squad match alarm turned off.", Toast.LENGTH_SHORT).show()
             }
             updatePlanUI()
+        }
+
+        // Personal Clutch Mic Highlights Replay Consent Switch
+        binding.switchSettingReplayBuffer.isChecked = com.gamervoice.app.util.SquadReplayManager.isConsentGranted(this)
+        binding.switchSettingReplayBuffer.setOnCheckedChangeListener { _, isChecked ->
+            com.gamervoice.app.util.SquadReplayManager.setConsentGranted(this, isChecked)
+            if (isChecked) {
+                Toast.makeText(this, "🎬 Personal Clutch Mic Highlights enabled (120s buffer)", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Personal Clutch Mic Highlights turned off", Toast.LENGTH_SHORT).show()
+            }
+            updateReplayBadgeUI()
         }
 
         AnimationHelper.attachPressAnimation(binding.btnToggleMicMode) {
@@ -1061,6 +1075,85 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             "Daily reminder active for ${com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)}"
         } else {
             "Daily match reminder at 8:00 PM (Tap to enable)"
+        }
+
+        updateReplayBadgeUI()
+    }
+
+    private fun updateReplayBadgeUI() {
+        val hasConsent = com.gamervoice.app.util.SquadReplayManager.isConsentGranted(this)
+        if (hasConsent) {
+            binding.tvReplayBadge.text = "🎙️ Clutch Mic Highlights Active (120s buffer)"
+            binding.tvReplayBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_cyan))
+        } else {
+            binding.tvReplayBadge.text = "🎙️ Clutch Mic Highlights (Disabled in Profile)"
+            binding.tvReplayBadge.setTextColor(Color.parseColor("#8E9BAE"))
+        }
+    }
+
+    private var isMobileAdsInitialized = false
+
+    private fun setupAdMobWithConsent() {
+        try {
+            // 1. Google AdMob Content & Rating Configuration
+            val reqConfig = com.google.android.gms.ads.RequestConfiguration.Builder()
+                .setMaxAdContentRating(com.google.android.gms.ads.RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
+                .setTagForChildDirectedTreatment(com.google.android.gms.ads.RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE)
+                .setTagForUnderAgeOfConsent(com.google.android.gms.ads.RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE)
+                .build()
+            com.google.android.gms.ads.MobileAds.setRequestConfiguration(reqConfig)
+
+            // 2. Google User Messaging Platform (UMP) Consent Flow
+            val consentParams = com.google.android.ump.ConsentRequestParameters.Builder()
+                .setTagForUnderAgeOfConsent(false)
+                .build()
+
+            val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(this)
+            consentInfo.requestConsentInfoUpdate(
+                this,
+                consentParams,
+                {
+                    com.google.android.ump.UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { formError ->
+                        if (formError != null) {
+                            Log.w("HomeActivity", "UMP Consent Form error: ${formError.message}")
+                        }
+                        if (consentInfo.canRequestAds()) {
+                            initializeMobileAds()
+                        }
+                    }
+                },
+                { requestError ->
+                    Log.w("HomeActivity", "UMP Consent Info update failure: ${requestError.message}")
+                    if (consentInfo.canRequestAds()) {
+                        initializeMobileAds()
+                    }
+                }
+            )
+
+            if (consentInfo.canRequestAds()) {
+                initializeMobileAds()
+            }
+        } catch (e: Throwable) {
+            Log.w("HomeActivity", "UMP / AdMob setup exception", e)
+            initializeMobileAds()
+        }
+    }
+
+    private fun initializeMobileAds() {
+        if (isMobileAdsInitialized) return
+        isMobileAdsInitialized = true
+        try {
+            com.google.android.gms.ads.MobileAds.initialize(this) {}
+            runOnUiThread {
+                if (!PlanManager.isVip()) {
+                    try {
+                        val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
+                        binding.adViewBanner.loadAd(adRequest)
+                    } catch (_: Throwable) {}
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w("HomeActivity", "MobileAds initialization error", e)
         }
     }
 
