@@ -481,6 +481,52 @@ object PlanManager {
         callback(false)
     }
 
+    /**
+     * Grants a promotional or referral VIP pass (e.g. +3 Days for Viral Referral).
+     */
+    fun grantVipPass(
+        tier: PlanTier,
+        durationDays: Int,
+        paymentId: String = "promo_grant",
+        userEmail: String = "",
+        callback: ((Boolean) -> Unit)? = null
+    ) {
+        val purchaseTime = System.currentTimeMillis()
+        val currentExpiry = prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
+        val baseTime = if (currentExpiry > purchaseTime) currentExpiry else purchaseTime
+        val expiryTime = if (durationDays < 0) -1L else baseTime + (durationDays.toLong() * 24L * 60L * 60L * 1000L)
+        val expiryLabel = if (expiryTime < 0) "Permanent (N/A)" else SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date(expiryTime))
+        val purchasedAtLabel = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date(purchaseTime))
+
+        prefs?.edit()
+            ?.putBoolean(KEY_IS_VIP, true)
+            ?.putString(KEY_PLAN_TIER, tier.id)
+            ?.putLong(KEY_EXPIRY_TIMESTAMP, expiryTime)
+            ?.putString(KEY_EXPIRY_LABEL, expiryLabel)
+            ?.putString(KEY_PURCHASED_AT, purchasedAtLabel)
+            ?.putString(KEY_USER_EMAIL, userEmail)
+            ?.putString(KEY_PAYMENT_ID, paymentId)
+            ?.apply()
+
+        val user = AuthManager.getCurrentUser()
+        if (user != null) {
+            syncPurchaseToFirestore(
+                uid = user.uid,
+                idToken = user.idToken,
+                email = user.email.ifEmpty { userEmail },
+                tier = tier,
+                paymentId = paymentId,
+                purchasedAt = purchasedAtLabel,
+                expiresAt = expiryLabel,
+                expiryTimestamp = expiryTime
+            ) { success ->
+                mainHandler.post { callback?.invoke(success) }
+            }
+        } else {
+            mainHandler.post { callback?.invoke(true) }
+        }
+    }
+
     private fun syncPurchaseToFirestore(
         uid: String,
         idToken: String,

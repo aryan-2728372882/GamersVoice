@@ -57,6 +57,20 @@
         android:textColor="@color/accent_green"
         android:textSize="11sp" />
 
+    <!-- Save Clutch Clip (VIP 120s buffer export) -->
+    <ImageView
+        android:id="@+id/btnHudClutchClip"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="Save Clutch Clip"
+        android:focusable="true"
+        android:padding="3dp"
+        android:src="@android:drawable/ic_menu_save"
+        app:tint="@color/neon_gold" />
+
     <!-- Close / Dismiss HUD Button -->
     <ImageView
         android:id="@+id/btnDismissHud"

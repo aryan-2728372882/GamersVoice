@@ -46,6 +46,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GamerVoice">
 
+        <!-- Google AdMob Application ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1270066934167842~1242095711" />
+
         <activity
             android:name=".PermissionActivity"
             android:exported="true">
@@ -75,6 +80,23 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- 1-Tap Quick Settings Rejoin Tile -->
+        <service
+            android:name=".service.GamerVoiceTileService"
+            android:icon="@drawable/ic_lightning_bolt"
+            android:label="GamerVoice"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Squad Up Match Alarm Receiver -->
+        <receiver
+            android:name=".service.SquadAlarmReceiver"
+            android:exported="false" />
 
     </application>
 

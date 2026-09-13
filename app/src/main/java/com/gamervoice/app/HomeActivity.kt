@@ -153,8 +153,22 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         setupUI()
         setupConsoleUI()
 
+        try {
+            com.google.android.gms.ads.MobileAds.initialize(this) {}
+        } catch (e: Throwable) {
+            Log.w("HomeActivity", "AdMob initialization error", e)
+        }
+
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
+
+        val autoJoin = intent?.getStringExtra("auto_join_room")
+        if (!autoJoin.isNullOrEmpty()) {
+            intent?.removeExtra("auto_join_room")
+            binding.root.postDelayed({
+                joinRoomWithCode(autoJoin)
+            }, 500L)
+        }
     }
 
     override fun onStart() {
@@ -199,13 +213,31 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 .setNegativeButton("Dismiss", null)
                 .show()
         }
+        try {
+            if (!PlanManager.isVip()) {
+                binding.adViewBanner.resume()
+            }
+        } catch (_: Throwable) {}
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try {
+            binding.adViewBanner.pause()
+        } catch (_: Throwable) {}
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        voiceService?.currentRoomCode?.let { roomCode ->
-            showConnectedRoomView(roomCode)
+        val autoJoin = intent.getStringExtra("auto_join_room")
+        if (!autoJoin.isNullOrEmpty()) {
+            intent.removeExtra("auto_join_room")
+            joinRoomWithCode(autoJoin)
+        } else {
+            voiceService?.currentRoomCode?.let { roomCode ->
+                showConnectedRoomView(roomCode)
+            }
         }
     }
 
@@ -292,6 +324,41 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             if (code.isNotEmpty()) {
                 saveRoomToSquad(code)
             }
+        }
+
+        // Save Clutch Clip (120s rolling audio buffer export)
+        AnimationHelper.attachPressAnimation(binding.btnSaveClutchClip) {
+            if (!PlanManager.isVip()) {
+                showVipUpgradeDialog("👑 Squad Replay is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.")
+                return@attachPressAnimation
+            }
+            Toast.makeText(this, "Exporting 120s clutch audio clip...", Toast.LENGTH_SHORT).show()
+            com.gamervoice.app.util.SquadReplayManager.saveClutchClip(this) { _, msg ->
+                runOnUiThread {
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        // Referral Engine (Share & Redeem)
+        AnimationHelper.attachPressAnimation(binding.btnShareReferral) {
+            com.gamervoice.app.auth.ReferralManager.shareReferral(this)
+        }
+        AnimationHelper.attachPressAnimation(binding.btnRedeemReferral) {
+            showRedeemReferralDialog()
+        }
+
+        // Squad Match Alarm Switch
+        binding.switchProfileSquadAlarm.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                val currentRoom = voiceService?.currentRoomCode ?: ""
+                com.gamervoice.app.util.SquadAlarmHelper.setSquadAlarm(this, hour = 20, minute = 0, roomCode = currentRoom)
+                Toast.makeText(this, "⏰ Squad Match Alarm set for 8:00 PM!", Toast.LENGTH_SHORT).show()
+            } else {
+                com.gamervoice.app.util.SquadAlarmHelper.cancelSquadAlarm(this)
+                Toast.makeText(this, "Squad match alarm turned off.", Toast.LENGTH_SHORT).show()
+            }
+            updatePlanUI()
         }
 
         AnimationHelper.attachPressAnimation(binding.btnToggleMicMode) {
@@ -713,20 +780,88 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun saveRoomToSquad(roomCode: String) {
-        RoomPersistenceManager.saveRoom(roomCode) { result ->
-            when (result) {
-                is RoomPersistenceManager.SaveResult.Success -> {
-                    Toast.makeText(this, "Room $roomCode saved permanently to your squad dashboard!", Toast.LENGTH_LONG).show()
-                    refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+        val isVip = PlanManager.isVip()
+        if (isVip) {
+            val colors = arrayOf(
+                "#00E676" to "Neon Cyber Green",
+                "#FFD700" to "Golden Legend",
+                "#00E5FF" to "Electric Cyan",
+                "#D500F9" to "Ultra Violet"
+            )
+            var selectedColorIdx = 0
+            val input = android.widget.EditText(this).apply {
+                hint = "e.g. Tournament Roster, Main BGMI"
+                setTextColor(Color.WHITE)
+                setHintTextColor(Color.parseColor("#8E9BAE"))
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("👑 VIP Custom Squad")
+                .setMessage("Give your squad a custom name & select a neon theme badge:")
+                .setView(input)
+                .setSingleChoiceItems(colors.map { it.second }.toTypedArray(), 0) { _, which ->
+                    selectedColorIdx = which
                 }
-                is RoomPersistenceManager.SaveResult.LimitReached -> {
-                    showVipUpgradeDialog("You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited squad rooms.")
+                .setPositiveButton("Save Squad") { _, _ ->
+                    val customName = input.text.toString().trim().ifEmpty { "Squad $roomCode" }
+                    val themeColor = colors[selectedColorIdx].first
+                    RoomPersistenceManager.saveRoom(roomCode, customName = customName, themeColor = themeColor) { result ->
+                        handleSaveRoomResult(roomCode, result)
+                    }
                 }
-                is RoomPersistenceManager.SaveResult.Error -> {
-                    Toast.makeText(this, "Could not save room: ${result.message}", Toast.LENGTH_SHORT).show()
-                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            RoomPersistenceManager.saveRoom(roomCode) { result ->
+                handleSaveRoomResult(roomCode, result)
             }
         }
+    }
+
+    private fun handleSaveRoomResult(roomCode: String, result: RoomPersistenceManager.SaveResult) {
+        when (result) {
+            is RoomPersistenceManager.SaveResult.Success -> {
+                Toast.makeText(this, "Room $roomCode saved permanently to your squad dashboard!", Toast.LENGTH_LONG).show()
+                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+            }
+            is RoomPersistenceManager.SaveResult.LimitReached -> {
+                showVipUpgradeDialog("You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited custom named squads.")
+            }
+            is RoomPersistenceManager.SaveResult.Error -> {
+                Toast.makeText(this, "Could not save room: ${result.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showRedeemReferralDialog() {
+        val input = android.widget.EditText(this).apply {
+            hint = "e.g. GV-XXXX"
+            setAllCaps(true)
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#8E9BAE"))
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🎁 Redeem Squad Referral Code")
+            .setMessage("Enter a squad mate's referral code to instantly unlock 3 Days of GamerVoice VIP Pass free!")
+            .setView(input)
+            .setPositiveButton("Redeem") { _, _ ->
+                val code = input.text.toString().trim().uppercase()
+                if (code.isEmpty()) {
+                    Toast.makeText(this, "Please enter a referral code", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                Toast.makeText(this, "Verifying referral code...", Toast.LENGTH_SHORT).show()
+                com.gamervoice.app.auth.ReferralManager.redeemCode(this, code) { success, message ->
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    if (success) {
+                        updatePlanUI()
+                        refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     // --- On-Device Installed Games Launcher ---
@@ -806,6 +941,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 val itemBinding = ItemSavedRoomBinding.inflate(layoutInflater, binding.llHomeSavedRoomsContainer, false)
                 itemBinding.tvSavedRoomName.text = room.roomName
                 itemBinding.tvSavedRoomCode.text = room.roomCode
+                try {
+                    val colorInt = Color.parseColor(room.themeColor)
+                    itemBinding.tvSavedRoomCode.setTextColor(colorInt)
+                } catch (_: Throwable) {}
                 itemBinding.tvSavedRoomDate.text = "Saved in Cloud • Rejoin anytime"
                 itemBinding.tvSavedRoomPinBadge.visibility = if (room.pin.isNotEmpty()) View.VISIBLE else View.GONE
 
@@ -856,6 +995,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         if (isVip) {
             binding.llSponsorBannerAd.visibility = View.GONE
+            try {
+                binding.adViewBanner.pause()
+            } catch (_: Throwable) {}
+            binding.btnSaveClutchClip.text = "🎬 SAVE CLUTCH CLIP"
             binding.tvHomePlanBadge.text = "👑 VIP"
             binding.tvHomePlanBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
@@ -882,6 +1025,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
+            try {
+                val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
+                binding.adViewBanner.loadAd(adRequest)
+            } catch (_: Throwable) {}
+            binding.btnSaveClutchClip.text = "🎬 CLUTCH CLIP (👑 VIP)"
             binding.tvHomePlanBadge.text = "FREE"
             binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             binding.tvHomePlanBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
@@ -896,6 +1044,23 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvSettingRamPurgeBadge.text = "VIP ONLY"
             binding.tvSettingRamPurgeBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
+        }
+
+        // Vanity Squad Stats & Streaks
+        binding.tvProfileSquaddedHours.text = com.gamervoice.app.util.SquadStatsTracker.getTotalSquaddedHours(this)
+        val streak = com.gamervoice.app.util.SquadStatsTracker.getStreakDays(this)
+        binding.tvProfileSquadStreak.text = if (streak > 0) "🔥 $streak-Day Streak" else "Start Streak Today"
+
+        // Viral Squad Referral Code
+        binding.tvProfileReferralCode.text = com.gamervoice.app.auth.ReferralManager.getReferralCode(this)
+
+        // Squad Up Alarm Status
+        val isAlarmOn = com.gamervoice.app.util.SquadAlarmHelper.isAlarmEnabled(this)
+        binding.switchProfileSquadAlarm.isChecked = isAlarmOn
+        binding.tvProfileAlarmTime.text = if (isAlarmOn) {
+            "Daily reminder active for ${com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)}"
+        } else {
+            "Daily match reminder at 8:00 PM (Tap to enable)"
         }
     }
 
@@ -1460,6 +1625,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            binding.adViewBanner.destroy()
+        } catch (_: Throwable) {}
         FloatingHudManager.hideHud()
         AppLogger.removeListener(logListener)
         if (isServiceBound) {

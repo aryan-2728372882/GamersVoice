@@ -139,6 +139,15 @@ object FloatingHudManager {
                 hideHud()
             }
 
+            // Save Clutch Clip Button (VIP)
+            com.gamervoice.app.util.AnimationHelper.attachPressAnimation(b.btnHudClutchClip) {
+                com.gamervoice.app.util.SquadReplayManager.saveClutchClip(context) { _, msg ->
+                    mainHandler.post {
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
             // Initial state
             updateMicState(service.isPttModeEnabled())
 

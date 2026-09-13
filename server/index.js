@@ -537,15 +537,17 @@ const server = http.createServer(async (req, res) => {
   // API 2: Server-Side Support Ticket Relay
   if (req.method === 'POST' && req.url === '/api/submit-support-ticket') {
     try {
-      const { category, subject, description, userEmail, userId, appVersion } = await parseJsonBody(req);
+      const { category, subject, description, userEmail, userId, appVersion, isVip } = await parseJsonBody(req);
       if (!description || !subject) {
         sendResponse(res, 400, { error: 'Subject and description are required' });
         return;
       }
 
       const ticketId = 'GV-' + Date.now().toString(36).toUpperCase();
-      const messageText = `🎮 *NEW GAMERVOICE SUPPORT TICKET*\n\n` +
+      const vipHeader = isVip ? `👑 *[VIP HIGH PRIORITY TICKET]* 👑\n\n` : '';
+      const messageText = `${vipHeader}🎮 *NEW GAMERVOICE SUPPORT TICKET*\n\n` +
         `🆔 *Ticket ID:* \`${ticketId}\`\n` +
+        `💎 *VIP Status:* ${isVip ? '👑 VIP Member (Priority 1)' : 'Standard / Free'}\n` +
         `📂 *Category:* ${category || 'General Issue'}\n` +
         `✉️ *User Email:* \`${userEmail || 'Anonymous'}\`\n` +
         `👤 *User ID:* \`${userId || 'N/A'}\`\n` +
@@ -566,7 +568,7 @@ const server = http.createServer(async (req, res) => {
               parse_mode: 'Markdown'
             })
           });
-          console.log(`[Support Ticket] Forwarded to Telegram: ${ticketId}`);
+          console.log(`[Support Ticket] Forwarded to Telegram: ${ticketId} (VIP: ${!!isVip})`);
         } catch (tgErr) {
           console.error('[Telegram Forward Error]', tgErr.message);
         }
@@ -582,6 +584,66 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error('[Support Ticket Error]', err.message);
       sendResponse(res, 500, { error: 'Failed to process ticket: ' + err.message });
+    }
+    return;
+  }
+
+  // API 2B: Viral Squad Referral Code Redemption (+3 Days VIP)
+  if (req.method === 'POST' && req.url === '/api/referral/redeem') {
+    try {
+      const { referralCode, refereeUid, refereeEmail, refereeName } = await parseJsonBody(req);
+      if (!referralCode || !refereeUid) {
+        sendResponse(res, 400, { error: 'Referral code and referee ID are required' });
+        return;
+      }
+
+      const cleanCode = referralCode.trim().toUpperCase();
+      console.log(`[Referral Engine] Processing redemption of code ${cleanCode} for referee ${refereeUid}`);
+
+      if (adminDb) {
+        try {
+          const userDocRef = adminDb.collection('users').doc(refereeUid);
+          const userSnap = await userDocRef.get();
+          const now = Date.now();
+          let baseTs = now;
+          if (userSnap.exists) {
+            const data = userSnap.data();
+            if (data.expiryTimestamp && Number(data.expiryTimestamp) > now) {
+              baseTs = Number(data.expiryTimestamp);
+            }
+          }
+          const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+          const newExpTs = baseTs + threeDaysMs;
+          const expDate = new Date(newExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+          await userDocRef.set({
+            isVip: true,
+            planType: 'WEEKLY',
+            expiryTimestamp: newExpTs,
+            expiresAt: expDate,
+            paymentId: `ref_${cleanCode}`,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+
+          // Also record in referrals collection
+          const refDoc = adminDb.collection('referrals').doc(cleanCode);
+          await refDoc.set({
+            code: cleanCode,
+            lastRedeemedBy: refereeUid,
+            lastRedeemedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn('[Referral DB Warning]', dbErr.message);
+        }
+      }
+
+      sendResponse(res, 200, {
+        success: true,
+        message: '🎉 Referral code verified! 3 Days of VIP pass added to your squad profile.'
+      });
+    } catch (err) {
+      console.error('[Referral Error]', err.message);
+      sendResponse(res, 500, { error: 'Failed to process referral: ' + err.message });
     }
     return;
   }

@@ -14,6 +14,10 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -22,6 +26,8 @@ import com.gamervoice.app.R
 import com.gamervoice.app.webrtc.PeerConnectionManager
 import com.gamervoice.app.webrtc.SignalingClient
 import com.gamervoice.app.util.AppLogger
+import com.gamervoice.app.util.SquadReplayManager
+import com.gamervoice.app.util.SquadStatsTracker
 import org.webrtc.PeerConnection
 import java.util.concurrent.Executors
 
@@ -88,6 +94,40 @@ class VoiceService : Service(),
         private set
     private var reconnectDeadlineMs: Long = 0L
     private var savedRoomCodeForReconnect: String? = null
+
+    private var connectivityManager: ConnectivityManager? = null
+    private var lastActiveNetwork: Network? = null
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            super.onAvailable(network)
+            val prev = lastActiveNetwork
+            lastActiveNetwork = network
+            if (prev != null && prev != network && currentRoomCode != null) {
+                AppLogger.log("NETWORK", "Network interface switch detected (Wi-Fi <-> Cellular). Triggering seamless ICE restart...")
+                mainHandler.post {
+                    listener?.onConnectedStateChanged("Re-syncing network handover...")
+                }
+                if (!signalingClient.isConnected) {
+                    signalingClient.connect()
+                }
+                executor.execute {
+                    try {
+                        peerConnectionManager.restartIceForActivePeers()
+                    } catch (e: Throwable) {
+                        AppLogger.log("ERROR", "ICE restart error on handover: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        override fun onLost(network: Network) {
+            super.onLost(network)
+            if (network == lastActiveNetwork) {
+                AppLogger.log("NETWORK", "Active network connection lost.")
+            }
+        }
+    }
 
     private val reconnectRunnable = object : Runnable {
         override fun run() {
@@ -207,6 +247,17 @@ class VoiceService : Service(),
         signalingClient.connect()
         mainHandler.postDelayed(pingRunnable, 5000)
         mainHandler.postDelayed(autoPurgeRunnable, 60_000L)
+
+        // Register Wi-Fi <-> Cellular network handover listener
+        connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as? ConnectivityManager
+        try {
+            val builder = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            connectivityManager?.registerNetworkCallback(builder.build(), networkCallback)
+            AppLogger.log("NETWORK", "Network handover monitor registered")
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed registering network callback", e)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -304,6 +355,8 @@ class VoiceService : Service(),
         isReconnecting = false
         savedRoomCodeForReconnect = null
         mainHandler.removeCallbacks(reconnectRunnable)
+        SquadReplayManager.stopSession()
+        SquadStatsTracker.onSessionEnded(this)
         executor.execute {
             try {
                 signalingClient.leaveRoom()
@@ -512,6 +565,8 @@ class VoiceService : Service(),
         val myAvatar = user?.avatar ?: "avatar_1"
         participants.clear()
         participants[myPeerId] = com.gamervoice.app.model.RoomParticipant(myPeerId, myName, myAvatar, isMe = true)
+        SquadReplayManager.startSession()
+        SquadStatsTracker.onSessionStarted(this)
         startForegroundNotification()
         executor.execute {
             try {
@@ -549,6 +604,8 @@ class VoiceService : Service(),
                 participants[peer] = com.gamervoice.app.model.RoomParticipant(peer, "Gamer", "avatar_1", isMe = false)
             }
         }
+        SquadReplayManager.startSession()
+        SquadStatsTracker.onSessionStarted(this)
         startForegroundNotification()
         executor.execute {
             try {
@@ -697,6 +754,9 @@ class VoiceService : Service(),
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            connectivityManager?.unregisterNetworkCallback(networkCallback)
+        } catch (_: Throwable) {}
         mainHandler.removeCallbacks(pingRunnable)
         mainHandler.removeCallbacks(autoPurgeRunnable)
         executor.execute {

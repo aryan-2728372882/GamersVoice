@@ -24,7 +24,8 @@ data class SavedRoom(
     val roomName: String,
     val createdAt: String,
     val ownerUid: String,
-    val pin: String = ""
+    val pin: String = "",
+    val themeColor: String = "#00E676"
 )
 
 object RoomPersistenceManager {
@@ -63,7 +64,8 @@ object RoomPersistenceManager {
                         roomName = obj.optString("roomName", "Squad Room"),
                         createdAt = obj.optString("createdAt", ""),
                         ownerUid = obj.optString("ownerUid", ""),
-                        pin = obj.optString("pin", "")
+                        pin = obj.optString("pin", ""),
+                        themeColor = obj.optString("themeColor", "#00E676")
                     )
                 )
             }
@@ -83,6 +85,7 @@ object RoomPersistenceManager {
                     put("createdAt", r.createdAt)
                     put("ownerUid", r.ownerUid)
                     put("pin", r.pin)
+                    put("themeColor", r.themeColor)
                 }
                 arr.put(obj)
             }
@@ -139,9 +142,10 @@ object RoomPersistenceManager {
                             val created = fields.optJSONObject("createdAt")?.optString("stringValue") ?: ""
                             val owner = fields.optJSONObject("ownerUid")?.optString("stringValue") ?: user.uid
                             val pin = fields.optJSONObject("pin")?.optString("stringValue") ?: ""
+                            val color = fields.optJSONObject("themeColor")?.optString("stringValue") ?: "#00E676"
 
                             if (code.isNotEmpty()) {
-                                list.add(SavedRoom(code, name, created, owner, pin))
+                                list.add(SavedRoom(code, name, created, owner, pin, color))
                             }
                         }
                     }
@@ -165,9 +169,15 @@ object RoomPersistenceManager {
 
     /**
      * Saves a room in Firestore, enforcing Free plan limits (max 2 rooms).
-     * VIP members can provide custom roomName and an optional private squad PIN.
+     * VIP members can provide custom roomName, neon color tag, and an optional private squad PIN.
      */
-    fun saveRoom(roomCode: String, customName: String? = null, pin: String? = null, callback: (SaveResult) -> Unit) {
+    fun saveRoom(
+        roomCode: String,
+        customName: String? = null,
+        pin: String? = null,
+        themeColor: String? = null,
+        callback: (SaveResult) -> Unit
+    ) {
         val user = AuthManager.getCurrentUser()
         if (user == null) {
             callback(SaveResult.Error("User must be logged in to save rooms"))
@@ -189,8 +199,9 @@ object RoomPersistenceManager {
 
         val roomName = customName ?: "Squad Room #${cached.size + 1}"
         val roomPin = pin ?: ""
+        val color = themeColor ?: "#00E676"
         val nowFormatted = SimpleDateFormat("MMM dd, yyyy", Locale.US).format(Date())
-        val newRoom = SavedRoom(roomCode, roomName, nowFormatted, user.uid, roomPin)
+        val newRoom = SavedRoom(roomCode, roomName, nowFormatted, user.uid, roomPin, color)
 
         cached.add(newRoom)
         updateLocalCache(cached)
@@ -202,6 +213,7 @@ object RoomPersistenceManager {
             put("createdAt", JSONObject().put("stringValue", nowFormatted))
             put("ownerUid", JSONObject().put("stringValue", user.uid))
             put("pin", JSONObject().put("stringValue", roomPin))
+            put("themeColor", JSONObject().put("stringValue", color))
         }
         val body = JSONObject().apply {
             put("fields", fields)

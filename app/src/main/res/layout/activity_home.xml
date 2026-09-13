@@ -224,46 +224,62 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_code_input"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="7dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
                         android:visibility="gone">
 
-                        <TextView
+                        <com.google.android.gms.ads.AdView
+                            android:id="@+id/adViewBanner"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="#26FFFFFF"
-                            android:fontFamily="sans-serif-bold"
-                            android:paddingHorizontal="4dp"
-                            android:paddingVertical="1dp"
-                            android:text="AD"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="8.5sp" />
+                            app:adSize="BANNER"
+                            app:adUnitId="ca-app-pub-1270066934167842/2080534660" />
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <LinearLayout
+                            android:id="@+id/llAdFallbackBar"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="Play Games with 0 Lag • GamerVoice VIP"
-                            android:textColor="#E2E8F0"
-                            android:textSize="10.5sp" />
+                            android:layout_marginTop="4dp"
+                            android:background="@drawable/bg_code_input"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="6dp">
 
-                        <TextView
-                            android:id="@+id/btnBannerRemoveAds"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:fontFamily="sans-serif-black"
-                            android:paddingHorizontal="6dp"
-                            android:paddingVertical="2dp"
-                            android:text="NO ADS ›"
-                            android:textColor="#FFD700"
-                            android:textSize="9.5sp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="#26FFFFFF"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:text="AD"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="8sp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="Play Games with 0 Lag • GamerVoice VIP"
+                                android:textColor="#E2E8F0"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/btnBannerRemoveAds"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="?attr/selectableItemBackground"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:fontFamily="sans-serif-black"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="2dp"
+                                android:text="NO ADS ›"
+                                android:textColor="#FFD700"
+                                android:textSize="9sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <!-- AUTHENTIC CYBER HERO BANNER (Full Neon Room & Gaming Chair) -->
@@ -1534,6 +1550,201 @@
                             android:textSize="11sp" />
                     </LinearLayout>
 
+                    <!-- Vanity Squad Stats & Streaks Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_terminal_box"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="🔥 SQUAD STREAK"
+                                android:textColor="@color/neon_gold"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/tvProfileSquadStreak"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="1 Day Streak"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginHorizontal="10dp"
+                            android:background="#33FFFFFF" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="⏱️ TIME SQUADDED"
+                                android:textColor="@color/neon_cyan"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:id="@+id/tvProfileSquaddedHours"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="0.0h"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Viral Squad Referral Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_card_cyber_green"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-black"
+                                android:text="🎁 INVITE SQUAD (EARN +3 DAYS VIP)"
+                                android:textColor="@color/white"
+                                android:textSize="11.5sp" />
+
+                            <TextView
+                                android:id="@+id/tvProfileReferralCode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="#3300E676"
+                                android:fontFamily="monospace"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="2dp"
+                                android:text="GV-XXXX"
+                                android:textColor="@color/accent_green"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif"
+                            android:text="Invite a friend to squad up! When they join, both of you unlock 3 Days of VIP Pass free."
+                            android:textColor="#CBD5E1"
+                            android:textSize="10sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnShareReferral"
+                                style="@style/Widget.MaterialComponents.Button"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="🚀 SHARE CODE"
+                                android:textColor="@color/black"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/accent_green"
+                                app:cornerRadius="6dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRedeemReferral"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="REDEEM CODE"
+                                android:textColor="@color/white"
+                                android:textSize="10sp"
+                                app:cornerRadius="6dp"
+                                app:strokeColor="#66FFFFFF"
+                                app:strokeWidth="1dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Squad Up Match Alarm Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_terminal_box"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="⏰ SQUAD UP AT 8 PM"
+                                android:textColor="@color/neon_gold"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvProfileAlarmTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Daily match reminder at 8:00 PM"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchProfileSquadAlarm"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
                     <!-- VIP Plan Selection Cards (3 Cards) -->
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -1865,6 +2076,42 @@
                     app:cornerRadius="6dp"
                     app:strokeColor="#6600E676"
                     app:strokeWidth="1dp" />
+
+                <!-- Squad Replay Clutch Clip Bar -->
+                <LinearLayout
+                    android:id="@+id/llSquadReplayBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_terminal_box"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:id="@+id/tvReplayBadge"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="🎙️ Squad Replay Active (120s buffer)"
+                        android:textColor="@color/neon_cyan"
+                        android:textSize="10.5sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveClutchClip"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="🎬 CLUTCH CLIP"
+                        android:textColor="@color/black"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/neon_gold"
+                        app:cornerRadius="6dp" />
+                </LinearLayout>
 
                 <!-- Connected Members Counter -->
                 <TextView

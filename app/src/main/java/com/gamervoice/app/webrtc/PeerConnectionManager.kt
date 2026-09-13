@@ -174,6 +174,11 @@ class PeerConnectionManager(
                                 com.gamervoice.app.util.AppLogger.log("AUDIO_ERR", "AudioTrack error: $msg")
                             }
                         })
+                        .setSamplesReadyCallback(object : org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback {
+                            override fun onWebRtcAudioRecordSamplesReady(samples: org.webrtc.audio.JavaAudioDeviceModule.AudioSamples) {
+                                com.gamervoice.app.util.SquadReplayManager.appendAudioSamples(samples.data, samples.data.size)
+                            }
+                        })
                         .createAudioDeviceModule()
 
                     jadm.setNoiseSuppressorEnabled(true)
@@ -683,6 +688,39 @@ class PeerConnectionManager(
 
         override fun onSetFailure(reason: String) {
             Log.e(TAG, "SDP Set Failure: $reason")
+        }
+    }
+
+    fun restartIceForActivePeers() {
+        Log.i(TAG, "Initiating ICE Restart for ${peerConnections.size} peers after network interface switch")
+        val mediaConstraints = MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+        }
+
+        for ((targetPeerId, pc) in peerConnections) {
+            try {
+                pc.createOffer(object : SdpObserver {
+                    override fun onCreateSuccess(desc: SessionDescription?) {
+                        desc?.let { sdp ->
+                            pc.setLocalDescription(object : SdpObserver {
+                                override fun onSetSuccess() {
+                                    signalingClient.sendOffer(targetPeerId, sdp.description)
+                                    Log.d(TAG, "Sent ICE restart offer to $targetPeerId")
+                                }
+                                override fun onSetFailure(p0: String?) {}
+                                override fun onCreateSuccess(p0: SessionDescription?) {}
+                                override fun onCreateFailure(p0: String?) {}
+                            }, sdp)
+                        }
+                    }
+                    override fun onSetSuccess() {}
+                    override fun onCreateFailure(p0: String?) {}
+                    override fun onSetFailure(p0: String?) {}
+                }, mediaConstraints)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Could not restart ICE for $targetPeerId", e)
+            }
         }
     }
 }
