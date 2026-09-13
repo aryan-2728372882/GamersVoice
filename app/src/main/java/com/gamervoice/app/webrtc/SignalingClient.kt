@@ -15,7 +15,7 @@ class SignalingClient(private val listener: SignalingListener) {
 
     companion object {
         private const val TAG = "SignalingClient"
-        private const val SIGNALING_URL = "wss://gamervoice-signaling.onrender.com"
+        private const val SIGNALING_URL = "wss://gamersvoice.onrender.com"
     }
 
     data class PeerMetadata(
