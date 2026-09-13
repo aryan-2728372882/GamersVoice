@@ -1,4 +1,4 @@
-﻿# Android & Gradle Build Artifacts
+# Android & Gradle Build Artifacts
 *.iml
 .gradle/
 **/build/
@@ -50,3 +50,5 @@ benchmark_ram_results.csv
 # Temporary test / scratch files
 *.log
 scratch/
+*test_admin_suite*
+test_*.js
