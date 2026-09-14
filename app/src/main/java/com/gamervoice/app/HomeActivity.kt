@@ -62,6 +62,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private var pendingPurchaseTier: PlanTier? = null
     private var vipUpgradeDialog: Dialog? = null
     private var currentActiveTab = 0
+    private var adViewBanner: com.google.android.gms.ads.AdView? = null
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
         runOnUiThread {
@@ -238,7 +239,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         try {
             if (!PlanManager.isVip()) {
-                binding.adViewBanner.resume()
+                adViewBanner?.resume()
             }
         } catch (_: Throwable) {}
     }
@@ -246,7 +247,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onPause() {
         super.onPause()
         try {
-            binding.adViewBanner.pause()
+            adViewBanner?.pause()
         } catch (_: Throwable) {}
     }
 
@@ -1035,7 +1036,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         if (isVip) {
             binding.llSponsorBannerAd.visibility = View.GONE
             try {
-                binding.adViewBanner.pause()
+                adViewBanner?.pause()
             } catch (_: Throwable) {}
             binding.btnSaveClutchClip.text = "🎬 SAVE CLUTCH CLIP"
             binding.tvHomePlanBadge.text = "👑 VIP"
@@ -1064,10 +1065,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
-            try {
-                val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
-                binding.adViewBanner.loadAd(adRequest)
-            } catch (_: Throwable) {}
+            loadBannerAd()
             binding.btnSaveClutchClip.text = "🎬 CLUTCH CLIP (👑 VIP)"
             binding.tvHomePlanBadge.text = "FREE"
             binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
@@ -1171,8 +1169,23 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             com.google.android.gms.ads.MobileAds.initialize(this) {}
             runOnUiThread {
                 if (!PlanManager.isVip()) {
-                    try {
-                        binding.adViewBanner.adListener = object : com.google.android.gms.ads.AdListener() {
+                    loadBannerAd()
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w("HomeActivity", "MobileAds initialization error", e)
+        }
+    }
+
+    private fun loadBannerAd() {
+        if (PlanManager.isVip()) return
+        runOnUiThread {
+            try {
+                if (adViewBanner == null) {
+                    val adView = com.google.android.gms.ads.AdView(this).apply {
+                        setAdSize(com.google.android.gms.ads.AdSize.BANNER)
+                        adUnitId = "ca-app-pub-1270066934167842/2080534660"
+                        adListener = object : com.google.android.gms.ads.AdListener() {
                             override fun onAdLoaded() {
                                 AppLogger.log("ADMOB", "✅ Banner Ad loaded and displayed successfully")
                             }
@@ -1186,13 +1199,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                                 AppLogger.log("ADMOB", "⚠️ Ad failed to load: ${error.message} [Code ${error.code}: $reason]")
                             }
                         }
-                        val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
-                        binding.adViewBanner.loadAd(adRequest)
-                    } catch (_: Throwable) {}
+                    }
+                    binding.flBannerAdContainer.removeAllViews()
+                    binding.flBannerAdContainer.addView(adView)
+                    adViewBanner = adView
                 }
+                val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
+                adViewBanner?.loadAd(adRequest)
+            } catch (t: Throwable) {
+                Log.w("HomeActivity", "AdMob load error: ${t.message}")
             }
-        } catch (e: Throwable) {
-            Log.w("HomeActivity", "MobileAds initialization error", e)
         }
     }
 
@@ -1852,7 +1868,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onDestroy() {
         super.onDestroy()
         try {
-            binding.adViewBanner.destroy()
+            adViewBanner?.destroy()
+            adViewBanner = null
         } catch (_: Throwable) {}
         FloatingHudManager.hideHud()
         AppLogger.removeListener(logListener)

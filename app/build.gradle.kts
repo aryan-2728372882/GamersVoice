@@ -22,7 +22,7 @@ android {
 
         ndk {
             debugSymbolLevel = "none"
-            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 
@@ -57,8 +57,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

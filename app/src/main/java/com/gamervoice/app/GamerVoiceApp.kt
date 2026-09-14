@@ -34,25 +34,15 @@ class GamerVoiceApp : Application() {
                     com.gamervoice.app.util.AppLogger.logCrashSync(thread.name, throwable)
                 } catch (_: Throwable) {}
 
-                // Launch dedicated :crash process CrashReportActivity so user sees error details instead of ANR
+                // Send non-fatal crash to Firebase Crashlytics if available
                 try {
-                    val crashIntent = android.content.Intent(this, CrashReportActivity::class.java).apply {
-                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        putExtra("extra_stack_trace", "*** FATAL CRASH in thread [${thread.name}] ***\n${throwable.javaClass.name}: ${throwable.message}\n\n$stackTrace")
-                    }
-                    startActivity(crashIntent)
+                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(throwable)
                 } catch (_: Throwable) {}
 
             } catch (_: Throwable) {
             } finally {
-                // Delegate to default system / Crashlytics handler
-                try {
-                    defaultHandler?.uncaughtException(thread, throwable)
-                } catch (_: Throwable) {}
-
-                // Cleanly kill process to prevent Android ANR (App Not Responding) freeze!
-                android.os.Process.killProcess(android.os.Process.myPid())
-                System.exit(10)
+                // Delegate cleanly to default system / Crashlytics handler
+                defaultHandler?.uncaughtException(thread, throwable)
             }
         }
 
