@@ -1172,6 +1172,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             runOnUiThread {
                 if (!PlanManager.isVip()) {
                     try {
+                        binding.adViewBanner.adListener = object : com.google.android.gms.ads.AdListener() {
+                            override fun onAdLoaded() {
+                                AppLogger.log("ADMOB", "✅ Banner Ad loaded and displayed successfully")
+                            }
+                            override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
+                                val reason = when (error.code) {
+                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_NO_FILL -> "No Fill (Inventory pending or new ad unit)"
+                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_NETWORK_ERROR -> "Network error"
+                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_INVALID_REQUEST -> "Invalid request"
+                                    else -> "Internal error"
+                                }
+                                AppLogger.log("ADMOB", "⚠️ Ad failed to load: ${error.message} [Code ${error.code}: $reason]")
+                            }
+                        }
                         val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
                         binding.adViewBanner.loadAd(adRequest)
                     } catch (_: Throwable) {}
