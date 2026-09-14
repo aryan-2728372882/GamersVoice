@@ -1,10 +1,8 @@
-# R8 Optimization Rules for GamerVoice
-
-# Strip verbose & debug log statements in release build
--assumenosideeffects class android.util.Log {
-    public static *** d(...);
-    public static *** v(...);
-}
+# Keep ALL GamerVoice application classes, methods, singletons, and members
+-keep class com.gamervoice.app.** { *; }
+-keepclassmembers class com.gamervoice.app.** { *; }
+-keepclasseswithmembers class com.gamervoice.app.** { *; }
+-dontwarn com.gamervoice.app.**
 
 # Keep ALL WebRTC classes, interfaces, enums, fields, and native JNI methods
 -keep class org.webrtc.** { *; }
@@ -14,21 +12,33 @@
 }
 -dontwarn org.webrtc.**
 
-# Keep GamerVoice WebRTC and Service classes for JNI callbacks and Binder
--keep class com.gamervoice.app.webrtc.** { *; }
--keepclassmembers class com.gamervoice.app.webrtc.** { *; }
--keep class com.gamervoice.app.service.** { *; }
--keepclassmembers class com.gamervoice.app.service.** { *; }
+# Keep inner classes and annotations essential for WebRTC JNI & reflection
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions,SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
 
-# Keep inner classes and annotations essential for WebRTC JNI
--keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions
+# ViewBinding and AndroidX View Keep Rules
+-keep class androidx.viewbinding.** { *; }
+-keep class * implements androidx.viewbinding.ViewBinding { *; }
+-keepclassmembers class * implements androidx.viewbinding.ViewBinding {
+    public static * inflate(...);
+    public static * bind(...);
+}
+
+# AndroidX & Material Components
+-keep class com.google.android.material.** { *; }
+-keepclassmembers class com.google.android.material.** { *; }
+-keep class androidx.appcompat.** { *; }
+-keepclassmembers class androidx.appcompat.** { *; }
+-keep class androidx.constraintlayout.** { *; }
+-keepclassmembers class androidx.constraintlayout.** { *; }
+-dontwarn com.google.android.material.**
 
 # OkHttp ProGuard Rules
--keepattributes Signature
--keepattributes Annotation
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
+-keep class okio.** { *; }
 -dontwarn okhttp3.**
+-dontwarn okio.**
 
 # Razorpay Checkout Rules
 -keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
@@ -46,23 +56,19 @@
 -dontwarn com.google.android.gms.ads.**
 -dontwarn com.google.android.ump.**
 
-# GamerVoice Data Models & Auth Entities (prevent JSON field stripping)
--keep class com.gamervoice.app.model.** { *; }
--keepclassmembers class com.gamervoice.app.model.** { *; }
--keep class com.gamervoice.app.auth.UserProfile { *; }
--keep class com.gamervoice.app.auth.PlanTier { *; }
--keep enum com.gamervoice.app.auth.PlanTier { *; }
+# Google Play Services & DataTransport
+-keep class com.google.android.gms.** { *; }
+-keepclassmembers class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+-keep class com.google.android.datatransport.** { *; }
+-keepclassmembers class com.google.android.datatransport.** { *; }
+-dontwarn com.google.android.datatransport.**
 
-# Firebase Cloud Messaging & Google Play Services
--keep class com.google.firebase.messaging.** { *; }
--dontwarn com.google.firebase.messaging.**
--keep class com.gamervoice.app.service.GamerVoiceMessagingService { *; }
+# Firebase Cloud Messaging, Crashlytics & Core
+-keep class com.google.firebase.** { *; }
+-keepclassmembers class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
 
-# Firebase Crashlytics
--keepattributes *Annotation*,SourceFile,LineNumberTable
--keep public class * extends java.lang.Exception
--keep class com.google.firebase.crashlytics.** { *; }
--dontwarn com.google.firebase.crashlytics.**
 
 
 

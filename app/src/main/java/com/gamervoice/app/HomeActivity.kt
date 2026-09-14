@@ -119,7 +119,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         AuthManager.init(this)
         PlanManager.init(this)
         RoomPersistenceManager.init(this)
-        Checkout.preload(applicationContext)
+        try {
+            Checkout.preload(applicationContext)
+        } catch (t: Throwable) {
+            Log.w("HomeActivity", "Checkout preload warning: ${t.message}")
+        }
 
         if (!AuthManager.isLoggedIn()) {
             val intent = Intent(this, AuthActivity::class.java)
@@ -130,8 +134,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         val loggedInUser = AuthManager.getCurrentUser()
         if (loggedInUser != null && loggedInUser.email.isNotBlank()) {
-            if (!com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(this, loggedInUser.email)) {
-                com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, loggedInUser.email, loggedInUser.name, loggedInUser.uid)
+            try {
+                if (!com.gamervoice.app.util.WelcomeEmailHelper.hasWelcomeBeenSent(this, loggedInUser.email)) {
+                    com.gamervoice.app.util.WelcomeEmailHelper.sendWelcomeEmailOnce(this, loggedInUser.email, loggedInUser.name, loggedInUser.uid)
+                }
+            } catch (t: Throwable) {
+                Log.w("HomeActivity", "Welcome email check warning: ${t.message}")
             }
         }
 
@@ -139,11 +147,15 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         setContentView(binding.root)
 
         // Automatically sync VIP status from Cloud Firestore on app launch
-        PlanManager.enforceValidPaidStatus {
-            runOnUiThread {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+        try {
+            PlanManager.enforceValidPaidStatus {
+                runOnUiThread {
+                    updatePlanUI()
+                    refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                }
             }
+        } catch (t: Throwable) {
+            Log.w("HomeActivity", "Plan sync warning: ${t.message}")
         }
 
         binding.btnCreateRoom.isEnabled = false
@@ -154,10 +166,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         setupUI()
         setupConsoleUI()
 
-        com.gamervoice.app.util.SquadReplayManager.init(this)
-        setupAdMobWithConsent()
-        com.gamervoice.app.auth.ReferralManager.registerCodeWithServer(this)
-        com.gamervoice.app.service.GamerVoiceMessagingService.subscribeToGlobalTopic()
+        try { com.gamervoice.app.util.SquadReplayManager.init(this) } catch (_: Throwable) {}
+        try { setupAdMobWithConsent() } catch (_: Throwable) {}
+        try { com.gamervoice.app.auth.ReferralManager.registerCodeWithServer(this) } catch (_: Throwable) {}
+        try { com.gamervoice.app.service.GamerVoiceMessagingService.subscribeToGlobalTopic() } catch (_: Throwable) {}
 
         // Android 13+ Notification Permission Prompt
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

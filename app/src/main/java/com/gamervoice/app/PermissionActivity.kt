@@ -94,14 +94,21 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     private fun navigateToHome() {
-        com.gamervoice.app.auth.AuthManager.init(this)
-        val targetClass = if (com.gamervoice.app.auth.AuthManager.isLoggedIn()) {
-            HomeActivity::class.java
-        } else {
-            AuthActivity::class.java
+        try {
+            com.gamervoice.app.auth.AuthManager.init(this)
+            val targetClass = if (com.gamervoice.app.auth.AuthManager.isLoggedIn()) {
+                HomeActivity::class.java
+            } else {
+                AuthActivity::class.java
+            }
+            val intent = Intent(this, targetClass)
+            startActivity(intent)
+            finish()
+        } catch (t: Throwable) {
+            android.util.Log.e("PermissionActivity", "Navigation error: ${t.message}", t)
+            val intent = Intent(this, AuthActivity::class.java)
+            startActivity(intent)
+            finish()
         }
-        val intent = Intent(this, targetClass)
-        startActivity(intent)
-        finish()
     }
 }
