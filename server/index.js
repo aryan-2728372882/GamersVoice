@@ -689,15 +689,30 @@ const server = http.createServer(async (req, res) => {
       await adminDb.runTransaction(async (transaction) => {
         // 1. All Transaction Reads First
         const refDocRef = adminDb.collection('referrals').doc(cleanCode);
-        const refSnap = await transaction.get(refDocRef);
-        if (!refSnap.exists) {
-          const err = new Error('Invalid referral code. This code does not exist.');
-          err.statusCode = 404;
-          throw err;
+        let refData = null;
+        let referrerUid = null;
+        if (refSnap.exists) {
+          refData = refSnap.data();
+          referrerUid = refData.ownerUid;
+        } else {
+          // Fallback: lookup in users collection by referralCode
+          const userQuery = await adminDb.collection('users').where('referralCode', '==', cleanCode).limit(1).get();
+          if (!userQuery.empty) {
+            const userDoc = userQuery.docs[0];
+            referrerUid = userDoc.id;
+            refData = {
+              code: cleanCode,
+              ownerUid: referrerUid,
+              ownerEmail: userDoc.data().email || '',
+              createdAt: new Date().toISOString()
+            };
+            transaction.set(refDocRef, refData, { merge: true });
+          } else {
+            const err = new Error('Invalid referral code. Please check with your squadmate.');
+            err.statusCode = 404;
+            throw err;
+          }
         }
-
-        const refData = refSnap.data();
-        const referrerUid = refData.ownerUid;
 
         // 2. Prevent self-redemption
         if (referrerUid === refereeUid) {

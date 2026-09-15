@@ -474,6 +474,25 @@
               Give your squad code to teammates. When they install &amp; redeem, <strong>both of you get +3 VIP days</strong> instantly credited!
             </p>
           </div>
+
+          <!-- Redeem Teammate Referral Code -->
+          <div style="margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08)">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">
+              🎁 Have a Squadmate's Code? Redeem It Here
+            </div>
+
+            <div id="profileRedeemContainer">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input type="text" id="profileRedeemInput" placeholder="e.g. GV-VIPER41" maxlength="12" style="flex:1;min-width:160px;background:rgba(255,255,255,0.05);border:1px solid var(--line-cyan);border-radius:var(--r-sm);color:#fff;padding:9px 12px;font-family:var(--font-mono);font-size:1rem;font-weight:700;text-transform:uppercase;outline:none" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn btn-primary btn-sm" id="btnProfileRedeemSubmit" type="button" onclick="redeemFromProfile()" style="padding:9px 16px">Claim +3 VIP Days</button>
+              </div>
+              <div id="profileRedeemFeedback" style="margin-top:8px;font-size:0.85rem;font-weight:600;display:none"></div>
+            </div>
+
+            <div id="profileAlreadyRedeemedNote" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(0,230,118,0.08);border:1px solid var(--line-mint);border-radius:var(--r-sm);color:var(--mint);font-size:0.9rem;font-weight:600">
+              ✅ Welcome Referral Bonus Claimed: Redeemed code <strong id="redeemedCodeLabel" style="color:#fff">GV-XXXX</strong> (+3 VIP Days Granted)
+            </div>
+          </div>
         </div>
 
         <!-- Account Specs -->
@@ -680,7 +699,61 @@
       setText("detailExpiry", isVip ? (data.expiresAt || "Lifetime") : "N/A");
       setText("detailPaymentId", data.paymentId || "—");
 
+      // Check if already redeemed a referral welcome bonus
+      const rc = document.getElementById("profileRedeemContainer");
+      const rn = document.getElementById("profileAlreadyRedeemedNote");
+      const lbl = document.getElementById("redeemedCodeLabel");
+      if (data.hasRedeemedReferral) {
+        if (rc) rc.style.display = "none";
+        if (rn) rn.style.display = "block";
+        if (lbl && data.redeemedReferralCode) lbl.textContent = data.redeemedReferralCode;
+      } else {
+        if (rc) rc.style.display = "block";
+        if (rn) rn.style.display = "none";
+      }
+
       renderActivity(data, user);
+    }
+
+    async function redeemFromProfile() {
+      const input = document.getElementById("profileRedeemInput");
+      const btn = document.getElementById("btnProfileRedeemSubmit");
+      const fb = document.getElementById("profileRedeemFeedback");
+      const code = input ? input.value.trim() : "";
+
+      if (!code || code.length < 5) {
+        if (fb) {
+          fb.style.display = "block";
+          fb.style.color = "var(--rose)";
+          fb.textContent = "Please enter a valid referral code (e.g. GV-XXXX)";
+        }
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Verifying...";
+      if (fb) fb.style.display = "none";
+
+      try {
+        const res = await GV.redeemReferralCode(code);
+        if (fb) {
+          fb.style.display = "block";
+          fb.style.color = "var(--mint)";
+          fb.textContent = "🎉 " + (res.message || "3 Days VIP added!");
+        }
+        input.value = "";
+        if (window.GV && GV.toast) GV.toast(res.message || "3 Days of VIP unlocked!", "ok");
+        setTimeout(() => location.reload(), 1800);
+      } catch (err) {
+        if (fb) {
+          fb.style.display = "block";
+          fb.style.color = "var(--rose)";
+          fb.textContent = "⚠️ " + err.message;
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Claim +3 VIP Days";
+      }
     }
 
     function handleAuth(user) {

@@ -431,6 +431,63 @@
     }
   };
 
+  GV.uidToCode = function (uid) {
+    if (!uid) return "GV-ALPHA01";
+    const words = ["TITAN","GHOST","VIPER","BLADE","STORM","RAVEN","ALPHA","SIGMA","NEXUS","CYBER"];
+    let hash = 0;
+    for (let i = 0; i < uid.length; i++) hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+    const word = words[Math.abs(hash) % words.length];
+    const num = String(Math.abs(hash >> 4) % 100).padStart(2, "0");
+    return "GV-" + word + num;
+  };
+
+  GV.registerReferralCode = async function (user) {
+    if (!user) return;
+    const code = GV.uidToCode(user.uid);
+    try {
+      const token = await user.getIdToken();
+      await fetch("/api/referral/register-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ referralCode: code })
+      });
+    } catch (_) {}
+  };
+
+  GV.redeemReferralCode = async function (code) {
+    if (!auth || !auth.currentUser) {
+      if (typeof openAuthModal === "function") openAuthModal();
+      throw new Error("Please sign in first to claim your referral reward.");
+    }
+    const clean = (code || "").trim().toUpperCase();
+    if (!clean || clean.length < 5) {
+      throw new Error("Please enter a valid referral code (e.g. GV-XXXX).");
+    }
+    const myCode = GV.uidToCode(auth.currentUser.uid);
+    if (clean === myCode) {
+      throw new Error("You cannot redeem your own referral code!");
+    }
+
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("/api/referral/redeem", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ referralCode: clean })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to redeem referral code.");
+    }
+    return data;
+  };
+
   function subscribeToUserPlan(uid) {
     if (!db) return;
     db.collection("users").doc(uid).onSnapshot((doc) => {
@@ -582,13 +639,16 @@
       auth = firebase.auth();
       db = firebase.firestore();
 
-      auth.onAuthStateChanged((user) => {
-        GV.currentUser = user;
-        updateUserInterface(user);
-        if (user && db) subscribeToUserPlan(user.uid);
-        // Dispatch event so pages can listen without polling
-        document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user } }));
-      });
+        auth.onAuthStateChanged((user) => {
+          GV.currentUser = user;
+          updateUserInterface(user);
+          if (user) {
+            GV.registerReferralCode(user);
+            if (db) subscribeToUserPlan(user.uid);
+          }
+          // Dispatch event so pages can listen without polling
+          document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user } }));
+        });
     } catch (e) {
       console.warn("[Firebase]", e.message);
       document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user: null } }));

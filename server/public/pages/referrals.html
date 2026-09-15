@@ -145,9 +145,8 @@
         <p class="ref-hero-text">Squad up without opening your wallet. Every time a teammate installs GamerVoice and redeems your squad code, both of you unlock +3 days of studio noise suppression. Stack as many days as you want!</p>
       </header>
 
-      <!-- Referral Box -->
+      <!-- Section 1: Share Your Code -->
       <section class="referral-box" id="referralSection">
-
         <!-- Signed out state -->
         <div id="refSignedOut">
           <p class="ref-kicker">Sample Squad Code</p>
@@ -172,8 +171,27 @@
         </div>
       </section>
 
+      <!-- Section 2: Redeem a Teammate's Code -->
+      <section class="referral-box" style="border-color:var(--line-cyan);background:linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, rgba(13, 18, 31, 0.95) 100%);margin-top:24px" id="redeemSection">
+        <p class="ref-kicker" style="color:var(--cyan)">🎁 Welcome Bonus</p>
+        <h2 style="font-size:clamp(1.2rem, 3.5vw, 1.6rem);font-weight:800;color:#fff;margin:6px 0 8px">Redeem Teammate's Code</h2>
+        <p class="ref-hint" style="margin-bottom:18px">Have a squadmate's code? Enter it below to unlock <strong>+3 Days of VIP Voice Clearance</strong> free!</p>
+
+        <div id="redeemInputWrap" style="max-width:400px;margin:0 auto">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="referralRedeemInput" placeholder="e.g. GV-VIPER41" maxlength="12" style="flex:1;min-width:160px;background:rgba(255,255,255,0.05);border:1px solid var(--line-cyan);border-radius:var(--r-sm);color:#fff;padding:10px 14px;font-family:var(--font-mono);font-size:1.05rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;outline:none" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn btn-primary btn-sm" id="btnRedeemSubmit" type="button" onclick="handleRedeemClick()" style="padding:10px 18px">Claim VIP</button>
+          </div>
+          <div id="redeemFeedback" style="margin-top:12px;font-size:0.9rem;font-weight:600;display:none"></div>
+        </div>
+
+        <div id="alreadyRedeemedCard" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(0,230,118,0.08);border:1px solid var(--line-mint);border-radius:12px;color:var(--mint);font-weight:600;font-size:0.92rem">
+          ✅ Welcome Referral Bonus Claimed: You redeemed code <strong id="alreadyRedeemedCodeText" style="color:#fff">GV-XXXX</strong> (+3 VIP Days granted)
+        </div>
+      </section>
+
       <!-- How it Works -->
-      <section class="section" style="padding-top:16px">
+      <section class="section" style="padding-top:20px">
         <div class="section-head" style="text-align:center;margin-bottom:24px">
           <p class="kicker">The Squad Reward Cycle</p>
           <h2>How it Works</h2>
@@ -189,7 +207,7 @@
           <div class="flow-step">
             <div class="step-num">02</div>
             <h3>Teammate Redeems</h3>
-            <p>Your squadmate installs the 17.1MB APK, goes to Profile, and enters your code under "Redeem Referral".</p>
+            <p>Your squadmate enters your code right here on the website or inside the GamerVoice Android app.</p>
           </div>
 
           <div class="flow-step">
@@ -208,16 +226,6 @@
   <script src="/js/core.js"></script>
   <script src="/js/animations.js"></script>
   <script>
-    function uidToCode(uid) {
-      if (!uid) return "GV-ALPHA01";
-      const words = ["TITAN","GHOST","VIPER","BLADE","STORM","RAVEN","ALPHA","SIGMA","NEXUS","CYBER"];
-      let hash = 0;
-      for (let i = 0; i < uid.length; i++) hash = ((hash << 5) - hash) + uid.charCodeAt(i);
-      const word = words[Math.abs(hash) % words.length];
-      const num = String(Math.abs(hash >> 4) % 100).padStart(2, '0');
-      return "GV-" + word + num;
-    }
-
     function copyReferralCode(personal) {
       const codeEl = personal
         ? document.getElementById("personalReferralCode")
@@ -238,6 +246,48 @@
       window.open("https://wa.me/?text=" + text, "_blank");
     }
 
+    async function handleRedeemClick() {
+      const input = document.getElementById("referralRedeemInput");
+      const btn = document.getElementById("btnRedeemSubmit");
+      const feedback = document.getElementById("redeemFeedback");
+      const code = input ? input.value.trim() : "";
+
+      if (!GV.currentUser) {
+        if (typeof openAuthModal === "function") openAuthModal();
+        return;
+      }
+
+      if (!code || code.length < 5) {
+        showFeedback("Please enter a valid referral code (e.g. GV-XXXX)", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Verifying...";
+      feedback.style.display = "none";
+
+      try {
+        const res = await GV.redeemReferralCode(code);
+        showFeedback("🎉 " + (res.message || "3 Days VIP unlocked!"), "success");
+        input.value = "";
+        if (window.GV && GV.toast) GV.toast(res.message || "3 Days VIP unlocked!", "ok");
+        setTimeout(() => location.reload(), 1800);
+      } catch (err) {
+        showFeedback("⚠️ " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Claim VIP";
+      }
+    }
+
+    function showFeedback(msg, type) {
+      const fb = document.getElementById("redeemFeedback");
+      if (!fb) return;
+      fb.style.display = "block";
+      fb.style.color = type === "success" ? "var(--mint)" : "var(--rose)";
+      fb.textContent = msg;
+    }
+
     function handleReferralAuth(user) {
       const signedOut = document.getElementById("refSignedOut");
       const signedIn = document.getElementById("refSignedIn");
@@ -247,20 +297,31 @@
         signedOut.style.display = "none";
         signedIn.style.display = "block";
 
-        const code = uidToCode(user.uid);
+        const code = GV.uidToCode(user.uid);
         const codeEl = document.getElementById("personalReferralCode");
         if (codeEl) codeEl.textContent = code;
 
         if (typeof firebase !== 'undefined' && firebase.firestore) {
           try {
             firebase.firestore().collection("users").doc(user.uid).get().then((doc) => {
+              if (!doc.exists) return;
+              const data = doc.data();
+              const refs = data.referralCount || 0;
               const note = document.getElementById("refVipDaysNote");
               if (note) {
-                const data = doc.exists ? doc.data() : {};
-                const refs = data.referralCount || 0;
                 note.innerHTML = refs > 0
                   ? "You've referred <span>" + refs + " squad teammate" + (refs > 1 ? "s" : "") + "</span> — that's <span>+" + (refs * 3) + " VIP days</span> earned!"
                   : "Share your code with squadmates to start stacking bonus VIP days!";
+              }
+
+              // Check if user already redeemed welcome referral
+              if (data.hasRedeemedReferral) {
+                const wrap = document.getElementById("redeemInputWrap");
+                const card = document.getElementById("alreadyRedeemedCard");
+                const codeTxt = document.getElementById("alreadyRedeemedCodeText");
+                if (wrap) wrap.style.display = "none";
+                if (card) card.style.display = "block";
+                if (codeTxt && data.redeemedReferralCode) codeTxt.textContent = data.redeemedReferralCode;
               }
             }).catch(() => {});
           } catch (_) {}
@@ -271,9 +332,7 @@
       }
     }
 
-    // Fast event-driven auth listener
     document.addEventListener("gv:authready", (e) => handleReferralAuth(e.detail.user));
-
     if (window.GV && GV.currentUser) {
       handleReferralAuth(GV.currentUser);
     }
