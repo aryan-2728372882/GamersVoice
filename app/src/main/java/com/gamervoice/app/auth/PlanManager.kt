@@ -24,6 +24,7 @@ enum class PlanTier(
     val priceUsd: Double
 ) {
     FREE("FREE", "Free Squad Plan", 0, 0, 0.0),
+    DAY_PASS("DAY_PASS", "24-Hour Tournament Pass", 1, 9, 0.29),
     WEEKLY("WEEKLY", "Weekly Gamer Pass (7 Days)", 7, 29, 0.99),
     MONTHLY("MONTHLY", "Monthly Squad Pro (30 Days)", 30, 89, 2.99),
     LIFETIME("LIFETIME", "Lifetime Legend Pass", -1, 249, 7.99)
@@ -77,6 +78,7 @@ object PlanManager {
     fun getPlanName(): String {
         return if (isVip()) {
             when (getCurrentPlanTier()) {
+                PlanTier.DAY_PASS -> "VIP MATCH PASS (24H)"
                 PlanTier.WEEKLY -> "VIP WEEKLY (7 DAYS)"
                 PlanTier.MONTHLY -> "VIP MONTHLY (30 DAYS)"
                 PlanTier.LIFETIME -> "VIP LIFETIME LEGEND"
@@ -86,6 +88,8 @@ object PlanManager {
             "FREE SQUAD PLAN"
         }
     }
+
+    fun getExpiryTimestamp(): Long = prefs?.getLong(KEY_EXPIRY_TIMESTAMP, -1L) ?: -1L
 
     fun getExpiryLabel(): String {
         if (!isVip()) return "Free Plan"

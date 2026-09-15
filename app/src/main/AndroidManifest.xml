@@ -65,8 +65,36 @@
 
         <activity
             android:name=".HomeActivity"
-            android:exported="false"
-            android:launchMode="singleTop" />
+            android:exported="true"
+            android:launchMode="singleTop">
+            <!-- Custom Scheme: gamervoice://join/CODE -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="gamervoice" android:host="join" />
+            </intent-filter>
+            <!-- Web App Links: https://gamersvoice.onrender.com/join/CODE -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="gamersvoice.onrender.com"
+                    android:pathPrefix="/join/" />
+            </intent-filter>
+            <!-- Localhost Dev Fallback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="http"
+                    android:host="localhost"
+                    android:pathPrefix="/join/" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".CrashReportActivity"

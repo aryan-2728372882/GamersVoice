@@ -185,17 +185,59 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
 
-        val autoJoin = intent?.getStringExtra("auto_join_room")
+        // Handle deep link: gamervoice://join/CODE or https://gamersvoice.onrender.com/join/CODE
+        val autoJoinFromLink = extractRoomCodeFromIntent(intent)
+        val autoJoinFromExtra = intent?.getStringExtra("auto_join_room")
+        val autoJoin = autoJoinFromLink ?: autoJoinFromExtra
         if (!autoJoin.isNullOrEmpty()) {
             intent?.removeExtra("auto_join_room")
             binding.root.postDelayed({
+                // Navigate to Rooms tab first, then join
+                updateActiveNavTab(1)
                 joinRoomWithCode(autoJoin)
-            }, 500L)
+            }, 700L)
         }
+    }
+
+    private fun extractRoomCodeFromIntent(i: Intent?): String? {
+        if (i == null) return null
+        val data = i.data ?: return null
+        // gamervoice://join/ABCDE
+        if (data.scheme == "gamervoice" && data.host == "join") {
+            val code = data.lastPathSegment?.uppercase()?.trim()
+            if (!code.isNullOrEmpty() && code.length >= 3) return code
+        }
+        // https://gamersvoice.onrender.com/join/ABCDE
+        val segments = data.pathSegments
+        if (segments != null && segments.size >= 2 && segments[segments.size - 2] == "join") {
+            val code = segments[segments.size - 1].uppercase().trim()
+            if (code.length >= 3) return code
+        }
+        return null
     }
 
     override fun onStart() {
         super.onStart()
+        // First-session quick launch: show once, on first ever app open
+        val onboarding = getSharedPreferences("gv_onboarding", MODE_PRIVATE)
+        if (!onboarding.getBoolean("first_launch_shown", false)) {
+            onboarding.edit().putBoolean("first_launch_shown", true).apply()
+            binding.root.postDelayed({
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("⚡ Welcome to GamerVoice!")
+                    .setMessage("Start your squad session now. What do you want to do?")
+                    .setPositiveButton("🎮 Create Room") { _, _ ->
+                        updateActiveNavTab(1)
+                        binding.root.postDelayed({ binding.btnCreateRoomCard?.performClick() }, 200)
+                    }
+                    .setNegativeButton("🔗 Join Room") { _, _ ->
+                        updateActiveNavTab(1)
+                        binding.root.postDelayed({ binding.btnJoinRoomCard?.performClick() }, 200)
+                    }
+                    .setNeutralButton("Later", null)
+                    .show()
+            }, 900L)
+        }
         AppLogger.addListener(logListener)
         verifyPlanExpiry()
         loadInstalledGames()
@@ -245,6 +287,15 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // Check for deep link first (gamervoice://join/CODE or https://gamersvoice.onrender.com/join/CODE)
+        val deepLinkCode = extractRoomCodeFromIntent(intent)
+        if (!deepLinkCode.isNullOrEmpty()) {
+            binding.root.postDelayed({
+                updateActiveNavTab(1)
+                joinRoomWithCode(deepLinkCode)
+            }, 400L)
+            return
+        }
         val autoJoin = intent.getStringExtra("auto_join_room")
         if (!autoJoin.isNullOrEmpty()) {
             intent.removeExtra("auto_join_room")
@@ -551,11 +602,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         // --- Profile Tab Controls ---
         var profileSelectedTier = PlanTier.MONTHLY
         fun updateProfileCardSelection() {
+            binding.llProfilePlanDayPass.setBackgroundResource(if (profileSelectedTier == PlanTier.DAY_PASS) R.drawable.bg_vip_card_neon else R.drawable.bg_vip_card_unselected)
             binding.llProfilePlanWeekly.setBackgroundResource(if (profileSelectedTier == PlanTier.WEEKLY) R.drawable.bg_vip_card_neon else R.drawable.bg_vip_card_unselected)
             binding.llProfilePlanMonthly.setBackgroundResource(if (profileSelectedTier == PlanTier.MONTHLY) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
             binding.llProfilePlanLifetime.setBackgroundResource(if (profileSelectedTier == PlanTier.LIFETIME) R.drawable.bg_vip_card_gold else R.drawable.bg_vip_card_unselected)
 
             val selectedCard = when (profileSelectedTier) {
+                PlanTier.DAY_PASS -> binding.llProfilePlanDayPass
                 PlanTier.WEEKLY -> binding.llProfilePlanWeekly
                 PlanTier.MONTHLY -> binding.llProfilePlanMonthly
                 PlanTier.LIFETIME -> binding.llProfilePlanLifetime
@@ -566,6 +619,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
 
             val text = when (profileSelectedTier) {
+                PlanTier.DAY_PASS -> "⚡ UNLOCK 24H VIP PASS — ₹9"
                 PlanTier.WEEKLY -> "⚡ UNLOCK 7 DAYS VIP — ₹29"
                 PlanTier.MONTHLY -> "⚡ UNLOCK 30 DAYS VIP — ₹89"
                 PlanTier.LIFETIME -> "⚡ UNLOCK LIFETIME VIP — ₹249"
@@ -575,6 +629,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         updateProfileCardSelection()
 
+        AnimationHelper.attachPressAnimation(binding.llProfilePlanDayPass) {
+            profileSelectedTier = PlanTier.DAY_PASS
+            updateProfileCardSelection()
+        }
         AnimationHelper.attachPressAnimation(binding.llProfilePlanWeekly) {
             profileSelectedTier = PlanTier.WEEKLY
             updateProfileCardSelection()
@@ -1102,6 +1160,25 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.btnChangeAlarmTime.text = alarmTimeStr
 
         updateReplayBadgeUI()
+
+        // Referral Expiry Warning: If VIP has < 24 hours left, remind user to invite more friends
+        if (isVip) {
+            val expTs = PlanManager.getExpiryTimestamp()
+            val tier = PlanManager.getCurrentPlanTier()
+            if (tier != PlanTier.LIFETIME && expTs > 0) {
+                val msLeft = expTs - System.currentTimeMillis()
+                val hoursLeft = msLeft / (1000 * 60 * 60)
+                if (msLeft > 0 && hoursLeft < 24) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "⚠️ VIP expires in ${hoursLeft}h! Share your referral code to earn +3 more free days.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun updateReplayBadgeUI() {

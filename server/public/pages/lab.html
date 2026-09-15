@@ -45,6 +45,29 @@
             <button class="preset active" data-val="75" type="button" onclick="setNoisePreset(75)">75% High Suppression</button>
             <button class="preset" data-val="100" type="button" onclick="setNoisePreset(100)">100% Studio Ultra Silent (VIP 👑)</button>
           </div>
+
+          <!-- Viral Squad Lab Share Banner -->
+          <div style="margin-top:24px;padding:16px 20px;background:linear-gradient(135deg, rgba(0,240,255,0.08) 0%, rgba(0,230,118,0.06) 100%);border:1px solid var(--line-cyan);border-radius:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+            <div>
+              <div style="font-weight:800;font-size:1.02rem;color:#fff;display:flex;align-items:center;gap:8px">
+                <span>🔊</span> Show Your Squad Why Their Mic Sounds Like A Jet Engine
+              </div>
+              <div style="font-size:0.86rem;color:var(--muted);margin-top:2px">
+                Share this interactive Noise Lab simulator with your teammates so they test GamerVoice studio suppression.
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" type="button" onclick="shareNoiseLab('native')" style="padding:8px 16px;display:inline-flex;align-items:center;gap:6px">
+                <span>⚡</span> Share Studio with Squad
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="shareNoiseLab('whatsapp')" style="padding:8px 14px;border-color:rgba(0,230,118,0.4);color:#00e676">
+                WhatsApp
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="shareNoiseLab('copy')" style="padding:8px 14px">
+                Copy Link
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Technical Deep-Dive Cards -->
@@ -75,5 +98,31 @@
   <script src="/js/core.js"></script>
   <script src="/js/animations.js"></script>
   <script src="/js/simulators.js"></script>
+  <script>
+    function shareNoiseLab(channel) {
+      const url = window.location.origin + "/lab";
+      const title = "GamerVoice Studio Audio Noise Lab";
+      const text = "Check out this real-time noise suppression lab! Listen to how gaming fan noise gets eliminated with GamerVoice: " + url;
+
+      if (channel === 'whatsapp') {
+        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+        return;
+      }
+      if (channel === 'copy') {
+        navigator.clipboard.writeText(url);
+        if (window.GV && GV.toast) {
+          GV.toast('Noise Lab link copied to clipboard!');
+        } else {
+          alert('Noise Lab link copied to clipboard!');
+        }
+        return;
+      }
+      if (navigator.share) {
+        navigator.share({ title: title, text: text, url: url }).catch(() => {});
+      } else {
+        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+      }
+    }
+  </script>
 </body>
 </html>

@@ -190,6 +190,38 @@
         </div>
       </section>
 
+      <!-- Section 3: Top Recruiters Leaderboard -->
+      <section class="referral-box" style="border-color:var(--line-gold);background:linear-gradient(180deg, rgba(255, 215, 0, 0.05) 0%, rgba(13, 18, 31, 0.95) 100%);margin-top:24px" id="leaderboardSection">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <span style="font-size:1.2rem">👑</span>
+          <p class="ref-kicker" style="color:var(--gold);margin:0">Squad Hall of Fame</p>
+        </div>
+        <h2 style="font-size:clamp(1.2rem, 3.5vw, 1.6rem);font-weight:800;color:#fff;margin:6px 0 8px">Top Squad Recruiters</h2>
+        <p class="ref-hint" style="margin-bottom:18px">Elite squad leaders earning infinite free VIP days by recruiting their teammates.</p>
+
+        <div id="leaderboardLoading" style="padding:20px;color:var(--muted);font-size:0.92rem;text-align:center">
+          ⚡ Loading recruiter rankings...
+        </div>
+
+        <div id="leaderboardTableWrap" style="display:none;max-width:580px;margin:0 auto;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.92rem">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:var(--muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em">
+                <th style="padding:10px 8px;width:50px;text-align:center">Rank</th>
+                <th style="padding:10px 8px">Recruiter</th>
+                <th style="padding:10px 8px;text-align:center">Squad Code</th>
+                <th style="padding:10px 8px;text-align:right">Recruits</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+
+        <div id="leaderboardEmpty" style="display:none;padding:24px;color:var(--muted);font-size:0.92rem">
+          🎮 No recruiter rankings yet today. Be the first to invite your squad and claim the #1 spot!
+        </div>
+      </section>
+
       <!-- How it Works -->
       <section class="section" style="padding-top:20px">
         <div class="section-head" style="text-align:center;margin-bottom:24px">
@@ -332,6 +364,51 @@
       }
     }
 
+    async function loadLeaderboard() {
+      const loading = document.getElementById("leaderboardLoading");
+      const wrap = document.getElementById("leaderboardTableWrap");
+      const empty = document.getElementById("leaderboardEmpty");
+      const tbody = document.getElementById("leaderboardBody");
+      if (!tbody) return;
+
+      try {
+        const res = await fetch("/api/referrals/leaderboard");
+        const json = await res.json();
+        if (loading) loading.style.display = "none";
+
+        if (json.success && Array.isArray(json.leaderboard) && json.leaderboard.length > 0) {
+          tbody.innerHTML = json.leaderboard.map(item => {
+            let rankBadge = "#" + item.rank;
+            let rankColor = "#8e9bae";
+            if (item.rank === 1) { rankBadge = "🥇 #1"; rankColor = "#ffd700"; }
+            else if (item.rank === 2) { rankBadge = "🥈 #2"; rankColor = "#c0c0c0"; }
+            else if (item.rank === 3) { rankBadge = "🥉 #3"; rankColor = "#cd7f32"; }
+
+            const vipTag = item.isVip ? `<span style="font-size:0.7rem;background:rgba(255,215,0,0.15);border:1px solid #ffd700;color:#ffd700;padding:1px 5px;border-radius:6px;margin-left:6px;font-weight:700">VIP</span>` : "";
+
+            return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.15s ease">
+              <td style="padding:10px 8px;text-align:center;font-weight:800;color:${rankColor}">${rankBadge}</td>
+              <td style="padding:10px 8px;font-weight:700;color:#fff">${item.name} ${vipTag}</td>
+              <td style="padding:10px 8px;text-align:center"><span style="font-family:var(--font-mono);font-size:0.82rem;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);padding:2px 8px;border-radius:6px;color:var(--cyan)">${item.referralCode || "—"}</span></td>
+              <td style="padding:10px 8px;text-align:right;font-weight:800;color:var(--mint)">${item.referralCount} <span style="font-size:0.75rem;color:var(--muted);font-weight:500">(+${item.referralCount * 3}d)</span></td>
+            </tr>`;
+          }).join("");
+          if (wrap) wrap.style.display = "block";
+          if (empty) empty.style.display = "none";
+        } else {
+          if (wrap) wrap.style.display = "none";
+          if (empty) empty.style.display = "block";
+        }
+      } catch (err) {
+        if (loading) loading.style.display = "none";
+        if (empty) {
+          empty.textContent = "⚡ Leaderboard updating. Refresh in a moment.";
+          empty.style.display = "block";
+        }
+      }
+    }
+
+    loadLeaderboard();
     document.addEventListener("gv:authready", (e) => handleReferralAuth(e.detail.user));
     if (window.GV && GV.currentUser) {
       handleReferralAuth(GV.currentUser);

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Clearance — GamerVoice Studio Audio & Priority Relay</title>
-  <meta name="description" content="Unlock GamerVoice VIP: Weekly ₹29, Monthly ₹89, Lifetime ₹249. 100% Studio noise filter, priority TURN relay, gold HUD badge, Razorpay instant checkout.">
+  <title>VIP Clearance & Passes — GamerVoice</title>
+  <meta name="description" content="Unlock GamerVoice VIP: Match Pass ₹9, Weekly ₹29, Monthly ₹89, Lifetime ₹249. 100% Studio noise filter, priority TURN relay, gold HUD badge, Razorpay instant checkout.">
   <link rel="icon" href="/logo.png">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/tokens.css">
@@ -25,9 +25,28 @@
         <p>Activate your VIP clearance securely with Razorpay (Google Pay, PhonePe, Paytm, UPI or Card). Once paid, entitlements sync immediately to your email in Firestore. Open the GamerVoice Android app signed in with the same account and your VIP studio perks are live instantly.</p>
       </header>
 
-      <!-- VIP Tier Cards -->
-      <section class="grid-3" style="margin:40px 0 56px">
+      <!-- VIP Tier Cards (4 Tiers) -->
+      <section style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin:40px 0 56px">
         
+        <!-- Day Pass (24-Hour Match Pass) -->
+        <article class="card price-card reveal tilt-card" style="border-color:rgba(0, 240, 255, 0.4)">
+          <div>
+            <p class="kicker" style="color:var(--cyan)">Single Tournament</p>
+            <h3>Match Pass</h3>
+            <p class="price" style="color:var(--cyan)">₹9 <small>/ 24 hours</small></p>
+            <ul class="plan-list">
+              <li>100% Studio Ultra Silent AI filter</li>
+              <li>Priority TURN traversal for tournament</li>
+              <li>Unlimited saved squad rooms</li>
+              <li>Gold VIP badge in HUD & profile</li>
+              <li>Sponsor-free clean interface</li>
+            </ul>
+          </div>
+          <button class="btn btn-ghost btn-block" type="button" onclick="initiateVipCheckout('DAY_PASS', 9)" style="border-color:var(--cyan);color:var(--cyan)">
+            Get Match Pass · ₹9
+          </button>
+        </article>
+
         <!-- Weekly Plan -->
         <article class="card price-card reveal tilt-card">
           <div>

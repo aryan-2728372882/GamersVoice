@@ -563,7 +563,10 @@
             const now = Date.now();
             let expiryTimestamp = -1;
             let expiryLabel = "Permanent Lifetime";
-            if (planTier === "WEEKLY") {
+            if (planTier === "DAY_PASS") {
+              expiryTimestamp = now + 1 * 24 * 60 * 60 * 1000;
+              expiryLabel = new Date(expiryTimestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            } else if (planTier === "WEEKLY") {
               expiryTimestamp = now + 7 * 24 * 60 * 60 * 1000;
               expiryLabel = new Date(expiryTimestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
             } else if (planTier === "MONTHLY") {

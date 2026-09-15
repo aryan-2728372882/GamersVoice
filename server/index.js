@@ -285,6 +285,64 @@ async function isWelcomeEmailSent(email) {
 const rooms = new Map();
 const clients = new Map();
 
+// Zero-Firestore-Burn Referral Leaderboard Cache (15-Minute TTL)
+let leaderboardCache = {
+  data: [],
+  lastFetched: 0
+};
+const LEADERBOARD_CACHE_TTL = 15 * 60 * 1000;
+
+function renderJoinRoomHtml(roomCode, activePeerCount, isRoomActive) {
+  const statusBadge = isRoomActive
+    ? `<span style="display:inline-block;padding:6px 14px;background:rgba(0,230,118,0.15);border:1px solid #00e676;border-radius:20px;color:#00e676;font-weight:700;font-size:0.85rem">🟢 Room Active (${activePeerCount}/5 Connected)</span>`
+    : `<span style="display:inline-block;padding:6px 14px;background:rgba(255,215,0,0.15);border:1px solid #ffd700;border-radius:20px;color:#ffd700;font-weight:700;font-size:0.85rem">🟡 Room Ready to Connect</span>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Squad Room ${roomCode} — GamerVoice</title>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <meta property="og:title" content="Join Squad Room ${roomCode} on GamerVoice">
+  <meta property="og:description" content="Connect with your squad with 0 lag and studio noise suppression.">
+  <link rel="stylesheet" href="/css/core.css">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.12), transparent 70%), #070a12; color: #fff; font-family: var(--font-body); padding: 20px; text-align: center; }
+    .join-card { background: rgba(13, 18, 31, 0.95); border: 1px solid var(--line-cyan); border-radius: 16px; padding: 36px 24px; max-width: 440px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+    .room-badge { font-family: var(--font-mono); font-size: 2.8rem; font-weight: 900; letter-spacing: 0.15em; color: var(--neon-cyan); background: rgba(0, 240, 255, 0.08); border: 2px dashed var(--neon-cyan); border-radius: 12px; padding: 12px 20px; margin: 20px 0; user-select: all; }
+    .btn-action { display: block; width: 100%; padding: 14px 20px; border-radius: 10px; font-weight: 800; font-size: 1.05rem; text-decoration: none; margin: 10px 0; cursor: pointer; transition: transform 0.15s ease; border: none; }
+    .btn-action:hover { transform: scale(1.02); }
+    .btn-open { background: linear-gradient(135deg, #00f0ff 0%, #00e676 100%); color: #070a12; }
+    .btn-download { background: rgba(255,255,255,0.06); border: 1px solid var(--line-cyan); color: #fff; }
+    .btn-copy { background: transparent; color: #8e9bae; font-size: 0.9rem; text-decoration: underline; margin-top: 8px; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="join-card">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
+      <img src="/logo.png" alt="GamerVoice" style="width:36px;height:36px;border-radius:8px">
+      <span style="font-weight:900;font-size:1.3rem;letter-spacing:0.04em">GAMERVOICE</span>
+    </div>
+    <div style="margin-bottom:12px">${statusBadge}</div>
+    <h1 style="font-size:1.4rem;font-weight:800;margin:0 0 6px">Squad Voice Room</h1>
+    <p style="color:#8e9bae;font-size:0.95rem;margin:0">You're invited to join voice comms with 0 lag.</p>
+    <div class="room-badge">${roomCode}</div>
+    <a href="gamervoice://join/${roomCode}" class="btn-action btn-open">🚀 Open in GamerVoice App</a>
+    <button class="btn-action btn-download" onclick="window.location.href='/download-apk'">📲 Download GamerVoice APK</button>
+    <button class="btn-copy" onclick="navigator.clipboard.writeText('${roomCode}');alert('Room Code ${roomCode} copied!')">📋 Copy Room Code Only</button>
+  </div>
+  <script>
+    if (/Android/i.test(navigator.userAgent)) {
+      setTimeout(() => {
+        window.location.href = "gamervoice://join/${roomCode}";
+      }, 350);
+    }
+  </script>
+</body>
+</html>`;
+}
+
 // Rate limiting in-memory storage (ip -> { count, resetTime })
 const ipRateLimits = new Map();
 const roomAttemptLimits = new Map();
@@ -460,6 +518,19 @@ const server = http.createServer(async (req, res) => {
         timestamp: new Date().toISOString()
       });
       return;
+    }
+
+    // Web Landing & Deep Link Preview for Squad Rooms (/join/CODE)
+    if (req.method === 'GET' && req.url.startsWith('/join/')) {
+      const codePart = req.url.split('?')[0].replace('/join/', '').trim().toUpperCase();
+      if (/^[A-Z0-9]{3,8}$/.test(codePart)) {
+        const room = rooms.get(codePart);
+        const peerCount = room && room.peers ? room.peers.size : 0;
+        const isRoomActive = Boolean(room);
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderJoinRoomHtml(codePart, peerCount, isRoomActive));
+        return;
+      }
     }
 
     // Static Web Assets from server/public/
@@ -828,6 +899,9 @@ const server = http.createServer(async (req, res) => {
         }, { merge: true });
       });
 
+      // Invalidate leaderboard cache so the new recruiter count reflects promptly
+      leaderboardCache.lastFetched = 0;
+
       sendResponse(res, 200, {
         success: true,
         message: '🎉 Referral code verified! 3 Days of VIP Pass unlocked for BOTH you and your squad mate!'
@@ -836,6 +910,88 @@ const server = http.createServer(async (req, res) => {
       console.error('[Referral Error]', err.message);
       const statusCode = err.statusCode || 500;
       sendResponse(res, statusCode, { error: err.message || 'Failed to process referral' });
+    }
+    return;
+  }
+
+  // API 2D: Viral Referral Leaderboard (RAM Cached with Zero Firestore Burn)
+  if (req.method === 'GET' && req.url === '/api/referrals/leaderboard') {
+    try {
+      const now = Date.now();
+      if (leaderboardCache.data.length > 0 && (now - leaderboardCache.lastFetched) < LEADERBOARD_CACHE_TTL) {
+        sendResponse(res, 200, {
+          success: true,
+          cached: true,
+          updatedAt: new Date(leaderboardCache.lastFetched).toISOString(),
+          leaderboard: leaderboardCache.data
+        });
+        return;
+      }
+
+      if (!adminDb) {
+        sendResponse(res, 200, {
+          success: true,
+          cached: false,
+          leaderboard: leaderboardCache.data.length > 0 ? leaderboardCache.data : []
+        });
+        return;
+      }
+
+      let snapshot;
+      try {
+        snapshot = await adminDb.collection('users')
+          .where('referralCount', '>', 0)
+          .orderBy('referralCount', 'desc')
+          .limit(20)
+          .get();
+      } catch (_idxErr) {
+        snapshot = await adminDb.collection('users')
+          .orderBy('referralCount', 'desc')
+          .limit(20)
+          .get();
+      }
+
+      const list = [];
+      let rank = 1;
+      snapshot.forEach(doc => {
+        const d = doc.data() || {};
+        const count = Number(d.referralCount) || 0;
+        if (count > 0) {
+          let name = d.displayName || d.name || '';
+          if (!name && d.email) {
+            const parts = d.email.split('@');
+            name = parts[0].slice(0, 3) + '***@' + (parts[1] || 'squad');
+          } else if (!name) {
+            name = 'SquadLeader_' + doc.id.slice(-4);
+          }
+          list.push({
+            rank: rank++,
+            name: name,
+            referralCode: d.referralCode || '',
+            referralCount: count,
+            isVip: Boolean(d.isVip)
+          });
+        }
+      });
+
+      leaderboardCache = {
+        data: list,
+        lastFetched: now
+      };
+
+      sendResponse(res, 200, {
+        success: true,
+        cached: false,
+        updatedAt: new Date(now).toISOString(),
+        leaderboard: list
+      });
+    } catch (err) {
+      console.warn('[Leaderboard Warning]', err.message);
+      sendResponse(res, 200, {
+        success: true,
+        cached: true,
+        leaderboard: leaderboardCache.data
+      });
     }
     return;
   }
@@ -860,6 +1016,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const expectedAmounts = {
+        DAY_PASS: 900,
         WEEKLY: 2900,
         MONTHLY: 8900,
         LIFETIME: 24900

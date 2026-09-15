@@ -1785,12 +1785,53 @@
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
-                    <!-- VIP Plan Selection Cards (3 Cards) -->
+                    <!-- VIP Plan Selection Cards (4 Cards) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:orientation="horizontal">
+
+                        <!-- Day Pass (24h) -->
+                        <LinearLayout
+                            android:id="@+id/llProfilePlanDayPass"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="3dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_vip_card_unselected"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="7dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:text="24H"
+                                android:textColor="@color/neon_cyan"
+                                android:textSize="10sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="₹9"
+                                android:textColor="@color/neon_cyan"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Match Pass"
+                                android:textColor="#A0AEC0"
+                                android:textSize="8sp" />
+                        </LinearLayout>
 
                         <!-- Weekly -->
                         <LinearLayout
