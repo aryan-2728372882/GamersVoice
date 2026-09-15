@@ -467,7 +467,8 @@
       throw new Error("Please enter a valid referral code (e.g. GV-XXXX).");
     }
     const myCode = GV.uidToCode(auth.currentUser.uid);
-    if (clean === myCode) {
+    const profileCode = (GV.currentVipPlan && GV.currentVipPlan.referralCode) ? GV.currentVipPlan.referralCode.toUpperCase() : null;
+    if (clean === myCode || (profileCode && clean === profileCode)) {
       throw new Error("You cannot redeem your own referral code!");
     }
 

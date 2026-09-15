@@ -621,6 +621,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  function uidToCode(uid) {
+  if (!uid) return "GV-ALPHA01";
+  const words = ["TITAN","GHOST","VIPER","BLADE","STORM","RAVEN","ALPHA","SIGMA","NEXUS","CYBER"];
+  let hash = 0;
+  for (let i = 0; i < uid.length; i++) hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+  const word = words[Math.abs(hash) % words.length];
+  const num = String(Math.abs(hash >> 4) % 100).padStart(2, '0');
+  return "GV-" + word + num;
+}
+
   // API 2B: Register Referral Code Owner
   if (req.method === 'POST' && req.url === '/api/referral/register-code') {
     try {
@@ -689,6 +699,7 @@ const server = http.createServer(async (req, res) => {
       await adminDb.runTransaction(async (transaction) => {
         // 1. All Transaction Reads First
         const refDocRef = adminDb.collection('referrals').doc(cleanCode);
+        const refSnap = await transaction.get(refDocRef);
         let refData = null;
         let referrerUid = null;
         if (refSnap.exists) {
@@ -714,8 +725,13 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
-        // 2. Prevent self-redemption
-        if (referrerUid === refereeUid) {
+        // 2. Prevent self-redemption (Multi-vector defense: UID, Email, and Deterministic Code)
+        const refereeDeterministicCode = uidToCode(refereeUid);
+        const isSelfByUid = (referrerUid && referrerUid === refereeUid);
+        const isSelfByEmail = (refData && refData.ownerEmail && authUser.email && refData.ownerEmail.toLowerCase() === authUser.email.toLowerCase());
+        const isSelfByDeterministicCode = (cleanCode === refereeDeterministicCode);
+
+        if (isSelfByUid || isSelfByEmail || isSelfByDeterministicCode) {
           const err = new Error('You cannot redeem your own referral code!');
           err.statusCode = 400;
           throw err;
@@ -732,10 +748,18 @@ const server = http.createServer(async (req, res) => {
 
         const refereeDocRef = adminDb.collection('users').doc(refereeUid);
         const refereeSnap = await transaction.get(refereeDocRef);
-        if (refereeSnap.exists && refereeSnap.data().hasRedeemedReferral) {
-          const err = new Error('You have already redeemed a welcome referral code on this account.');
-          err.statusCode = 400;
-          throw err;
+        if (refereeSnap.exists) {
+          const refUserDoc = refereeSnap.data();
+          if (refUserDoc.hasRedeemedReferral) {
+            const err = new Error('You have already redeemed a welcome referral code on this account.');
+            err.statusCode = 400;
+            throw err;
+          }
+          if (refUserDoc.referralCode && refUserDoc.referralCode.toUpperCase() === cleanCode) {
+            const err = new Error('You cannot redeem your own referral code!');
+            err.statusCode = 400;
+            throw err;
+          }
         }
 
         let referrerSnap = null;
