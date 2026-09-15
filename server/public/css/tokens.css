@@ -40,8 +40,8 @@
   --text-mute: #5a6685;
   --text-inverse: #05070d;
 
-  --font-display: "Syne", "Outfit", system-ui, sans-serif;
-  --font-body: "Outfit", system-ui, sans-serif;
+  --font-display: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
 
   /* Radii */

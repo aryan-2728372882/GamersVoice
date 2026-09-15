@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>My Profile — GamerVoice</title>
+  <meta name="description" content="Manage your GamerVoice squad account, VIP clearance, referrals, and squad statistics.">
+  <link rel="icon" href="/logo.png">
+
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <style>
+    /* ── Profile Page Styles ────────────────────────── */
+    .profile-wrap {
+      padding: 36px 0 72px;
+      max-width: 860px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Gate view (Logged out) */
+    .profile-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 55vh;
+      text-align: center;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .profile-gate .gate-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.4));
+    }
+
+    .profile-gate h2 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .profile-gate p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      max-width: 420px;
+      line-height: 1.65;
+    }
+
+    /* Profile Header Card */
+    .profile-header-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px 22px;
+      border-radius: 18px;
+      border: 1px solid var(--line-cyan);
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(13, 18, 31, 0.95) 100%);
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.08);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .profile-identity-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 200px;
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--mint));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #041019;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .profile-info h2 {
+      font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 4px;
+      line-height: 1.2;
+    }
+
+    .profile-info .email {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .profile-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid var(--line);
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .plan-badge.vip {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(255, 215, 0, 0.1);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    }
+
+    .profile-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Stats Grid */
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      padding: 16px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--glass-card);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stat-card .stat-val {
+      font-size: clamp(1.3rem, 3.2vw, 1.8rem);
+      font-weight: 800;
+      color: var(--cyan);
+      line-height: 1.1;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-mute);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Common Card Section */
+    .profile-section {
+      padding: 20px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--glass-card);
+      margin-bottom: 16px;
+    }
+
+    .profile-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Referral Box */
+    .ref-box-inner {
+      background: rgba(0, 230, 118, 0.06);
+      border: 1px solid var(--line-mint);
+      border-radius: 14px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .ref-code-text {
+      font-family: var(--font-mono);
+      font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+      font-weight: 700;
+      color: var(--mint);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 16px var(--mint-glow);
+      margin: 4px 0 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ref-actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ref-actions-row .btn {
+      flex: 1;
+      min-width: 140px;
+      max-width: 220px;
+    }
+
+    .ref-desc-note {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+
+    .ref-desc-note strong {
+      color: var(--mint);
+    }
+
+    /* Account Details List */
+    .account-field-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .profile-field-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .profile-field-row:last-child {
+      border-bottom: none;
+    }
+
+    .field-key {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-mute);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-width: 110px;
+    }
+
+    .field-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+    }
+
+    .activity-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--line-cyan);
+    }
+
+    .activity-text-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-text-wrap strong {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .activity-text-wrap span {
+      font-size: 0.82rem;
+      color: var(--text-mute);
+      display: block;
+    }
+
+    .activity-stamp {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-mute);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Danger zone */
+    .danger-zone-card {
+      border-color: rgba(255, 60, 60, 0.25);
+      background: rgba(255, 50, 50, 0.03);
+    }
+
+    /* ── Mobile Layout Fixes (≤ 600px & ≤ 380px) ───── */
+    @media (max-width: 600px) {
+      .profile-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .profile-header-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 18px 16px;
+      }
+      .profile-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .profile-header-actions .btn {
+        flex: 1;
+      }
+      .profile-field-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      .field-value {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .profile-wrap {
+        padding: 20px 0 48px;
+      }
+      .profile-section {
+        padding: 16px 14px;
+      }
+      .ref-actions-row .btn {
+        max-width: 100%;
+        width: 100%;
+      }
+      .activity-stamp {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-page="profile">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap profile-wrap">
+
+      <!-- GATED: Signed Out State -->
+      <div id="profileGate" class="profile-gate" style="display:none">
+        <div class="gate-icon">🎮</div>
+        <h2>Sign In to View Your Profile</h2>
+        <p>Access your GamerVoice squad identity, live VIP status, referral bonus days, and account activity.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+          <button class="btn btn-primary" onclick="openAuthModal()">Sign In / Register</button>
+          <a class="btn btn-ghost" href="/vip">View VIP Plans</a>
+        </div>
+      </div>
+
+      <!-- PROFILE: Signed In State -->
+      <div id="profileContent" style="display:none">
+
+        <!-- Top Identity Card -->
+        <div class="profile-header-card">
+          <div class="profile-identity-block">
+            <div class="profile-avatar" id="profileAvatar">G</div>
+            <div class="profile-info">
+              <h2 id="profileDisplayName">Operator</h2>
+              <div class="email" id="profileEmail">—</div>
+              <div class="profile-badge-row">
+                <span class="plan-badge" id="profilePlanBadge">FREE PLAN</span>
+              </div>
+            </div>
+          </div>
+          <div class="profile-header-actions">
+            <a class="btn btn-gold btn-sm" href="/vip" id="upgradeBtn">👑 Upgrade VIP</a>
+            <button class="btn btn-ghost btn-sm" onclick="GV.signOut()">Sign Out</button>
+          </div>
+        </div>
+
+        <!-- 4-Stat Grid -->
+        <div class="profile-stats">
+          <div class="stat-card">
+            <div class="stat-val" id="statVipDays">0</div>
+            <div class="stat-label">VIP Days Left</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="statRefs">0</div>
+            <div class="stat-label">Squad Referrals</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="statRefDays">0</div>
+            <div class="stat-label">Bonus Days</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="statPlan">FREE</div>
+            <div class="stat-label">Active Tier</div>
+          </div>
+        </div>
+
+        <!-- Referral Code Showcase -->
+        <div class="profile-section">
+          <div class="profile-section-title"><span>🔗</span> Squad Referral Program</div>
+          <div class="ref-box-inner">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--mint);text-transform:uppercase;letter-spacing:0.06em">Your Unique Share Code</div>
+            <div class="ref-code-text" id="profileRefCode">GV-LOADING</div>
+            <div class="ref-actions-row">
+              <button class="btn btn-mint btn-sm" onclick="copyProfileCode()">📋 Copy Code</button>
+              <button class="btn btn-ghost btn-sm" onclick="shareProfileCode()">💬 WhatsApp</button>
+            </div>
+            <p class="ref-desc-note">
+              Give your squad code to teammates. When they install &amp; redeem, <strong>both of you get +3 VIP days</strong> instantly credited!
+            </p>
+          </div>
+        </div>
+
+        <!-- Account Specs -->
+        <div class="profile-section">
+          <div class="profile-section-title"><span>👤</span> Account Information</div>
+          <div class="account-field-list">
+            <div class="profile-field-row">
+              <span class="field-key">Gamer Tag</span>
+              <span class="field-value" id="detailName">—</span>
+            </div>
+            <div class="profile-field-row">
+              <span class="field-key">Email</span>
+              <span class="field-value" id="detailEmail">—</span>
+            </div>
+            <div class="profile-field-row">
+              <span class="field-key">UID</span>
+              <span class="field-value" id="detailUid" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-mute)">—</span>
+            </div>
+            <div class="profile-field-row">
+              <span class="field-key">Clearance</span>
+              <span class="field-value" id="detailPlan">FREE</span>
+            </div>
+            <div class="profile-field-row">
+              <span class="field-key">VIP Expiry</span>
+              <span class="field-value" id="detailExpiry">N/A</span>
+            </div>
+            <div class="profile-field-row">
+              <span class="field-key">Payment ID</span>
+              <span class="field-value" id="detailPaymentId" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-mute)">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div class="profile-section">
+          <div class="profile-section-title"><span>⚡</span> Account History</div>
+          <div class="activity-feed" id="activityFeed"></div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="profile-section">
+          <div class="profile-section-title"><span>🚀</span> Squad Quick Links</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn btn-primary btn-sm" href="/download">Download 17.1MB APK</a>
+            <a class="btn btn-gold btn-sm" href="/vip">Browse VIP Passes</a>
+            <a class="btn btn-mint btn-sm" href="/referrals">Referral Program</a>
+            <button class="btn btn-ghost btn-sm" onclick="openSupport()">Contact Support</button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="profile-section danger-zone-card">
+          <div class="profile-section-title" style="color:#ff6666"><span>⚠️</span> Session Security</div>
+          <p style="font-size:0.9rem;color:var(--text-dim);margin-bottom:14px;line-height:1.6">
+            Sign out of this browser. Your VIP perks, referral records, and squad stats remain safely synced to your account.
+          </p>
+          <button class="btn btn-ghost btn-sm" onclick="GV.signOut()" style="border-color:rgba(255,80,80,0.4);color:#ff8888">Sign Out of GamerVoice</button>
+        </div>
+
+      </div><!-- /profileContent -->
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+  <script>
+    function uidToCode(uid) {
+      if (!uid) return "GV-ALPHA01";
+      const words = ["TITAN","GHOST","VIPER","BLADE","STORM","RAVEN","ALPHA","SIGMA","NEXUS","CYBER"];
+      let hash = 0;
+      for (let i = 0; i < uid.length; i++) hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+      const word = words[Math.abs(hash) % words.length];
+      const num = String(Math.abs(hash >> 4) % 100).padStart(2, '0');
+      return "GV-" + word + num;
+    }
+
+    function timeAgo(isoStr) {
+      if (!isoStr) return "Recently";
+      const diff = Date.now() - new Date(isoStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "Just now";
+      if (mins < 60) return mins + "m ago";
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + "h ago";
+      return Math.floor(hrs / 24) + "d ago";
+    }
+
+    function vipDaysLeft(expiryTimestamp) {
+      if (!expiryTimestamp || expiryTimestamp === -1) return "∞";
+      const ms = expiryTimestamp - Date.now();
+      if (ms <= 0) return "0";
+      return String(Math.ceil(ms / 86400000));
+    }
+
+    function copyProfileCode() {
+      const code = document.getElementById("profileRefCode")?.textContent || "";
+      navigator.clipboard.writeText(code).then(() => {
+        if (window.GV && GV.toast) GV.toast("Copied " + code + " to clipboard!", "ok");
+      });
+    }
+
+    function shareProfileCode() {
+      const code = document.getElementById("profileRefCode")?.textContent || "";
+      const text = encodeURIComponent(
+        "🎮 Squad up on GamerVoice — ultra-low latency VOIP for Free Fire & BGMI!\n" +
+        "Use my referral code *" + code + "* to get +3 FREE VIP days:\n" +
+        "https://gamervoice.app/download"
+      );
+      window.open("https://wa.me/?text=" + text, "_blank");
+    }
+
+    function setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function renderActivity(data, user) {
+      const feed = document.getElementById("activityFeed");
+      if (!feed) return;
+      const items = [];
+
+      items.push({
+        icon: "🎮",
+        title: "GamerVoice Account",
+        desc: "Linked to " + user.email,
+        time: user.metadata?.creationTime ? timeAgo(user.metadata.creationTime) : "Active"
+      });
+
+      if (data?.purchasedAt) {
+        items.push({
+          icon: "👑",
+          title: "VIP Activated — " + (data.planType || "PRO"),
+          desc: "Payment: " + (data.paymentId || "Verified"),
+          time: timeAgo(data.purchasedAt)
+        });
+      }
+
+      const refs = data?.referralCount || 0;
+      if (refs > 0) {
+        items.push({
+          icon: "🔗",
+          title: refs + " Referral" + (refs > 1 ? "s" : "") + " Redeemed",
+          desc: "+" + (refs * 3) + " bonus VIP days added",
+          time: "Squad Program"
+        });
+      }
+
+      feed.innerHTML = items.map(it =>
+        '<div class="activity-row">' +
+          '<div class="activity-icon-badge">' + it.icon + '</div>' +
+          '<div class="activity-text-wrap"><strong>' + it.title + '</strong><span>' + it.desc + '</span></div>' +
+          '<div class="activity-stamp">' + it.time + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    function populateProfile(user, firestoreData) {
+      const data = firestoreData || {};
+      const name = user.displayName || user.email.split("@")[0];
+      const initial = name.charAt(0).toUpperCase();
+      const isVip = data.isVip === true;
+      const refs = data.referralCount || 0;
+      const code = uidToCode(user.uid);
+
+      // Avatar: Use real Google profile photo if available, else initial
+      const av = document.getElementById("profileAvatar");
+      if (av) {
+        if (user.photoURL) {
+          av.innerHTML = '<img src="' + user.photoURL + '" alt="' + initial + '">';
+        } else {
+          av.textContent = initial;
+        }
+      }
+
+      setText("profileDisplayName", name);
+      setText("profileEmail", user.email);
+
+      const badge = document.getElementById("profilePlanBadge");
+      if (badge) {
+        badge.textContent = isVip ? "👑 VIP " + (data.planType || "MEMBER") : "FREE PLAN";
+        if (isVip) badge.classList.add("vip");
+        else badge.classList.remove("vip");
+      }
+
+      const upgradeBtn = document.getElementById("upgradeBtn");
+      if (upgradeBtn && isVip) upgradeBtn.style.display = "none";
+
+      setText("statVipDays", isVip ? vipDaysLeft(data.expiryTimestamp) : "0");
+      setText("statRefs", String(refs));
+      setText("statRefDays", String(refs * 3));
+      setText("statPlan", isVip ? (data.planType || "VIP") : "FREE");
+
+      const planVal = document.getElementById("statPlan");
+      if (planVal && isVip) planVal.style.color = "var(--gold)";
+
+      setText("profileRefCode", code);
+      setText("detailName", name);
+      setText("detailEmail", user.email);
+      setText("detailUid", user.uid);
+      setText("detailPlan", isVip ? "VIP " + (data.planType || "PRO") : "FREE");
+      setText("detailExpiry", isVip ? (data.expiresAt || "Lifetime") : "N/A");
+      setText("detailPaymentId", data.paymentId || "—");
+
+      renderActivity(data, user);
+    }
+
+    function handleAuth(user) {
+      const gate = document.getElementById("profileGate");
+      const content = document.getElementById("profileContent");
+      if (!gate || !content) return;
+
+      if (user) {
+        gate.style.display = "none";
+        content.style.display = "block";
+        populateProfile(user, null);
+
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+          try {
+            firebase.firestore().collection("users").doc(user.uid).get().then((doc) => {
+              populateProfile(user, doc.exists ? doc.data() : null);
+            }).catch(() => {});
+          } catch (_) {}
+        }
+      } else {
+        gate.style.display = "flex";
+        content.style.display = "none";
+      }
+    }
+
+    // Fast event-driven auth listener
+    document.addEventListener("gv:authready", (e) => handleAuth(e.detail.user));
+
+    // Fallback if auth is already resolved
+    if (window.GV && GV.currentUser) {
+      handleAuth(GV.currentUser);
+    }
+  </script>
+</body>
+</html>

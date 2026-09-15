@@ -290,14 +290,48 @@
   color: var(--cyan);
 }
 
+/* ── RESPONSIVE NAVIGATION & LAYOUT ───────────────────────────────── */
+
 @media (max-width: 1024px) {
   .nav-links { display: none; }
-  .hamburger { display: block; }
+  .hamburger { display: flex; align-items: center; justify-content: center; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 
-@media (max-width: 640px) {
-  .footer-grid { grid-template-columns: 1fr; }
-  .nav-inner { padding: 0 16px; }
-  .wrap { padding: 0 16px; }
+@media (max-width: 768px) {
+  .nav-inner { padding: 0 14px; gap: 10px; }
+  .wrap { padding: 0 14px; }
+  
+  /* On mobile nav: hide download button and simplify user pill to avatar only */
+  .nav-actions .btn { display: none; }
+  
+  /* Compact avatar in top navbar on mobile */
+  .nav-actions .user-pill {
+    padding: 2px;
+    border-radius: var(--r-full);
+    background: transparent;
+    border: 2px solid var(--line-cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    gap: 0;
+  }
+  .nav-actions .user-pill .user-name,
+  .nav-actions .user-pill .vip-tag,
+  .nav-actions .user-pill .btn-signout {
+    display: none !important;
+  }
+  .nav-actions .user-pill .user-av {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
 }
+
+@media (max-width: 480px) {
+  .nav-inner { padding: 0 10px; gap: 6px; }
+  .wrap { padding: 0 12px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand-name { font-size: 0.95rem; letter-spacing: -0.02em; }
+  .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+}
+
+

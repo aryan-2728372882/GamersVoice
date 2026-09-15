@@ -478,7 +478,8 @@ const server = http.createServer(async (req, res) => {
         '/support': '/pages/support.html',
         '/privacy': '/pages/privacy.html',
         '/terms': '/pages/terms.html',
-        '/refund': '/pages/refund.html'
+        '/refund': '/pages/refund.html',
+        '/profile': '/pages/profile.html'
       };
       if (PAGE_ROUTES[pathname]) {
         pathname = PAGE_ROUTES[pathname];

@@ -124,6 +124,7 @@
               '<a class="' + navClass("compare") + '" href="/compare">Benchmarks</a>' +
               '<a class="' + navClass("lab") + '" href="/lab">Noise Lab</a>' +
               '<a class="' + navClass("referrals") + '" href="/referrals">Squad Referrals</a>' +
+              '<a class="' + navClass("profile") + '" href="/profile">My Profile</a>' +
               '<a class="' + navClass("download") + '" href="/download">Download 17.1MB APK</a>' +
               '<a class="' + navClass("faq") + '" href="/faq">FAQ</a>' +
               '<a class="' + navClass("support") + '" href="/support">Support</a>' +
@@ -404,13 +405,16 @@
         const isVip = GV.currentVipPlan?.isVip;
         const planText = isVip ? "VIP " + (GV.currentVipPlan.planType || "") : "FREE";
 
+        const avatarHtml = user.photoURL
+          ? '<img src="' + user.photoURL + '" alt="' + initial + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+          : initial;
         box.innerHTML =
-          '<div class="user-pill">' +
-            '<div class="user-av">' + initial + '</div>' +
+          '<a class="user-pill" href="/profile" style="text-decoration:none">' +
+            '<div class="user-av">' + avatarHtml + '</div>' +
             '<span class="user-name">' + tag + '</span>' +
             '<span class="vip-tag" id="userVipTag" style="' + (isVip ? "color:var(--gold);border-color:var(--gold)" : "") + '">' + planText + '</span>' +
-            '<button class="btn-signout" onclick="GV.signOut()">Exit</button>' +
-          '</div>';
+            '<button class="btn-signout" onclick="event.preventDefault();event.stopPropagation();GV.signOut()">Exit</button>' +
+          '</a>';
       } else {
         box.innerHTML = '<button class="btn btn-ghost btn-sm" onclick="openAuthModal()">Sign in</button>';
       }
@@ -568,19 +572,26 @@
 
   async function initFirebase() {
     try {
-      await loadScript("https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js");
-      await loadScript("https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js");
-      await loadScript("https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js");
+      // Load SDKs from local server without blocking initial render
+      await Promise.all([
+        loadScript("/js/vendor/firebase-app-compat.js"),
+        loadScript("/js/vendor/firebase-auth-compat.js"),
+        loadScript("/js/vendor/firebase-firestore-compat.js")
+      ]);
       firebase.initializeApp(firebaseConfig);
       auth = firebase.auth();
       db = firebase.firestore();
+
       auth.onAuthStateChanged((user) => {
         GV.currentUser = user;
         updateUserInterface(user);
         if (user && db) subscribeToUserPlan(user.uid);
+        // Dispatch event so pages can listen without polling
+        document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user } }));
       });
     } catch (e) {
       console.warn("[Firebase]", e.message);
+      document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user: null } }));
     }
   }
 
@@ -588,6 +599,11 @@
     injectChrome();
     initCursor();
     initReveal();
-    initFirebase();
+    // Yield to browser to paint UI first, then init Firebase
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(() => initFirebase(), { timeout: 300 });
+    } else {
+      setTimeout(initFirebase, 50);
+    }
   });
 })();

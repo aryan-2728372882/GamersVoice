@@ -182,3 +182,28 @@ main {
     transition: none !important;
   }
 }
+
+/* ── MOBILE PERFORMANCE: disable GPU-heavy effects on phones ─── */
+@media (max-width: 768px) {
+  /* Kill aurora blobs — they run 3 continuous GPU animations */
+  #gv-aurora { display: none !important; }
+  /* Kill cyber grid background */
+  #gv-grid { display: none !important; }
+  /* Kill custom cursor — touch devices don't use it */
+  #gv-cursor { display: none !important; }
+  /* Disable card tilt animations */
+  .tilt-card { transform: none !important; }
+  /* Disable hover transforms that cause repaints on scroll */
+  .card:hover { transform: none; }
+  .btn:hover { transform: none; }
+  /* Make reveal animations instant — no lag on scroll */
+  .reveal, .reveal-left, .reveal-right {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .reveal.in, .reveal-left.in, .reveal-right.in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
