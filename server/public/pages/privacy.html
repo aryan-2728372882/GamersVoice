@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — GamerVoice Zero-Cloud Audio</title>
+  <meta name="description" content="GamerVoice Privacy Policy: Encrypted WebRTC peer-to-peer audio, zero server recording, and zero third-party advertising tracking.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="privacy">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal">
+        <div class="chip"><span class="chip-dot"></span> Privacy Guarantee</div>
+        <h1>Privacy Policy</h1>
+        <p>GamerVoice was built with a fundamental principle: your voice belongs to you and your squad, not a cloud server.</p>
+      </header>
+
+      <div class="legal reveal">
+        <h2>1. Zero Cloud Voice Recording</h2>
+        <p>Unlike traditional chat services that route your microphone stream through intermediate cloud processing, GamerVoice operates on a pure WebRTC peer-to-peer (P2P) mesh. Your voice packets are encrypted end-to-end using DTLS-SRTP and travel directly between players' phones. <strong>We do not record, store, transcribe, or listen to any squad audio.</strong></p>
+
+        <h2>2. On-Device 120s Clutch Audio Highlights</h2>
+        <p>Our personal clutch highlight feature maintains a temporary 2-minute rolling PCM buffer in your mobile device's volatile RAM. When you trigger the save button, that audio is packaged into a .wav file directly in your private device storage (<code>/Music/GamerVoice_Clips/</code>). Nothing is ever sent to our servers.</p>
+
+        <h2>3. Information We Collect</h2>
+        <p>To provide account authentication, VIP synchronization, and referral crediting, we store:</p>
+        <ul>
+          <li>Your account email address and gamer handle (managed securely through Firebase Authentication).</li>
+          <li>Entitlement metadata (active VIP tier, purchase timestamp, and referral redemption flags).</li>
+          <li>Ephemeral signaling connection data (anonymized IP addresses used solely for ICE candidate negotiation).</li>
+        </ul>
+
+        <h2>4. No Third-Party Advertising SDKs</h2>
+        <p>We do not bundle AdMob, Facebook Audience Network, or any commercial tracking SDKs into the GamerVoice APK. Your mobile device resources and network data are never used for targeted surveillance.</p>
+
+        <h2>5. Contact Us</h2>
+        <p>If you have any questions about this Privacy Policy or wish to request data deletion, contact us at <a href="mailto:supportgamersvoice@gmail.com" style="color:var(--cyan)">supportgamersvoice@gmail.com</a>.</p>
+      </div>
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+</body>
+</html>

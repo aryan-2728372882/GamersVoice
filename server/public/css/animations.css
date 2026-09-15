@@ -1,0 +1,227 @@
+/* ==========================================================================
+   GAMERVOICE ADVANCED CYBER ANIMATIONS
+   ========================================================================== */
+
+@keyframes drift-aurora {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(60px, 40px, 0) scale(1.15) rotate(180deg); }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(360deg); }
+}
+
+@keyframes cyber-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-live-dot {
+  0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 12px var(--mint); }
+  50% { transform: scale(0.65); opacity: 0.4; box-shadow: 0 0 4px var(--mint); }
+}
+
+@keyframes glow-pulse-cyan {
+  0%, 100% { box-shadow: 0 0 16px rgba(0, 240, 255, 0.3), inset 0 0 12px rgba(0, 240, 255, 0.15); }
+  50% { box-shadow: 0 0 32px rgba(0, 240, 255, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.3); }
+}
+
+@keyframes glow-pulse-gold {
+  0%, 100% { box-shadow: 0 0 16px rgba(255, 215, 0, 0.3), inset 0 0 12px rgba(255, 215, 0, 0.15); }
+  50% { box-shadow: 0 0 32px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.3); }
+}
+
+@keyframes float-gentle {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(0.5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes float-reverse {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(-0.5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes shimmer-sheen {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+@keyframes dialog-spring-in {
+  0% { opacity: 0; transform: translateY(28px) scale(0.94); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes toast-slide-in {
+  0% { opacity: 0; transform: translateX(36px) scale(0.9); }
+  70% { transform: translateX(-4px) scale(1.02); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes eq-jump {
+  0%, 100% { transform: scaleY(0.2); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes badge-sparkle {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 8px var(--gold)); }
+}
+
+/* Reveal on Scroll Transitions */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  will-change: opacity, transform;
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.reveal-left.in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.reveal-right.in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.delay-1 { transition-delay: 0.08s; }
+.delay-2 { transition-delay: 0.16s; }
+.delay-3 { transition-delay: 0.24s; }
+.delay-4 { transition-delay: 0.32s; }
+.delay-5 { transition-delay: 0.40s; }
+
+/* Floating Classes */
+.float-y {
+  animation: float-gentle 5s ease-in-out infinite;
+}
+
+.float-y-reverse {
+  animation: float-reverse 5.5s ease-in-out infinite;
+}
+
+/* Audio Equalizer Bars */
+.eq-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+  vertical-align: middle;
+}
+
+.eq-bars span {
+  width: 3px;
+  height: 100%;
+  background: var(--mint);
+  border-radius: 2px;
+  transform-origin: bottom;
+  animation: eq-jump 0.8s ease-in-out infinite alternate;
+}
+
+.eq-bars span:nth-child(1) { animation-delay: 0.0s; height: 60%; }
+.eq-bars span:nth-child(2) { animation-delay: 0.2s; height: 100%; }
+.eq-bars span:nth-child(3) { animation-delay: 0.4s; height: 75%; }
+.eq-bars span:nth-child(4) { animation-delay: 0.1s; height: 90%; }
+.eq-bars span:nth-child(5) { animation-delay: 0.3s; height: 50%; }
+
+.eq-bars.gold span {
+  background: var(--gold);
+}
+
+.eq-bars.cyan span {
+  background: var(--cyan);
+}
+
+/* 3D Tilt Wrapper */
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0.3, 1), box-shadow 0.25s ease;
+}
+
+/* Animated Aurora Background Blobs */
+#gv-aurora {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.7;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+}
+
+.aurora-blob.a {
+  width: 600px;
+  height: 600px;
+  top: -150px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, rgba(0, 240, 255, 0) 70%);
+  animation: drift-aurora 22s ease-in-out infinite alternate;
+}
+
+.aurora-blob.b {
+  width: 700px;
+  height: 700px;
+  bottom: -200px;
+  right: -150px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(139, 92, 246, 0) 70%);
+  animation: drift-aurora 28s ease-in-out infinite alternate-reverse;
+}
+
+.aurora-blob.c {
+  width: 500px;
+  height: 500px;
+  top: 40%;
+  left: 35%;
+  background: radial-gradient(circle, rgba(0, 230, 118, 0.12) 0%, rgba(0, 230, 118, 0) 70%);
+  animation: drift-aurora 18s ease-in-out infinite alternate;
+}
+
+/* Cyber Grid */
+#gv-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 100%);
+}

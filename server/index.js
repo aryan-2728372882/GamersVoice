@@ -467,11 +467,21 @@ const server = http.createServer(async (req, res) => {
       const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       let pathname = parsedUrl.pathname;
 
-      // Policy & Legal direct route redirects
-      if (pathname === '/privacy' || pathname === '/terms' || pathname === '/refund') {
-        res.writeHead(302, { 'Location': '/#' + pathname.slice(1) });
-        res.end();
-        return;
+      const PAGE_ROUTES = {
+        '/features': '/pages/features.html',
+        '/vip': '/pages/vip.html',
+        '/compare': '/pages/compare.html',
+        '/download': '/pages/download.html',
+        '/lab': '/pages/lab.html',
+        '/referrals': '/pages/referrals.html',
+        '/faq': '/pages/faq.html',
+        '/support': '/pages/support.html',
+        '/privacy': '/pages/privacy.html',
+        '/terms': '/pages/terms.html',
+        '/refund': '/pages/refund.html'
+      };
+      if (PAGE_ROUTES[pathname]) {
+        pathname = PAGE_ROUTES[pathname];
       }
 
       if (pathname === '/admin' || pathname === '/admin/') {

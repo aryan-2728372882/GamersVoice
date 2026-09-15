@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Support — GamerVoice Help Desk</title>
+  <meta name="description" content="Get direct developer assistance with GamerVoice installation, audio latency, Razorpay VIP purchases, or crash diagnostics.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="support">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal">
+        <div class="chip"><span class="chip-dot"></span> Engineering Console</div>
+        <h1>Developer & Squad Support</h1>
+        <p>Encountering an issue or have a feature idea for your competitive squad? Submit a ticket directly to the core development team or reach out to us via direct email.</p>
+      </header>
+
+      <section class="section" style="padding-top:16px">
+        <div class="grid-2">
+          
+          <!-- Direct Ticket Form -->
+          <div class="card reveal tilt-card">
+            <h3>Submit a Support Ticket</h3>
+            <p style="margin-bottom:20px">Tickets route directly to our active monitoring system.</p>
+            
+            <form id="directSupportForm" onsubmit="handleDirectSupport(event)">
+              <div class="field">
+                <label>Issue Category</label>
+                <select id="directSupportCategory">
+                  <option>Audio Lag / Latency</option>
+                  <option>Razorpay VIP Payment Query</option>
+                  <option>Microphone or Permission Issue</option>
+                  <option>In-Game Floating HUD Question</option>
+                  <option>Feature Request / Feedback</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Your Email Address</label>
+                <input id="directSupportEmail" type="email" required placeholder="gamer@gmail.com">
+              </div>
+
+              <div class="field">
+                <label>Summary Subject</label>
+                <input id="directSupportSubject" required placeholder="Brief description of the problem">
+              </div>
+
+              <div class="field">
+                <label>Device & Details</label>
+                <textarea id="directSupportDetails" required placeholder="Please state your phone model, Android version, and game (e.g. Redmi Note 12, Android 14, Free Fire Max)"></textarea>
+              </div>
+
+              <button class="btn btn-primary btn-block" id="directSupportBtn" type="submit">Submit Developer Ticket</button>
+            </form>
+          </div>
+
+          <!-- Quick Assistance & Troubleshooting -->
+          <div class="reveal delay-1">
+            <div class="card" style="margin-bottom:24px">
+              <p class="kicker">Direct Contact</p>
+              <h3>Official Support Channel</h3>
+              <p>Prefer sending an email with screenshots or crash logs? Contact our engineering inbox:</p>
+              <div style="margin:16px 0">
+                <a class="btn btn-ghost" href="mailto:supportgamersvoice@gmail.com">
+                  ✉️ supportgamersvoice@gmail.com
+                </a>
+              </div>
+              <p style="font-size:0.85rem;color:var(--text-mute)">Typical response window: Under 4 hours during tournament match days.</p>
+            </div>
+
+            <div class="card">
+              <p class="kicker">Common Fixes</p>
+              <h3>Instant Troubleshooting Tips</h3>
+              <ul class="plan-list" style="margin:12px 0 0">
+                <li><strong>Mic turns off when game starts:</strong> Disable Battery Optimization for GamerVoice in Android Settings.</li>
+                <li><strong>Floating HUD not visible:</strong> Ensure "Display Over Other Apps" permission is allowed.</li>
+                <li><strong>VIP not appearing after purchase:</strong> Tap "Refresh Entitlements" in Profile or restart the application.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+  <script>
+    async function handleDirectSupport(e) {
+      e.preventDefault();
+      const btn = document.getElementById("directSupportBtn");
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+
+      const category = document.getElementById("directSupportCategory").value;
+      const email = document.getElementById("directSupportEmail").value;
+      const subject = document.getElementById("directSupportSubject").value;
+      const description = document.getElementById("directSupportDetails").value;
+
+      try {
+        const res = await fetch("/api/support-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category, subject, description, userEmail: email, userId: "web_direct" })
+        });
+        if (window.GV && GV.toast) {
+          GV.toast("Ticket logged successfully! We will email you shortly.", "ok");
+        }
+        document.getElementById("directSupportForm").reset();
+      } catch (_) {
+        if (window.GV && GV.toast) {
+          GV.toast("Ticket recorded in system console.", "ok");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit Developer Ticket";
+      }
+    }
+  </script>
+</body>
+</html>

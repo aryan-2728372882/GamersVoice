@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squad Referrals — Earn Free VIP Days with GamerVoice</title>
+  <meta name="description" content="Share your GamerVoice squad code: Give 3 days of VIP to your teammate, and get 3 days of VIP credited to your account automatically. Stackable and unlimited.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="referrals">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal" style="text-align:center;margin:0 auto">
+        <div class="chip chip-gold"><span class="chip-dot"></span> Viral Squad Growth</div>
+        <h1>Give 3 Days VIP. Get 3 Days VIP.</h1>
+        <p style="margin:12px auto 0">Squad up without opening your wallet. Every time a teammate installs GamerVoice and enters your referral code, both of you unlock +3 days of full VIP studio clearance. Stack as many days as you want!</p>
+      </header>
+
+      <!-- Referral Showcase Box -->
+      <section class="referral-box reveal">
+        <p class="kicker" style="color:var(--mint)">Your Squad Share Code</p>
+        <div class="referral-code-display" id="sampleReferralCode">GV-TITAN</div>
+        <p style="color:var(--text-dim);font-size:0.92rem;margin-bottom:24px">Tap below to copy your code or share it directly to WhatsApp / Discord squads.</p>
+        
+        <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-mint" type="button" onclick="copyReferralCode()">📋 Copy Squad Code</button>
+          <button class="btn btn-ghost" type="button" onclick="openAuthModal()">Sign in to View My Personal Code</button>
+        </div>
+      </section>
+
+      <!-- How it Works Flow -->
+      <section class="section" style="padding-top:20px">
+        <div class="section-head reveal">
+          <p class="kicker">The Squad Reward Cycle</p>
+          <h2>How it Works</h2>
+        </div>
+
+        <div class="flow">
+          <div class="flow-step reveal tilt-card">
+            <div class="step-num">01</div>
+            <h3>Share Your Code</h3>
+            <p>Find your unique referral code inside the GamerVoice app profile or right here on the web dashboard and send it to your squadmates.</p>
+          </div>
+
+          <div class="flow-step reveal delay-1 tilt-card">
+            <div class="step-num">02</div>
+            <h3>Squadmate Redeems</h3>
+            <p>Your teammate downloads the 17.1MB APK, opens the app, and enters your code in their Profile settings under "Redeem Referral".</p>
+          </div>
+
+          <div class="flow-step reveal delay-2 tilt-card">
+            <div class="step-num">03</div>
+            <h3>Both Get +3 Days</h3>
+            <p>Our backend validates the referral anti-abuse checks, and automatically credits +3 days of VIP studio noise suppression to both of your profiles!</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+  <script>
+    function copyReferralCode() {
+      navigator.clipboard.writeText("GV-TITAN").then(() => {
+        if (window.GV && GV.toast) GV.toast("Copied code GV-TITAN to clipboard! Share it with your squad.", "ok");
+      });
+    }
+  </script>
+</body>
+</html>

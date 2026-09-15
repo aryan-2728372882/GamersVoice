@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIP Clearance — GamerVoice Studio Audio & Priority Relay</title>
+  <meta name="description" content="Unlock GamerVoice VIP: Weekly ₹29, Monthly ₹89, Lifetime ₹249. 100% Studio noise filter, priority TURN relay, gold HUD badge, Razorpay instant checkout.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="vip">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal">
+        <div class="chip chip-gold"><span class="chip-dot"></span> Premium Squad Clearance</div>
+        <h1>Studio silence. Priority relay. Permanent status.</h1>
+        <p>Activate your VIP clearance securely with Razorpay (Google Pay, PhonePe, Paytm, UPI or Card). Once paid, entitlements sync immediately to your email in Firestore. Open the GamerVoice Android app signed in with the same account and your VIP studio perks are live instantly.</p>
+      </header>
+
+      <!-- VIP Tier Cards -->
+      <section class="grid-3" style="margin:40px 0 56px">
+        
+        <!-- Weekly Plan -->
+        <article class="card price-card reveal tilt-card">
+          <div>
+            <p class="kicker">Tournament Pass</p>
+            <h3>Weekly VIP</h3>
+            <p class="price">₹29 <small>/ 7 days</small></p>
+            <ul class="plan-list">
+              <li>75% Neural AI noise suppression</li>
+              <li>Priority TURN traversal on Jio & Airtel</li>
+              <li>Saved squad room codes</li>
+              <li>Gold VIP badge in HUD & profile</li>
+              <li>Sponsor-free clean interface</li>
+            </ul>
+          </div>
+          <button class="btn btn-ghost btn-block" type="button" onclick="initiateVipCheckout('WEEKLY', 29)">
+            Activate Weekly · ₹29
+          </button>
+        </article>
+
+        <!-- Monthly Plan (Featured) -->
+        <article class="card price-card featured reveal delay-1 tilt-card">
+          <span class="ribbon">MOST POPULAR</span>
+          <div>
+            <p class="kicker" style="color:var(--violet)">Squad Captain</p>
+            <h3>Monthly VIP</h3>
+            <p class="price">₹89 <small>/ 30 days</small></p>
+            <ul class="plan-list">
+              <li>100% Studio Ultra Silent AI filter</li>
+              <li>Ultra-low latency TURN priority bandwidth</li>
+              <li>Unlimited saved custom squad rooms</li>
+              <li>Glowing Gold VIP badge in HUD & app</li>
+              <li>Direct developer support routing</li>
+              <li>Sponsor-free clean interface</li>
+            </ul>
+          </div>
+          <button class="btn btn-violet btn-block" type="button" onclick="initiateVipCheckout('MONTHLY', 89)">
+            Activate Monthly · ₹89
+          </button>
+        </article>
+
+        <!-- Lifetime Plan -->
+        <article class="card price-card reveal delay-2 tilt-card" style="border-color:rgba(255,215,0,0.4)">
+          <div>
+            <p class="kicker" style="color:var(--gold)">Permanent Legend</p>
+            <h3>Lifetime VIP</h3>
+            <p class="price" style="color:var(--gold)">₹249 <small>/ one-time</small></p>
+            <ul class="plan-list">
+              <li>Never expires — permanent entitlement</li>
+              <li>100% Studio Ultra Silent AI filter forever</li>
+              <li>Top tier TURN routing prioritization</li>
+              <li>Exclusive Imperial Gold VIP HUD crest</li>
+              <li>All future premium features included</li>
+              <li>Sponsor-free clean interface</li>
+            </ul>
+          </div>
+          <button class="btn btn-gold btn-block" type="button" onclick="initiateVipCheckout('LIFETIME', 249)">
+            Claim Lifetime · ₹249
+          </button>
+        </article>
+
+      </section>
+
+      <!-- Referral Alternative Banner -->
+      <section class="card reveal" style="padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;border-color:var(--line-mint)">
+        <div>
+          <h3 style="color:#ffffff;margin-bottom:6px">Want VIP for free?</h3>
+          <p style="margin:0">Invite a squadmate using your referral code: they get <strong>+3 Days VIP</strong>, and you get <strong>+3 Days VIP</strong> automatically.</p>
+        </div>
+        <a class="btn btn-mint" href="/referrals">Go to Squad Referrals ›</a>
+      </section>
+
+      <!-- VIP FAQ Section -->
+      <section class="section" style="padding-top:60px">
+        <div class="section-head reveal">
+          <p class="kicker">Payment Verification</p>
+          <h2>Frequently Asked Questions</h2>
+        </div>
+        
+        <div style="max-width:800px;margin:0 auto">
+          <div class="faq-item reveal">
+            <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+              <span>Which payment methods are supported on Razorpay?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+              You can pay using any Indian UPI app (Google Pay, PhonePe, Paytm, BHIM, CRED), Net Banking across 50+ Indian banks, or Debit/Credit Cards (RuPay, Visa, Mastercard).
+            </div>
+          </div>
+
+          <div class="faq-item reveal delay-1">
+            <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+              <span>How does VIP link to my Android app?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+              Make sure you sign in on the web with the exact same Google or Email account you use in the GamerVoice Android app. Once the payment is verified, your Firestore profile updates instantly and the app recognizes your VIP badge immediately.
+            </div>
+          </div>
+
+          <div class="faq-item reveal delay-2">
+            <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+              <span>What is the 100% Studio AI Noise Filter?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-a">
+              Standard noise gates only mute when you stop speaking. GamerVoice's VIP Studio filter runs real-time spectral noise suppression that isolates your vocal cords and strips loud room fans, mechanical keyboard clicks, and street noise even while you are speaking.
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+</body>
+</html>

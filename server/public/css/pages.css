@@ -1,0 +1,245 @@
+/* ==========================================================================
+   GAMERVOICE SUB-PAGE STYLES
+   ========================================================================== */
+
+.page-hero {
+  padding: 64px 0 24px;
+  max-width: 840px;
+}
+
+.page-hero h1 {
+  font-size: clamp(2.4rem, 4.8vw, 3.8rem);
+  margin: 12px 0 16px;
+  line-height: 1.12;
+}
+
+.page-hero p {
+  color: var(--text-dim);
+  font-size: 1.15rem;
+  line-height: 1.7;
+}
+
+/* Download Hub */
+.download-panel {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.download-hero-card {
+  padding: 32px;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line-cyan);
+  background: var(--glass-card);
+  box-shadow: var(--shadow-lg), 0 0 28px rgba(0, 240, 255, 0.12);
+}
+
+.apk-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.apk-meta-item {
+  padding: 12px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+}
+
+.apk-meta-item span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-mute);
+  text-transform: uppercase;
+}
+
+.apk-meta-item b {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+.qr-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: rgba(0, 240, 255, 0.05);
+  border: 1px dashed var(--line-cyan);
+  margin-top: 20px;
+}
+
+.qr-box {
+  width: 90px;
+  height: 90px;
+  background: #ffffff;
+  border-radius: var(--r-sm);
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.qr-box svg, .qr-box img {
+  width: 100%;
+  height: 100%;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 28px;
+}
+
+.flow-step {
+  padding: 24px;
+  border-radius: var(--r-md);
+  background: var(--glass-card);
+  border: 1px solid var(--line);
+  position: relative;
+}
+
+.step-num {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+}
+
+/* Noise Lab */
+.lab-card {
+  padding: 28px;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line-cyan);
+  background: var(--ink-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.canvas-wrap {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  margin-bottom: 24px;
+}
+
+#waveCanvas {
+  width: 100%;
+  height: 240px;
+  background: #03060c;
+  display: block;
+}
+
+.slider {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--cyan);
+  margin: 16px 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.preset {
+  padding: 10px 18px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset:hover {
+  border-color: var(--cyan);
+  color: #ffffff;
+}
+
+.preset.active {
+  border-color: var(--cyan);
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--cyan);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+}
+
+/* Referrals Page */
+.referral-box {
+  padding: 32px;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line-mint);
+  background: linear-gradient(180deg, rgba(0, 230, 118, 0.08) 0%, rgba(13, 18, 31, 0.8) 100%);
+  text-align: center;
+  max-width: 600px;
+  margin: 36px auto;
+}
+
+.referral-code-display {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  letter-spacing: 0.25em;
+  color: var(--mint);
+  margin: 18px 0;
+  font-weight: 800;
+  text-shadow: 0 0 20px var(--mint-glow);
+}
+
+/* Legal Pages */
+.legal {
+  padding: 24px 0 60px;
+  max-width: 800px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+.legal h2 {
+  font-size: 1.8rem;
+  color: #ffffff;
+  margin: 36px 0 14px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.legal h3 {
+  font-size: 1.25rem;
+  color: var(--cyan);
+  margin: 24px 0 10px;
+}
+
+.legal ul {
+  padding-left: 20px;
+  list-style: disc;
+  margin: 12px 0;
+}
+
+.legal li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 960px) {
+  .download-panel, .flow {
+    grid-template-columns: 1fr;
+  }
+}

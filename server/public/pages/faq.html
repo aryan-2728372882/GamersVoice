@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequently Asked Questions — GamerVoice Squad VOIP</title>
+  <meta name="description" content="Answers to common questions regarding GamerVoice APK safety, in-game FPS impact, permissions, floating HUD, and Razorpay VIP purchases.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="faq">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal">
+        <div class="chip"><span class="chip-dot"></span> Knowledge Base</div>
+        <h1>Frequently Asked Questions</h1>
+        <p>Everything you need to know about GamerVoice, APK safety, in-game permissions, and peer-to-peer audio performance.</p>
+      </header>
+
+      <section class="section" style="padding-top:16px;max-width:840px">
+        
+        <div class="faq-item reveal">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>Is the GamerVoice APK safe to download and install?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Yes, 100%. GamerVoice contains zero advertising trackers, zero analytic spying SDKs, and zero malware. We distribute the binary directly from our web server to pass savings directly to gamers and keep the APK under 18 MB. You can inspect the package hash directly on our download page.
+          </div>
+        </div>
+
+        <div class="faq-item reveal delay-1">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>Does running GamerVoice drop my FPS in Free Fire or BGMI?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            No. Unlike Discord which runs a heavy Chromium WebView consuming 300MB+ RAM, GamerVoice is built with native Android C++ WebRTC bindings and takes less than 20MB of memory. Your game receives 100% of your phone's GPU and CPU capacity.
+          </div>
+        </div>
+
+        <div class="faq-item reveal delay-2">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>Why does GamerVoice request "Display Over Other Apps"?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            This permission is required strictly to draw the tactical floating HUD on top of your game screen. It allows you to mute/unmute, see who is talking, send tactical voice cues, and save clutch moments without leaving your game.
+          </div>
+        </div>
+
+        <div class="faq-item reveal delay-1">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>How do the 120s Clutch Highlights work without cloud storage?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            GamerVoice maintains a rolling 2-minute PCM buffer in your phone's local volatile RAM. When you tap the Clutch button on the floating HUD, it packages that buffer into a 16kHz uncompressed stereo WAV file and saves it directly to your device's <code>/Music/GamerVoice_Clips/</code> folder. Nothing is ever uploaded to a server.
+          </div>
+        </div>
+
+        <div class="faq-item reveal delay-2">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>Are VIP payments recurring subscriptions?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            No! All GamerVoice VIP passes (Weekly ₹29, Monthly ₹89, Lifetime ₹249) are strictly one-time prepaid payments processed via Razorpay UPI. There are never any surprise automatic debits or recurring deductions from your bank account.
+          </div>
+        </div>
+
+        <div class="faq-item reveal delay-3">
+          <button class="faq-q" type="button" onclick="this.parentElement.classList.toggle('open')">
+            <span>How does GamerVoice maintain sub-20ms ping on 4G mobile data?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            GamerVoice uses direct peer-to-peer WebRTC mesh routing. Audio packets travel directly between smartphones over the shortest network path instead of bouncing through a central server in another country. We deploy dual STUN/TURN relays across Indian server hubs to ensure immediate connection even through strict CGNAT firewalls on Jio and Airtel.
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+</body>
+</html>

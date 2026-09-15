@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noise Suppression Lab — GamerVoice Studio Audio</title>
+  <meta name="description" content="Interactive audio visualizer demonstrating GamerVoice's on-device neural noise suppression. Test ambient room noise vs 100% VIP studio silence.">
+  <link rel="icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body data-page="lab">
+  <div id="gv-header"></div>
+
+  <div class="page">
+    <main class="wrap">
+      <header class="page-hero reveal">
+        <div class="chip"><span class="chip-dot"></span> Audio Engineering Lab</div>
+        <h1>Test on-device neural noise suppression.</h1>
+        <p>In hot gaming rooms, high-speed ceiling fans and mechanical keyboard clicks ruin squad communication. See how GamerVoice's neural DSP cleans your audio in real-time with zero processing latency.</p>
+      </header>
+
+      <!-- Noise Lab Interactive Card -->
+      <section class="section" style="padding-top:16px">
+        <div class="card lab-card reveal">
+          <div class="canvas-wrap">
+            <canvas id="waveCanvas"></canvas>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-family:var(--font-mono);font-size:0.9rem;color:var(--cyan);font-weight:600">NEURAL SUPPRESSION STRENGTH</span>
+            <b id="noiseValueDisplay" style="font-family:var(--font-mono);font-size:1.3rem;color:var(--cyan)">75%</b>
+          </div>
+
+          <input type="range" class="slider" id="noiseSlider" min="0" max="100" value="75">
+
+          <div class="preset-row">
+            <button class="preset" data-val="0" type="button" onclick="setNoisePreset(0)">0% Raw (Fan & Room Noise)</button>
+            <button class="preset" data-val="50" type="button" onclick="setNoisePreset(50)">50% Standard Noise Gate</button>
+            <button class="preset active" data-val="75" type="button" onclick="setNoisePreset(75)">75% High Suppression</button>
+            <button class="preset" data-val="100" type="button" onclick="setNoisePreset(100)">100% Studio Ultra Silent (VIP 👑)</button>
+          </div>
+        </div>
+
+        <!-- Technical Deep-Dive Cards -->
+        <div class="grid-3" style="margin-top:36px">
+          <div class="card reveal tilt-card">
+            <p class="kicker">Stage 1</p>
+            <h3>Acoustic Echo Canceller (AEC)</h3>
+            <p>Runs on Android's native audio HAL to prevent game gunshots and footsteps from leaking back into your microphone when playing on loud speakers.</p>
+          </div>
+          <div class="card reveal delay-1 tilt-card">
+            <p class="kicker">Stage 2</p>
+            <h3>Adaptive Spectral Gate</h3>
+            <p>Measures background ambient sound during pauses in speech. Instantly attenuates the noise floor without cutting off the beginning of your voice.</p>
+          </div>
+          <div class="card reveal delay-2 tilt-card" style="border-color:rgba(255,215,0,0.4)">
+            <p class="kicker" style="color:var(--gold)">Stage 3 (VIP)</p>
+            <h3>100% Neural Studio Filter</h3>
+            <p>Our deep recurrent neural network runs on mobile NPU/NEON vector extensions, stripping out continuous fan wind and keyboard clicks even while you talk.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="gv-footer"></div>
+  <div id="gv-modals"></div>
+
+  <script src="/js/core.js"></script>
+  <script src="/js/animations.js"></script>
+  <script src="/js/simulators.js"></script>
+</body>
+</html>
