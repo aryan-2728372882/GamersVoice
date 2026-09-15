@@ -12,6 +12,8 @@ class GamerVoiceApp : Application() {
     }
 
     override fun onCreate() {
+        super.onCreate()
+
         // 1. Safe Uncaught Exception Logger - Installed FIRST before any other initialization
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -34,19 +36,12 @@ class GamerVoiceApp : Application() {
                     com.gamervoice.app.util.AppLogger.logCrashSync(thread.name, throwable)
                 } catch (_: Throwable) {}
 
-                // Send non-fatal crash to Firebase Crashlytics if available
-                try {
-                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(throwable)
-                } catch (_: Throwable) {}
-
             } catch (_: Throwable) {
             } finally {
-                // Delegate cleanly to default system / Crashlytics handler
+                // Delegate cleanly to default system handler
                 defaultHandler?.uncaughtException(thread, throwable)
             }
         }
-
-        super.onCreate()
 
         // 2. Initialize Persistent Diagnostic Logger
         try {

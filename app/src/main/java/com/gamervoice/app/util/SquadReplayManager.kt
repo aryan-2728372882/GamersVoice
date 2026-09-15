@@ -33,7 +33,7 @@ object SquadReplayManager {
     private const val KEY_CLUTCH_CONSENT = "pref_clutch_replay_enabled"
 
     private val lock = ReentrantLock()
-    private val circularBuffer = ByteArray(MAX_BUFFER_SIZE)
+    private var circularBuffer: ByteArray? = null
     private var writePos = 0
     private var isBufferFull = false
 
@@ -63,6 +63,9 @@ object SquadReplayManager {
     fun startSession() {
         if (!isReplayConsentActive) return
         lock.withLock {
+            if (circularBuffer == null) {
+                circularBuffer = ByteArray(MAX_BUFFER_SIZE)
+            }
             writePos = 0
             isBufferFull = false
             isRecordingActive = true
@@ -75,7 +78,7 @@ object SquadReplayManager {
             isRecordingActive = false
             writePos = 0
             isBufferFull = false
-            circularBuffer.fill(0)
+            circularBuffer = null
             Log.i(TAG, "Squad Replay session stopped and buffer cleared")
         }
     }
@@ -84,6 +87,7 @@ object SquadReplayManager {
         if (!isRecordingActive || !isReplayConsentActive) return
 
         lock.withLock {
+            val buf = circularBuffer ?: return
             var srcOffset = 0
             var remaining = length
 
@@ -91,7 +95,7 @@ object SquadReplayManager {
                 val spaceToEnd = MAX_BUFFER_SIZE - writePos
                 val bytesToCopy = minOf(remaining, spaceToEnd)
 
-                System.arraycopy(data, srcOffset, circularBuffer, writePos, bytesToCopy)
+                System.arraycopy(data, srcOffset, buf, writePos, bytesToCopy)
 
                 writePos += bytesToCopy
                 srcOffset += bytesToCopy
@@ -133,6 +137,10 @@ object SquadReplayManager {
                 val wavFile = File(clipsFolder, "Clutch_Audio_$timeStamp.wav")
 
                 lock.withLock {
+                    val buf = circularBuffer ?: run {
+                        callback(false, "No recording buffer available")
+                        return@Thread
+                    }
                     FileOutputStream(wavFile).use { fos ->
                         // 1. Write empty 44-byte WAV header placeholder
                         fos.write(ByteArray(44))
@@ -140,11 +148,11 @@ object SquadReplayManager {
                         // 2. Write circular PCM data in chronological order
                         if (isBufferFull) {
                             // First write from writePos to end (oldest data)
-                            fos.write(circularBuffer, writePos, MAX_BUFFER_SIZE - writePos)
+                            fos.write(buf, writePos, MAX_BUFFER_SIZE - writePos)
                             // Then write from 0 to writePos (newest data)
-                            fos.write(circularBuffer, 0, writePos)
+                            fos.write(buf, 0, writePos)
                         } else {
-                            fos.write(circularBuffer, 0, writePos)
+                            fos.write(buf, 0, writePos)
                         }
                     }
                 }

@@ -62,7 +62,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private var pendingPurchaseTier: PlanTier? = null
     private var vipUpgradeDialog: Dialog? = null
     private var currentActiveTab = 0
-    private var adViewBanner: com.google.android.gms.ads.AdView? = null
+
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
         runOnUiThread {
@@ -168,7 +168,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         setupConsoleUI()
 
         try { com.gamervoice.app.util.SquadReplayManager.init(this) } catch (_: Throwable) {}
-        try { setupAdMobWithConsent() } catch (_: Throwable) {}
         try { com.gamervoice.app.auth.ReferralManager.registerCodeWithServer(this) } catch (_: Throwable) {}
         try { com.gamervoice.app.service.GamerVoiceMessagingService.subscribeToGlobalTopic() } catch (_: Throwable) {}
 
@@ -237,18 +236,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 .setNegativeButton("Dismiss", null)
                 .show()
         }
-        try {
-            if (!PlanManager.isVip()) {
-                adViewBanner?.resume()
-            }
-        } catch (_: Throwable) {}
     }
 
     override fun onPause() {
         super.onPause()
-        try {
-            adViewBanner?.pause()
-        } catch (_: Throwable) {}
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1035,9 +1026,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         if (isVip) {
             binding.llSponsorBannerAd.visibility = View.GONE
-            try {
-                adViewBanner?.pause()
-            } catch (_: Throwable) {}
             binding.btnSaveClutchClip.text = "🎬 SAVE CLUTCH CLIP"
             binding.tvHomePlanBadge.text = "👑 VIP"
             binding.tvHomePlanBadge.setTextColor(Color.parseColor("#FFD700"))
@@ -1065,7 +1053,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
-            loadBannerAd()
             binding.btnSaveClutchClip.text = "🎬 CLUTCH CLIP (👑 VIP)"
             binding.tvHomePlanBadge.text = "FREE"
             binding.tvHomePlanBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
@@ -1114,103 +1101,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
     }
 
-    private var isMobileAdsInitialized = false
-
-    private fun setupAdMobWithConsent() {
-        try {
-            // 1. Google AdMob Content & Rating Configuration
-            val reqConfig = com.google.android.gms.ads.RequestConfiguration.Builder()
-                .setMaxAdContentRating(com.google.android.gms.ads.RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
-                .setTagForChildDirectedTreatment(com.google.android.gms.ads.RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE)
-                .setTagForUnderAgeOfConsent(com.google.android.gms.ads.RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE)
-                .build()
-            com.google.android.gms.ads.MobileAds.setRequestConfiguration(reqConfig)
-
-            // 2. Google User Messaging Platform (UMP) Consent Flow
-            val consentParams = com.google.android.ump.ConsentRequestParameters.Builder()
-                .setTagForUnderAgeOfConsent(false)
-                .build()
-
-            val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(this)
-            consentInfo.requestConsentInfoUpdate(
-                this,
-                consentParams,
-                {
-                    com.google.android.ump.UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { formError ->
-                        if (formError != null) {
-                            Log.w("HomeActivity", "UMP Consent Form error: ${formError.message}")
-                        }
-                        if (consentInfo.canRequestAds()) {
-                            initializeMobileAds()
-                        }
-                    }
-                },
-                { requestError ->
-                    Log.w("HomeActivity", "UMP Consent Info update failure: ${requestError.message}")
-                    if (consentInfo.canRequestAds()) {
-                        initializeMobileAds()
-                    }
-                }
-            )
-
-            if (consentInfo.canRequestAds()) {
-                initializeMobileAds()
-            }
-        } catch (e: Throwable) {
-            Log.w("HomeActivity", "UMP / AdMob setup exception", e)
-            initializeMobileAds()
-        }
-    }
-
-    private fun initializeMobileAds() {
-        if (isMobileAdsInitialized) return
-        isMobileAdsInitialized = true
-        try {
-            com.google.android.gms.ads.MobileAds.initialize(this) {}
-            runOnUiThread {
-                if (!PlanManager.isVip()) {
-                    loadBannerAd()
-                }
-            }
-        } catch (e: Throwable) {
-            Log.w("HomeActivity", "MobileAds initialization error", e)
-        }
-    }
-
-    private fun loadBannerAd() {
-        if (PlanManager.isVip()) return
-        runOnUiThread {
-            try {
-                if (adViewBanner == null) {
-                    val adView = com.google.android.gms.ads.AdView(this).apply {
-                        setAdSize(com.google.android.gms.ads.AdSize.BANNER)
-                        adUnitId = "ca-app-pub-1270066934167842/2080534660"
-                        adListener = object : com.google.android.gms.ads.AdListener() {
-                            override fun onAdLoaded() {
-                                AppLogger.log("ADMOB", "✅ Banner Ad loaded and displayed successfully")
-                            }
-                            override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
-                                val reason = when (error.code) {
-                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_NO_FILL -> "No Fill (Inventory pending or new ad unit)"
-                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_NETWORK_ERROR -> "Network error"
-                                    com.google.android.gms.ads.AdRequest.ERROR_CODE_INVALID_REQUEST -> "Invalid request"
-                                    else -> "Internal error"
-                                }
-                                AppLogger.log("ADMOB", "⚠️ Ad failed to load: ${error.message} [Code ${error.code}: $reason]")
-                            }
-                        }
-                    }
-                    binding.flBannerAdContainer.removeAllViews()
-                    binding.flBannerAdContainer.addView(adView)
-                    adViewBanner = adView
-                }
-                val adRequest = com.google.android.gms.ads.AdRequest.Builder().build()
-                adViewBanner?.loadAd(adRequest)
-            } catch (t: Throwable) {
-                Log.w("HomeActivity", "AdMob load error: ${t.message}")
-            }
-        }
-    }
 
     private fun showVipUpgradeDialog(customSubtitle: String? = null) {
         val user = AuthManager.getCurrentUser()
@@ -1867,10 +1757,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            adViewBanner?.destroy()
-            adViewBanner = null
-        } catch (_: Throwable) {}
         FloatingHudManager.hideHud()
         AppLogger.removeListener(logListener)
         if (isServiceBound) {

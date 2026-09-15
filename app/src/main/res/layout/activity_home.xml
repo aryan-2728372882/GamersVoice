@@ -218,66 +218,52 @@
                     android:paddingHorizontal="14dp"
                     android:visibility="visible">
 
-                    <!-- Gamer Sponsor Banner Ad (Visible only on Free plan) -->
+                    <!-- Gamer Sponsor Banner Bar (Visible only on Free plan, upgrade to VIP) -->
                     <LinearLayout
                         android:id="@+id/llSponsorBannerAd"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:background="@drawable/bg_code_input"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="6dp"
                         android:visibility="gone">
 
-                        <FrameLayout
-                            android:id="@+id/flBannerAdContainer"
+                        <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-
-                        <LinearLayout
-                            android:id="@+id/llAdFallbackBar"
-                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/bg_code_input"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:padding="6dp">
+                            android:background="#26FFFFFF"
+                            android:fontFamily="sans-serif-bold"
+                            android:paddingHorizontal="4dp"
+                            android:paddingVertical="1dp"
+                            android:text="AD"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="8sp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="#26FFFFFF"
-                                android:fontFamily="sans-serif-bold"
-                                android:paddingHorizontal="4dp"
-                                android:paddingVertical="1dp"
-                                android:text="AD"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="8sp" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Play Games with 0 Lag • GamerVoice VIP"
+                            android:textColor="#E2E8F0"
+                            android:textSize="10sp" />
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:fontFamily="sans-serif-medium"
-                                android:text="Play Games with 0 Lag • GamerVoice VIP"
-                                android:textColor="#E2E8F0"
-                                android:textSize="10sp" />
-
-                            <TextView
-                                android:id="@+id/btnBannerRemoveAds"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="?attr/selectableItemBackground"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:fontFamily="sans-serif-black"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="2dp"
-                                android:text="NO ADS ›"
-                                android:textColor="#FFD700"
-                                android:textSize="9sp" />
-                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/btnBannerRemoveAds"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="sans-serif-black"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="NO ADS ›"
+                            android:textColor="#FFD700"
+                            android:textSize="9sp" />
                     </LinearLayout>
 
                     <!-- AUTHENTIC CYBER HERO BANNER (Full Neon Room & Gaming Chair) -->
