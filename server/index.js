@@ -695,66 +695,67 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Execute redemption inside an atomic Firestore transaction
-      await adminDb.runTransaction(async (transaction) => {
-        // 1. All Transaction Reads First
-        const refDocRef = adminDb.collection('referrals').doc(cleanCode);
-        const refSnap = await transaction.get(refDocRef);
-        let refData = null;
-        let referrerUid = null;
-        if (refSnap.exists) {
-          refData = refSnap.data();
-          referrerUid = refData.ownerUid;
+      // Pre-check & Pre-fetch referral document before transaction
+      const refDocRef = adminDb.collection('referrals').doc(cleanCode);
+      const refSnap = await refDocRef.get();
+      let refData = null;
+      let referrerUid = null;
+
+      if (refSnap.exists) {
+        refData = refSnap.data();
+        referrerUid = refData.ownerUid;
+      } else {
+        // Fallback: check users collection by referralCode
+        const userQuery = await adminDb.collection('users').where('referralCode', '==', cleanCode).limit(1).get();
+        if (!userQuery.empty) {
+          const uDoc = userQuery.docs[0];
+          referrerUid = uDoc.id;
+          refData = {
+            code: cleanCode,
+            ownerUid: referrerUid,
+            ownerEmail: uDoc.data().email || '',
+            createdAt: new Date().toISOString()
+          };
+          await refDocRef.set(refData, { merge: true });
         } else {
-          // Fallback: lookup in users collection by referralCode
-          const userQuery = await adminDb.collection('users').where('referralCode', '==', cleanCode).limit(1).get();
-          if (!userQuery.empty) {
-            const userDoc = userQuery.docs[0];
-            referrerUid = userDoc.id;
-            refData = {
-              code: cleanCode,
-              ownerUid: referrerUid,
-              ownerEmail: userDoc.data().email || '',
-              createdAt: new Date().toISOString()
-            };
-            transaction.set(refDocRef, refData, { merge: true });
-          } else {
-            const err = new Error('Invalid referral code. Please check with your squadmate.');
-            err.statusCode = 404;
-            throw err;
-          }
+          sendResponse(res, 404, { error: 'Invalid referral code. Please check with your squadmate.' });
+          return;
         }
+      }
 
-        // 2. Prevent self-redemption (Multi-vector defense: UID, Email, and Deterministic Code)
-        const refereeDeterministicCode = uidToCode(refereeUid);
-        const isSelfByUid = (referrerUid && referrerUid === refereeUid);
-        const isSelfByEmail = (refData && refData.ownerEmail && authUser.email && refData.ownerEmail.toLowerCase() === authUser.email.toLowerCase());
-        const isSelfByDeterministicCode = (cleanCode === refereeDeterministicCode);
+      // Pre-transaction Self-Redemption Check (Multi-vector)
+      const refereeDeterministicCode = uidToCode(refereeUid);
+      const isSelfByUid = (referrerUid && referrerUid === refereeUid);
+      const isSelfByEmail = (refData.ownerEmail && authUser.email && refData.ownerEmail.toLowerCase() === authUser.email.toLowerCase());
+      const isSelfByCode = (cleanCode === refereeDeterministicCode);
 
-        if (isSelfByUid || isSelfByEmail || isSelfByDeterministicCode) {
-          const err = new Error('You cannot redeem your own referral code!');
-          err.statusCode = 400;
-          throw err;
-        }
+      if (isSelfByUid || isSelfByEmail || isSelfByCode) {
+        sendResponse(res, 400, { error: 'You cannot redeem your own referral code!' });
+        return;
+      }
 
-        // 3. Prevent repeated redemption by the same user
+      // Execute redemption inside an atomic Firestore transaction
+      // Strict rule: ALL reads must be executed before ANY writes!
+      await adminDb.runTransaction(async (transaction) => {
         const redemptionDocRef = adminDb.collection('referral_redemptions').doc(refereeUid);
+        const refereeDocRef = adminDb.collection('users').doc(refereeUid);
+        const referrerDocRef = adminDb.collection('users').doc(referrerUid);
+
+        // 1. ALL READS FIRST
+        const refDocSnap = await transaction.get(refDocRef);
         const redemptionSnap = await transaction.get(redemptionDocRef);
-        if (redemptionSnap.exists) {
+        const refereeSnap = await transaction.get(refereeDocRef);
+        const referrerSnap = await transaction.get(referrerDocRef);
+
+        // 2. VALIDATION
+        if (redemptionSnap.exists || (refereeSnap.exists && refereeSnap.data().hasRedeemedReferral)) {
           const err = new Error('You have already redeemed a welcome referral code on this account.');
           err.statusCode = 400;
           throw err;
         }
 
-        const refereeDocRef = adminDb.collection('users').doc(refereeUid);
-        const refereeSnap = await transaction.get(refereeDocRef);
         if (refereeSnap.exists) {
           const refUserDoc = refereeSnap.data();
-          if (refUserDoc.hasRedeemedReferral) {
-            const err = new Error('You have already redeemed a welcome referral code on this account.');
-            err.statusCode = 400;
-            throw err;
-          }
           if (refUserDoc.referralCode && refUserDoc.referralCode.toUpperCase() === cleanCode) {
             const err = new Error('You cannot redeem your own referral code!');
             err.statusCode = 400;
@@ -762,14 +763,7 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
-        let referrerSnap = null;
-        let referrerDocRef = null;
-        if (referrerUid) {
-          referrerDocRef = adminDb.collection('users').doc(referrerUid);
-          referrerSnap = await transaction.get(referrerDocRef);
-        }
-
-        // 4. Calculations
+        // 3. CALCULATIONS
         const now = Date.now();
         const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
 
@@ -783,7 +777,19 @@ const server = http.createServer(async (req, res) => {
         const newRefereeExpTs = refereeBaseTs + threeDaysMs;
         const refereeExpDate = new Date(newRefereeExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-        // 5. Transaction Writes (Atomic)
+        let referrerBaseTs = now;
+        let currentRefCount = 0;
+        if (referrerSnap.exists) {
+          const rd = referrerSnap.data();
+          if (rd.expiryTimestamp && Number(rd.expiryTimestamp) > now) {
+            referrerBaseTs = Number(rd.expiryTimestamp);
+          }
+          currentRefCount = Number(rd.referralCount) || 0;
+        }
+        const newReferrerExpTs = referrerBaseTs + threeDaysMs;
+        const referrerExpDate = new Date(newReferrerExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+        // 4. ALL WRITES LAST
         transaction.set(refereeDocRef, {
           isVip: true,
           planType: 'WEEKLY',
@@ -795,38 +801,28 @@ const server = http.createServer(async (req, res) => {
           updatedAt: new Date().toISOString()
         }, { merge: true });
 
-        if (referrerUid && referrerDocRef) {
-          let referrerBaseTs = now;
-          if (referrerSnap && referrerSnap.exists) {
-            const rd = referrerSnap.data();
-            if (rd.expiryTimestamp && Number(rd.expiryTimestamp) > now) {
-              referrerBaseTs = Number(rd.expiryTimestamp);
-            }
-          }
-          const newReferrerExpTs = referrerBaseTs + threeDaysMs;
-          const referrerExpDate = new Date(newReferrerExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-
-          transaction.set(referrerDocRef, {
-            isVip: true,
-            planType: 'WEEKLY',
-            expiryTimestamp: newReferrerExpTs,
-            expiresAt: referrerExpDate,
-            paymentId: `ref_bonus_${cleanCode}`,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
-        }
+        transaction.set(referrerDocRef, {
+          isVip: true,
+          planType: 'WEEKLY',
+          expiryTimestamp: newReferrerExpTs,
+          expiresAt: referrerExpDate,
+          referralCount: currentRefCount + 1,
+          paymentId: `ref_bonus_${cleanCode}`,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
 
         transaction.set(redemptionDocRef, {
           refereeUid,
           refereeEmail: authUser.email,
-          referrerUid: referrerUid || '',
+          referrerUid,
           code: cleanCode,
           redeemedAt: new Date().toISOString(),
           timestamp: now
         });
 
+        const currentRedeemedCount = (refDocSnap.exists && refDocSnap.data().redeemedCount) || 0;
         transaction.set(refDocRef, {
-          redeemedCount: (refData.redeemedCount || 0) + 1,
+          redeemedCount: currentRedeemedCount + 1,
           lastRedeemedBy: refereeUid,
           lastRedeemedAt: new Date().toISOString()
         }, { merge: true });
