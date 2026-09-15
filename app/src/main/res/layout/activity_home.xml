@@ -1688,8 +1688,9 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Squad Up Match Alarm Card -->
+                    <!-- Squad Match Alarm Setting (Customizable Time) -->
                     <LinearLayout
+                        android:id="@+id/llSquadAlarmContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
@@ -1699,16 +1700,18 @@
                         android:padding="12dp">
 
                         <LinearLayout
+                            android:id="@+id/llSquadAlarmClickArea"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvProfileAlarmTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-bold"
-                                android:text="⏰ SQUAD UP AT 8 PM"
+                                android:text="⏰ SQUAD MATCH ALARM"
                                 android:textColor="@color/neon_gold"
                                 android:textSize="11sp" />
 
@@ -1718,10 +1721,23 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="sans-serif"
-                                android:text="Daily match reminder at 8:00 PM"
+                                android:text="Daily match reminder · Tap to customize time"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="10sp" />
                         </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnChangeAlarmTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_status_chip"
+                            android:fontFamily="sans-serif-bold"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="5dp"
+                            android:text="8:00 PM"
+                            android:textColor="@color/neon_cyan"
+                            android:textSize="10sp" />
 
                         <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/switchProfileSquadAlarm"

@@ -367,17 +367,28 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             showRedeemReferralDialog()
         }
 
-        // Squad Match Alarm Switch
+        // Squad Match Alarm Switch (Customizable Reminder Time)
         binding.switchProfileSquadAlarm.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 val currentRoom = voiceService?.currentRoomCode ?: ""
-                com.gamervoice.app.util.SquadAlarmHelper.setSquadAlarm(this, hour = 20, minute = 0, roomCode = currentRoom)
-                Toast.makeText(this, "⏰ Squad Match Alarm set for 8:00 PM!", Toast.LENGTH_SHORT).show()
+                val savedHour = com.gamervoice.app.util.SquadAlarmHelper.getAlarmHour(this)
+                val savedMinute = com.gamervoice.app.util.SquadAlarmHelper.getAlarmMinute(this)
+                com.gamervoice.app.util.SquadAlarmHelper.setSquadAlarm(this, hour = savedHour, minute = savedMinute, roomCode = currentRoom)
+                val timeStr = com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)
+                Toast.makeText(this, "⏰ Squad Match Alarm active for $timeStr daily!", Toast.LENGTH_SHORT).show()
             } else {
                 com.gamervoice.app.util.SquadAlarmHelper.cancelSquadAlarm(this)
                 Toast.makeText(this, "Squad match alarm turned off.", Toast.LENGTH_SHORT).show()
             }
             updatePlanUI()
+        }
+
+        // Tap to customize Squad Match Reminder Time via Android TimePickerDialog
+        AnimationHelper.attachPressAnimation(binding.llSquadAlarmClickArea) {
+            showAlarmTimePickerDialog()
+        }
+        AnimationHelper.attachPressAnimation(binding.btnChangeAlarmTime) {
+            showAlarmTimePickerDialog()
         }
 
         // Personal Clutch Mic Highlights Replay Consent Switch
@@ -1078,14 +1089,17 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         // Viral Squad Referral Code
         binding.tvProfileReferralCode.text = com.gamervoice.app.auth.ReferralManager.getReferralCode(this)
 
-        // Squad Up Alarm Status
+        // Squad Up Alarm Status (Customizable)
         val isAlarmOn = com.gamervoice.app.util.SquadAlarmHelper.isAlarmEnabled(this)
+        val alarmTimeStr = com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)
         binding.switchProfileSquadAlarm.isChecked = isAlarmOn
+        binding.tvProfileAlarmTitle.text = "⏰ SQUAD MATCH ALARM"
         binding.tvProfileAlarmTime.text = if (isAlarmOn) {
-            "Daily reminder active for ${com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)}"
+            "Active daily at $alarmTimeStr (Tap to edit)"
         } else {
-            "Daily match reminder at 8:00 PM (Tap to enable)"
+            "Off · Set for $alarmTimeStr (Tap to customize)"
         }
+        binding.btnChangeAlarmTime.text = alarmTimeStr
 
         updateReplayBadgeUI()
     }
@@ -1101,6 +1115,33 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
     }
 
+
+    private fun showAlarmTimePickerDialog() {
+        val currentHour = com.gamervoice.app.util.SquadAlarmHelper.getAlarmHour(this)
+        val currentMinute = com.gamervoice.app.util.SquadAlarmHelper.getAlarmMinute(this)
+
+        val dialog = android.app.TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                val currentRoom = voiceService?.currentRoomCode ?: ""
+                com.gamervoice.app.util.SquadAlarmHelper.setSquadAlarm(
+                    this,
+                    hour = hourOfDay,
+                    minute = minute,
+                    roomCode = currentRoom
+                )
+                binding.switchProfileSquadAlarm.isChecked = true
+                val timeStr = com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)
+                Toast.makeText(this, "⏰ Squad Match Alarm set for $timeStr daily!", Toast.LENGTH_SHORT).show()
+                updatePlanUI()
+            },
+            currentHour,
+            currentMinute,
+            false
+        )
+        dialog.setTitle("Set Squad Match Reminder")
+        dialog.show()
+    }
 
     private fun showVipUpgradeDialog(customSubtitle: String? = null) {
         val user = AuthManager.getCurrentUser()
