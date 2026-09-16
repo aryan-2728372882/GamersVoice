@@ -58,6 +58,8 @@ class AuthActivity : AppCompatActivity() {
             // Status 12501 is user cancelled, 10 is developer config/SHA1
             if (e.statusCode == 12501) {
                 showError("Google sign-in cancelled.")
+            } else if (e.statusCode == 10) {
+                showError("Google Sign-In Error 10: Keystore SHA-1 fingerprint needs to be added in Firebase Console. Use Email/Password login or register the Release SHA-1.")
             } else {
                 showError("Google sign-in error (Code: ${e.statusCode})")
             }
