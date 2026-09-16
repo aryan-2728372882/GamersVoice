@@ -1701,6 +1701,22 @@
                             android:textSize="10.5sp"
                             android:clickable="true"
                             android:focusable="true" />
+
+                        <!-- Dedicated Test Button for Free Fire Glory Crate Opening -->
+                        <TextView
+                            android:id="@+id/btnTestGloryCrate"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_cyber_button_gold"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:letterSpacing="0.06"
+                            android:text="🎁 OPEN SEASON GLORY LOOT CRATE (TEST) 🔥"
+                            android:textColor="@color/black"
+                            android:textSize="11sp"
+                            android:clickable="true"
+                            android:focusable="true" />
                     </LinearLayout>
 
                     <!-- Squad Match Alarm Setting (Customizable Time) -->
@@ -2026,18 +2042,6 @@
                             android:textSize="10.5sp" />
                     </LinearLayout>
 
-                    <!-- Reset to Free Plan Option -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnProfileResetToFree"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="6dp"
-                        android:text="🔄 Reset Account to Free Plan"
-                        android:textColor="#A0AEC0"
-                        android:textSize="10.5sp" />
-
                 </LinearLayout>
 
             </LinearLayout>
@@ -2229,29 +2233,93 @@
                     android:orientation="vertical"
                     android:padding="12dp" />
 
-                <!-- Mic Mode Toggle -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnToggleMicMode"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                <!-- Two Intuitive Mic Buttons: MIC LIVE (ON) & MUTE MIC -->
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/mode_always_on"
-                    android:textColor="@color/white"
-                    android:textSize="13sp"
-                    app:cornerRadius="10dp"
-                    app:strokeColor="@color/text_secondary"
-                    app:strokeWidth="1dp" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
 
+                    <!-- Button 1: MIC ON (LIVE) -->
+                    <LinearLayout
+                        android:id="@+id/btnRoomMicLive"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_mic_live_active"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivRoomMicLiveIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="Mic On"
+                            android:src="@drawable/ic_mic_white"
+                            android:tint="@color/accent_green" />
+
+                        <TextView
+                            android:id="@+id/tvRoomMicLiveText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.04"
+                            android:text="MIC ON"
+                            android:textColor="@color/accent_green"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Button 2: MUTE MIC -->
+                    <LinearLayout
+                        android:id="@+id/btnRoomMicMute"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_mic_inactive"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivRoomMicMuteIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="Mic Muted"
+                            android:src="@drawable/ic_mic_mute_red"
+                            android:tint="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/tvRoomMicMuteText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.04"
+                            android:text="MUTE"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Status Explainer -->
                 <TextView
-                    android:id="@+id/tvPttStatus"
+                    android:id="@+id/tvRoomMicStatusHint"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/ptt_muted_hint"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:visibility="gone" />
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="🟢 Voice is LIVE · Squadmates can hear you"
+                    android:textColor="@color/accent_green"
+                    android:textSize="11sp" />
 
                 <!-- Continue / Go to Game Button -->
                 <com.google.android.material.button.MaterialButton

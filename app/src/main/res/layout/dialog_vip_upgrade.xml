@@ -486,12 +486,13 @@
                 android:textSize="9.5sp" />
         </LinearLayout>
 
-        <!-- Collapsible / Discreet Admin & Test Controls -->
+        <!-- Collapsible / Discreet Admin & Test Controls (Hidden) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center"
+            android:visibility="gone"
             android:orientation="horizontal">
 
             <TextView

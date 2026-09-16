@@ -311,7 +311,9 @@ object AuthManager {
         idToken: String
     ) {
         try {
-            val url = "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents/users/$uid"
+            val url = "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents/users/$uid" +
+                "?updateMask.fieldPaths=name&updateMask.fieldPaths=email&updateMask.fieldPaths=phone" +
+                "&updateMask.fieldPaths=avatar&updateMask.fieldPaths=welcomeEmailSent&updateMask.fieldPaths=updatedAt"
             val fields = JSONObject().apply {
                 put("name", JSONObject().put("stringValue", name))
                 put("email", JSONObject().put("stringValue", email))

@@ -229,26 +229,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     override fun onStart() {
         super.onStart()
-        // First-session quick launch: show once, on first ever app open
-        val onboarding = getSharedPreferences("gv_onboarding", MODE_PRIVATE)
-        if (!onboarding.getBoolean("first_launch_shown", false)) {
-            onboarding.edit().putBoolean("first_launch_shown", true).apply()
-            binding.root.postDelayed({
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("⚡ Welcome to GamerVoice!")
-                    .setMessage("Start your squad session now. What do you want to do?")
-                    .setPositiveButton("🎮 Create Room") { _, _ ->
-                        updateActiveNavTab(1)
-                        binding.root.postDelayed({ binding.btnCreateRoomCard?.performClick() }, 200)
-                    }
-                    .setNegativeButton("🔗 Join Room") { _, _ ->
-                        updateActiveNavTab(1)
-                        binding.root.postDelayed({ binding.btnJoinRoomCard?.performClick() }, 200)
-                    }
-                    .setNeutralButton("Later", null)
-                    .show()
-            }, 900L)
-        }
         AppLogger.addListener(logListener)
         verifyPlanExpiry()
         loadInstalledGames()
@@ -438,7 +418,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
         binding.btnViewLeaderboard.setOnLongClickListener {
-            // Instant Test Preview of Free Fire Glory Crate Opening!
             com.gamervoice.app.util.GloryRewardDialog.showGloryCeremony(
                 this,
                 rank = 1,
@@ -448,6 +427,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 updatePlanUI()
             }
             true
+        }
+        AnimationHelper.attachPressAnimation(binding.btnTestGloryCrate) {
+            com.gamervoice.app.util.GloryRewardDialog.showGloryCeremony(
+                this,
+                rank = 1,
+                vipDays = 14,
+                recruitsCount = 1
+            ) {
+                updatePlanUI()
+            }
         }
 
         // Squad Match Alarm Switch (Customizable Reminder Time)
@@ -486,8 +475,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             updateReplayBadgeUI()
         }
 
-        AnimationHelper.attachPressAnimation(binding.btnToggleMicMode) {
-            voiceService?.toggleMicMode()
+        AnimationHelper.attachPressAnimation(binding.btnRoomMicLive) {
+            voiceService?.setMicMuted(false)
+            updateMicModeUI(isMuted = false)
+        }
+        AnimationHelper.attachPressAnimation(binding.btnRoomMicMute) {
+            voiceService?.setMicMuted(true)
+            updateMicModeUI(isMuted = true)
         }
 
         AnimationHelper.attachPressAnimation(binding.btnToggleFloatingHud) {
@@ -683,13 +677,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 startRazorpayCheckout(profileSelectedTier, u)
             } else {
                 Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show()
-            }
-        }
-        AnimationHelper.attachPressAnimation(binding.btnProfileResetToFree) {
-            PlanManager.revokeVip {
-                updatePlanUI()
-                refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "🔄 Account Plan reset to Free tier successfully.", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -1721,7 +1708,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && (voiceService?.isPttModeEnabled() == true)) {
             voiceService?.setPttTransmitting(transmitting = true)
-            binding.tvPttStatus.text = getString(R.string.ptt_speaking_hint)
+            binding.tvRoomMicStatusHint.text = getString(R.string.ptt_speaking_hint)
             return true
         }
         return super.onKeyDown(keyCode, event)
@@ -1730,7 +1717,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && (voiceService?.isPttModeEnabled() == true)) {
             voiceService?.setPttTransmitting(transmitting = false)
-            binding.tvPttStatus.text = getString(R.string.ptt_muted_hint)
+            binding.tvRoomMicStatusHint.text = getString(R.string.ptt_muted_hint)
             return true
         }
         return super.onKeyUp(keyCode, event)
@@ -1921,16 +1908,35 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             .show()
     }
 
-    private fun updateMicModeUI(isPtt: Boolean) {
+    private fun updateMicModeUI(isMuted: Boolean) {
         runOnUiThread {
             try {
-                if (isPtt) {
-                    binding.btnToggleMicMode.text = getString(R.string.mode_ptt)
-                    binding.tvPttStatus.visibility = View.VISIBLE
-                    binding.tvPttStatus.text = getString(R.string.ptt_muted_hint)
+                if (isMuted) {
+                    // Mute Button Active (Red)
+                    binding.btnRoomMicMute.setBackgroundResource(R.drawable.bg_btn_mic_mute_active)
+                    binding.ivRoomMicMuteIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FF2A6D"))
+                    binding.tvRoomMicMuteText.setTextColor(Color.parseColor("#FF2A6D"))
+
+                    // Mic On Inactive (Dimmed)
+                    binding.btnRoomMicLive.setBackgroundResource(R.drawable.bg_btn_mic_inactive)
+                    binding.ivRoomMicLiveIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#8E9BAE"))
+                    binding.tvRoomMicLiveText.setTextColor(Color.parseColor("#8E9BAE"))
+
+                    binding.tvRoomMicStatusHint.text = "🔴 Mic is MUTED · Squadmates cannot hear you"
+                    binding.tvRoomMicStatusHint.setTextColor(Color.parseColor("#FF2A6D"))
                 } else {
-                    binding.btnToggleMicMode.text = getString(R.string.mode_always_on)
-                    binding.tvPttStatus.visibility = View.GONE
+                    // Mic On Active (Green)
+                    binding.btnRoomMicLive.setBackgroundResource(R.drawable.bg_btn_mic_live_active)
+                    binding.ivRoomMicLiveIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#00FF88"))
+                    binding.tvRoomMicLiveText.setTextColor(Color.parseColor("#00FF88"))
+
+                    // Mute Inactive (Dimmed)
+                    binding.btnRoomMicMute.setBackgroundResource(R.drawable.bg_btn_mic_inactive)
+                    binding.ivRoomMicMuteIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#8E9BAE"))
+                    binding.tvRoomMicMuteText.setTextColor(Color.parseColor("#8E9BAE"))
+
+                    binding.tvRoomMicStatusHint.text = "🟢 Voice is LIVE · Squadmates can hear you"
+                    binding.tvRoomMicStatusHint.setTextColor(Color.parseColor("#00FF88"))
                 }
             } catch (t: Throwable) {
                 Log.e("HomeActivity", "Error updating mic mode UI", t)

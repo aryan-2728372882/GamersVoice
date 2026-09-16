@@ -302,6 +302,18 @@ class VoiceService : Service(),
         }
     }
 
+    fun setMicMuted(muted: Boolean) {
+        executor.execute {
+            prefs.edit { putBoolean(PREF_PTT_ENABLED, muted) }
+            peerConnectionManager.setPttModeEnabled(muted)
+            peerConnectionManager.setMicTransmitting(!muted)
+            updateNotification()
+            mainHandler.post {
+                listener?.onMicModeChanged(muted)
+            }
+        }
+    }
+
     fun isPttModeEnabled(): Boolean = peerConnectionManager.isPttModeEnabled()
 
     fun setPttTransmitting(transmitting: Boolean) {
