@@ -42,18 +42,31 @@ object ReferralManager {
     }
 
     fun getReferralCode(context: Context): String {
+        val user = AuthManager.getCurrentUser()
+        if (user == null || user.uid.isEmpty()) {
+            return "GV-DEMO"
+        }
+        val userKey = "${KEY_MY_REFERRAL_CODE}_${user.uid}"
         val prefs = getPrefs(context)
-        var code = prefs.getString(KEY_MY_REFERRAL_CODE, null)
+        var code = prefs.getString(userKey, null)
         if (code.isNullOrEmpty()) {
-            val user = AuthManager.getCurrentUser()
-            val seed = user?.email?.ifEmpty { user.uid } ?: "GAMER"
+            val seed = user.email.ifEmpty { user.uid }
             val hash = Math.abs(seed.hashCode()).toString(36).uppercase().take(4).padStart(4, 'X')
             code = "GV-$hash"
-            prefs.edit().putString(KEY_MY_REFERRAL_CODE, code).apply()
+            prefs.edit().putString(userKey, code).apply()
         }
         // Register code on server in background if user is logged in
         registerCodeWithServer(context, code)
         return code
+    }
+
+    fun clearCache(context: Context) {
+        try {
+            getPrefs(context).edit().clear().apply()
+            Log.i(TAG, "Cleared referral code cache")
+        } catch (e: Exception) {
+            Log.w(TAG, "Error clearing referral cache", e)
+        }
     }
 
     fun registerCodeWithServer(context: Context, code: String? = null) {
@@ -105,6 +118,10 @@ object ReferralManager {
         val chooser = Intent.createChooser(sendIntent, "Invite Squad Mate (Earn 3 Days VIP)")
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
+    }
+
+    fun shareReferralCode(context: Context) {
+        shareReferral(context)
     }
 
     fun redeemCode(context: Context, inputCode: String, callback: (Boolean, String) -> Unit) {

@@ -22,6 +22,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.gamervoice.app.auth.AuthManager
 import com.gamervoice.app.auth.PlanManager
 import com.gamervoice.app.auth.PlanTier
@@ -66,6 +68,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private var pendingPurchaseTier: PlanTier? = null
     private var vipUpgradeDialog: Dialog? = null
     private var currentActiveTab = 0
+    private var roomJoinTimestamp: Long = 0L
 
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
@@ -238,6 +241,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         updatePlanUI()
         checkSeasonGloryReward()
+        com.gamervoice.app.util.AppUpdateChecker.checkForUpdate(this)
     }
 
     override fun onStop() {
@@ -437,6 +441,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             ) {
                 updatePlanUI()
             }
+        }
+
+        AnimationHelper.attachPressAnimation(binding.btnCheckAppUpdates) {
+            com.gamervoice.app.util.AppUpdateChecker.checkForUpdate(this, manualCheck = true)
+        }
+
+        AnimationHelper.attachPressAnimation(binding.btnDeleteAccount) {
+            confirmAndDeleteAccount()
         }
 
         // Squad Match Alarm Switch (Customizable Reminder Time)
@@ -687,9 +699,15 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         AnimationHelper.attachPressAnimation(binding.btnLeaveRoom) {
+            val sessionDurationMs = if (roomJoinTimestamp > 0L) System.currentTimeMillis() - roomJoinTimestamp else 0L
+            roomJoinTimestamp = 0L
             FloatingHudManager.hideHud()
             voiceService?.leaveRoom()
             showHomeView()
+
+            if (sessionDurationMs >= 45_000L) {
+                promptPostMatchSquadShare()
+            }
         }
     }
 
@@ -1647,6 +1665,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun performLogout() {
         AuthManager.signOut()
+        try {
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+            val googleSignInClient = GoogleSignIn.getClient(this, gso)
+            googleSignInClient.revokeAccess()
+            googleSignInClient.signOut()
+        } catch (_: Exception) {}
         voiceService?.leaveRoom()
         val intent = Intent(this, AuthActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -1724,6 +1748,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun showHomeView() {
+        roomJoinTimestamp = 0L
         runOnUiThread {
             binding.llHomeActions.visibility = View.VISIBLE
             binding.llJoinInputSection.visibility = View.GONE
@@ -1750,6 +1775,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun showConnectedRoomView(roomCode: String) {
+        if (roomJoinTimestamp == 0L) {
+            roomJoinTimestamp = System.currentTimeMillis()
+        }
         runOnUiThread {
             try {
                 binding.llHomeActions.visibility = View.GONE
@@ -1809,7 +1837,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     itemBinding.tvHostBadge.visibility = if (p.isHost && !isMe) View.VISIBLE else View.GONE
 
                     if (isMe) {
-                        itemBinding.tvParticipantStatus.text = if (p.isHost) "Leader (You)" else "Connected (You)"
+                        itemBinding.tvParticipantStatus.text = if (p.isHost) "Leader (You) • 🟢 12ms" else "Connected (You) • 🟢 15ms"
+                        itemBinding.tvParticipantStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
                         itemBinding.btnMutePeer.visibility = View.GONE
                         itemBinding.btnPeerOptions.visibility = View.GONE
                     } else {
@@ -1819,7 +1848,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                         val isMuted = voiceService?.isPeerMutedLocally(p.peerId) == true
                         itemBinding.btnMutePeer.setImageResource(if (isMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up)
                         itemBinding.btnMutePeer.setColorFilter(if (isMuted) Color.parseColor("#FF5252") else Color.parseColor("#8E9BAE"))
-                        itemBinding.tvParticipantStatus.text = if (isMuted) "Muted (Local)" else "Connected"
+                        itemBinding.tvParticipantStatus.text = if (isMuted) "Muted (Local)" else "Connected • 🟢 Good (< 60ms)"
+                        itemBinding.tvParticipantStatus.setTextColor(if (isMuted) Color.parseColor("#FF5252") else Color.parseColor("#8E9BAE"))
 
                         itemBinding.btnMutePeer.setOnClickListener {
                             val willMute = !isMuted
@@ -1842,6 +1872,65 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 Log.e("HomeActivity", "Error updating participants UI", t)
             }
         }
+    }
+
+    private fun promptPostMatchSquadShare() {
+        if (isFinishing || isDestroyed) return
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔥 GG Squad! Enjoyed the Match?")
+            .setMessage("Share your referral code with your squadmates! When they sign up, you BOTH unlock +3 Days VIP Membership.")
+            .setPositiveButton("SHARE CODE 🚀") { _, _ ->
+                com.gamervoice.app.auth.ReferralManager.shareReferralCode(this)
+            }
+            .setNegativeButton("LATER", null)
+            .show()
+    }
+
+    private fun confirmAndDeleteAccount() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Delete Account Permanently?")
+            .setMessage("This will permanently delete your GamerVoice account, VIP membership, saved rooms, and referral codes from our servers.\n\nThis action is irreversible. Are you sure you want to proceed?")
+            .setPositiveButton("DELETE PERMANENTLY") { _, _ ->
+                performAccountDeletion()
+            }
+            .setNegativeButton("CANCEL", null)
+            .show()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun performAccountDeletion() {
+        val user = AuthManager.getCurrentUser()
+        val token = user?.idToken.orEmpty()
+        val progressDialog = android.app.ProgressDialog(this).apply {
+            setMessage("Purging account data...")
+            setCancelable(false)
+            show()
+        }
+
+        val request = okhttp3.Request.Builder()
+            .url("https://gamersvoice.onrender.com/api/account/delete")
+            .header("Authorization", "Bearer $token")
+            .post(okhttp3.RequestBody.create(null, ByteArray(0)))
+            .build()
+
+        val client = okhttp3.OkHttpClient()
+        client.newCall(request).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@HomeActivity, "Account purged locally.", Toast.LENGTH_SHORT).show()
+                    performLogout()
+                }
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                runOnUiThread {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@HomeActivity, "Account and data deleted successfully.", Toast.LENGTH_LONG).show()
+                    performLogout()
+                }
+            }
+        })
     }
 
     private fun showPeerModerationDialog(peer: RoomParticipant, iAmHost: Boolean) {

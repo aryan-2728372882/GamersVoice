@@ -1341,7 +1341,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif"
-                            android:text="GamerVoice v1.0.0-beta • Universal Release"
+                            android:text="GamerVoice v1.0.9 • Universal Release"
                             android:textColor="#5A6E85"
                             android:textSize="9.5sp" />
 
@@ -2040,6 +2040,46 @@
                             android:text="✔ Save Unlimited Squad Rooms in Cloud Firestore\n✔ Ultra Silent AI Noise Shield (&lt; 10% Noise)\n✔ 0 Latency Priority Server Routing\n✔ Floating In-Game HUD overlay for all games\n✔ 100% Ad-Free Experience"
                             android:textColor="#CBD5E0"
                             android:textSize="10.5sp" />
+                    </LinearLayout>
+
+                    <!-- App Version & Account Management (Danger Zone) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="24dp"
+                        android:orientation="vertical">
+
+                        <!-- Check for Updates Button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCheckAppUpdates"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:fontFamily="sans-serif-bold"
+                            android:letterSpacing="0.04"
+                            android:text="🚀 CHECK FOR APP UPDATES"
+                            android:textColor="@color/neon_cyan"
+                            android:textSize="11sp"
+                            app:cornerRadius="8dp"
+                            app:strokeColor="@color/neon_cyan"
+                            app:strokeWidth="1dp" />
+
+                        <!-- Danger Zone: Delete Account -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnDeleteAccount"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-bold"
+                            android:letterSpacing="0.04"
+                            android:text="🗑️ DELETE ACCOUNT &amp; PURGE DATA"
+                            android:textColor="@color/neon_red"
+                            android:textSize="11sp"
+                            app:cornerRadius="8dp"
+                            app:strokeColor="@color/neon_red"
+                            app:strokeWidth="1dp" />
                     </LinearLayout>
 
                 </LinearLayout>

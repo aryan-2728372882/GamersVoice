@@ -391,6 +391,24 @@ function parseJsonBody(req) {
   });
 }
 
+// Helper: parse raw request body for webhook signature verification
+function parseRawBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 500000) {
+        req.destroy();
+        reject(new Error('Body too large'));
+      }
+    });
+    req.on('end', () => {
+      resolve(body);
+    });
+    req.on('error', reject);
+  });
+}
+
 function sendResponse(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
@@ -1285,6 +1303,136 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error('[Payment Verification Error]', err.message);
       sendResponse(res, 500, { verified: false, error: err.message });
+    }
+    return;
+  }
+
+  // API: Razorpay Webhook (Automated server-to-server payment fulfillment)
+  if (req.method === 'POST' && req.url === '/api/webhooks/razorpay') {
+    try {
+      const rawBody = await parseRawBody(req);
+      const signature = req.headers['x-razorpay-signature'] || '';
+      const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || RAZORPAY_KEY_SECRET;
+
+      if (webhookSecret) {
+        const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+        if (!signature || !timingSafeEqualStr(signature, expectedSignature)) {
+          console.warn('[Razorpay Webhook] Invalid signature rejected');
+          sendResponse(res, 400, { error: 'Invalid webhook signature' });
+          return;
+        }
+      }
+
+      const eventData = rawBody ? JSON.parse(rawBody) : {};
+      console.log(`[Razorpay Webhook] Received event: ${eventData.event}`);
+
+      if (eventData.event === 'payment.captured' || eventData.event === 'order.paid') {
+        const payment = eventData.payload?.payment?.entity || {};
+        const paymentId = payment.id;
+        const notes = payment.notes || {};
+        const userId = notes.userId || notes.userUid || notes.uid || '';
+        const planTier = notes.planTier || notes.planType || 'MONTHLY';
+        const userEmail = payment.email || notes.email || notes.userEmail || '';
+
+        if (paymentId && !(await isPaymentUsed(paymentId))) {
+          await recordUsedPayment(paymentId);
+
+          let targetUid = userId;
+          if (!targetUid && userEmail && adminDb) {
+            const snap = await adminDb.collection('users').where('email', '==', userEmail.toLowerCase().trim()).limit(1).get();
+            if (!snap.empty) {
+              targetUid = snap.docs[0].id;
+            }
+          }
+
+          const days = planTier === 'DAY_PASS' ? 1 : planTier === 'WEEKLY' ? 7 : planTier === 'LIFETIME' ? -1 : 30;
+          const isLifetime = planTier === 'LIFETIME' || days === -1;
+          const now = Date.now();
+          const expiryTimestamp = isLifetime ? -1 : (now + (days * 24 * 60 * 60 * 1000));
+          const expiresAt = isLifetime ? 'N/A (Permanent)' : new Date(expiryTimestamp).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+
+          if (adminDb && targetUid) {
+            const updates = {
+              isVip: true,
+              planType: isLifetime ? 'LIFETIME' : planTier,
+              expiresAt,
+              expiryTimestamp,
+              purchasedAt: new Date().toISOString(),
+              paymentId: paymentId
+            };
+            await adminDb.collection('users').doc(targetUid).set(updates, { merge: true });
+            console.log(`[Razorpay Webhook] Successfully credited VIP to user ${targetUid} via payment ${paymentId}`);
+          }
+        }
+      }
+
+      sendResponse(res, 200, { status: 'ok' });
+    } catch (err) {
+      console.error('[Razorpay Webhook Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  // API: Latest App Version Check (For in-app auto-update notifications)
+  if (req.method === 'GET' && req.url === '/api/app-version') {
+    sendResponse(res, 200, {
+      latestVersionCode: 9,
+      latestVersionName: '1.0.9',
+      downloadUrl: '/gamervoice-release.apk',
+      mandatory: false,
+      changelog: '• Free Fire AAA 3D Glory Crate Season Rewards\n• In-app auto updates & instant downloads\n• Peer network connection quality indicators\n• Multi-account Google sign-in fixes\n• Hindi localization support'
+    });
+    return;
+  }
+
+  // API: Self-Service User Account Deletion
+  if (req.method === 'POST' && req.url === '/api/account/delete') {
+    try {
+      const authUser = await verifyUserAuth(req);
+      if (!authUser || !authUser.uid) {
+        sendResponse(res, 401, { error: 'Authentication required to delete account.' });
+        return;
+      }
+
+      const uid = authUser.uid;
+      console.log(`[Account Deletion] Initiated self-service account deletion for user: ${uid}`);
+
+      if (adminDb) {
+        // 1. Delete user profile document
+        await adminDb.collection('users').doc(uid).delete();
+
+        // 2. Delete user's registered referral code if any
+        try {
+          const refSnap = await adminDb.collection('referralCodes').where('uid', '==', uid).get();
+          if (!refSnap.empty) {
+            const batch = adminDb.batch();
+            refSnap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+          }
+        } catch (refErr) {
+          console.warn('[Account Deletion] Error clearing referral codes:', refErr.message);
+        }
+      }
+
+      // 3. Delete Firebase Auth user
+      if (adminAuth) {
+        try {
+          await adminAuth.deleteUser(uid);
+          console.log(`[Account Deletion] Deleted Auth record for ${uid}`);
+        } catch (authErr) {
+          console.warn('[Account Deletion] Warning deleting Auth record:', authErr.message);
+        }
+      }
+
+      sendResponse(res, 200, { success: true, message: 'Account and associated data deleted successfully.' });
+    } catch (err) {
+      console.error('[Account Deletion Error]', err.message);
+      sendResponse(res, 500, { error: err.message });
     }
     return;
   }

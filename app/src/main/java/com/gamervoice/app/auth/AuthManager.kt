@@ -84,6 +84,9 @@ object AuthManager {
     fun signOut() {
         currentUser = null
         prefs?.edit()?.clear()?.apply()
+        appContext?.let { ctx ->
+            ReferralManager.clearCache(ctx)
+        }
         Log.i(TAG, "User signed out and cache cleared")
     }
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GamerVoice</string>
+    <string name="status_ready">स्थिति: तैयार</string>
+    <string name="status_creating_room">स्थिति: कमरा बनाया जा रहा है&#8230;</string>
+    <string name="status_connecting_service">वॉइस सर्विस कनेक्ट हो रही है, कृपया प्रतीक्षा करें&#8230;</string>
+    <string name="permission_message">गेमरवॉइस को काम करने के लिए माइक्रोफ़ोन की अनुमति चाहिए</string>
+    <string name="btn_allow_continue">अनुमति दें और आगे बढ़ें</string>
+    <string name="create_room">कमरा बनाएं</string>
+    <string name="join_room">कमरे में जुड़ें</string>
+    <string name="copy_code">कोड कॉपी करें</string>
+    <string name="continue_go_to_game">गेम पर जाएं</string>
+    <string name="leave_room">कमरा छोड़ें</string>
+    <string name="code_copied">कमरा कोड कॉपी हो गया!</string>
+    <string name="mode_ptt">मोड: पुश-टू-टॉक</string>
+    <string name="mode_always_on">मोड: हमेशा ऑन (VAD)</string>
+    <string name="ptt_muted_hint">🔇 म्यूट (बोलने के लिए वॉल्यूम-डाउन दबाए रखें)</string>
+    <string name="ptt_speaking_hint">🎙️ बोल रहे हैं (PTT सक्रिय)</string>
+    <string name="connected_count_fmt">%1$d/5 जुड़े हुए हैं</string>
+    <string name="status_connecting_server">स्थिति: सर्वर से कनेक्ट हो रहा है&#8230;</string>
+    <string name="status_connected_room_fmt">स्थिति: कमरा %1$s से जुड़े हैं</string>
+    <string name="hint_room_code">5-अक्षरों का कमरा कोड दर्ज करें</string>
+    <string name="btn_cancel">रद्द करें</string>
+    <string name="label_room_code">कमरा कोड</string>
+    <string name="default_room_code_placeholder">A3K9P</string>
+    <string name="crash_report_title">गेमरवॉइस त्रुटि रिपोर्ट</string>
+    <string name="crash_report_desc">एक त्रुटि उत्पन्न हुई। कृपया विवरण कॉपी करें और साझा करें:</string>
+    <string name="btn_copy_error">त्रुटि लॉग कॉपी करें</string>
+
+    <!-- UI Action and Screen Strings -->
+    <string name="btn_create_room">स्क्वाड कमरा बनाएं</string>
+    <string name="btn_join_room">स्क्वाड कमरे में जुड़ें</string>
+    <string name="enter_room_code">स्क्वाड कमरा कोड दर्ज करें</string>
+    <string name="btn_connect">कमरे से जुड़ें</string>
+    <string name="btn_back">होम पर वापस जाएं</string>
+    <string name="room_code_label">सक्रिय कमरा कोड</string>
+    <string name="cd_copy_room_code">कमरा कोड कॉपी करें</string>
+</resources>

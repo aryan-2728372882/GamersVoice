@@ -103,10 +103,12 @@ class AuthActivity : AppCompatActivity() {
 
     private fun setupGoogleSignIn() {
         binding.btnGoogleSignIn.setOnClickListener {
-            // Clear prior sign in cache to allow choosing account
-            googleSignInClient.signOut().addOnCompleteListener {
-                val signInIntent = googleSignInClient.signInIntent
-                googleSignInLauncher.launch(signInIntent)
+            // Force Google Play Services to always show account picker modal
+            googleSignInClient.revokeAccess().addOnCompleteListener {
+                googleSignInClient.signOut().addOnCompleteListener {
+                    val signInIntent = googleSignInClient.signInIntent
+                    googleSignInLauncher.launch(signInIntent)
+                }
             }
         }
     }
