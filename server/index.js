@@ -524,9 +524,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && (req.url === '/.well-known/assetlinks.json' || req.url === '/.well-known/assetlinks.json?')) {
       const assetlinksPath = path.join(PUBLIC_DIR, '.well-known', 'assetlinks.json');
       try {
-        const content = fs.readFileSync(assetlinksPath, 'utf8');
+        const content = fs.readFileSync(assetlinksPath, 'utf8').replace(/^\uFEFF/, '');
         res.writeHead(200, {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, max-age=3600'
         });
