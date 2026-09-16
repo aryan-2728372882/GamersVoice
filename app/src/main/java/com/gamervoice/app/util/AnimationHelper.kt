@@ -168,4 +168,86 @@ object AnimationHelper {
             }
             .start()
     }
+
+    /**
+     * Cinematic slide-up + zoom-in entrance for Dialog root cards.
+     * Call immediately after dialog.show() on the root view.
+     */
+    fun enterDialog(rootView: View) {
+        rootView.translationY = 80f
+        rootView.alpha = 0f
+        rootView.scaleX = 0.90f
+        rootView.scaleY = 0.90f
+        rootView.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(340)
+            .setInterpolator(DecelerateInterpolator(2f))
+            .start()
+    }
+
+    /**
+     * Scale-down + fade exit. Runs animation then calls onComplete (e.g. dialog.dismiss()).
+     */
+    fun exitDialog(rootView: View, onComplete: () -> Unit) {
+        rootView.animate()
+            .translationY(60f)
+            .alpha(0f)
+            .scaleX(0.88f)
+            .scaleY(0.88f)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator(1.5f))
+            .withEndAction { onComplete() }
+            .start()
+    }
+
+    /**
+     * Wraps a dialog dismiss in the exit animation so close feels smooth.
+     */
+    fun dismissWithAnimation(dialog: android.app.Dialog, rootView: View) {
+        exitDialog(rootView) {
+            try { if (dialog.isShowing) dialog.dismiss() } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * Animates a neon border glow by cycling stroke color between cyan ↔ purple.
+     * Returns the ValueAnimator so the caller can cancel it when dialog closes.
+     */
+    fun pulseNeonBorder(view: View, borderDrawable: android.graphics.drawable.GradientDrawable? = null): ValueAnimator {
+        val cyan = 0xFF00E5FF.toInt()
+        val purple = 0xFFA855F7.toInt()
+        return ValueAnimator.ofArgb(cyan, purple, cyan).apply {
+            duration = 3000
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { animator ->
+                val color = animator.animatedValue as Int
+                borderDrawable?.setStroke(4, color)
+                    ?: view.background?.let {
+                        if (it is android.graphics.drawable.GradientDrawable) it.setStroke(4, color)
+                    }
+            }
+            start()
+        }
+    }
+
+    /**
+     * Stagger-fades a list of views in with increasing delay (40ms apart).
+     */
+    fun staggerFadeIn(views: List<View>, startDelayMs: Long = 160L, stepMs: Long = 50L) {
+        views.forEachIndexed { index, view ->
+            view.alpha = 0f
+            view.translationY = 20f
+            view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220)
+                .setStartDelay(startDelayMs + index * stepMs)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
+    }
 }

@@ -1,0 +1,11 @@
+﻿[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.gamervoice.app",
+    "sha256_cert_fingerprints": [
+      "53:D3:90:41:16:D4:78:FA:D7:29:C8:15:7B:FA:37:B7:08:FB:03:53:8E:0A:67:5B:14:4E:A9:96:74:94:0C:E9",
+      "64:16:F2:49:35:0D:6B:8B:49:6E:2E:DB:72:52:3D:04:A3:B0:BA:C3:A4:D4:96:C2:0C:1E:2F:15:19:06:16:BD"
+    ]
+  }
+}]

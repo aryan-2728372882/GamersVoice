@@ -20,5 +20,26 @@
         <item name="colorOnSurface">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- Dialog Styling & Animations -->
+        <item name="android:alertDialogTheme">@style/CyberAlertDialogTheme</item>
+        <item name="alertDialogTheme">@style/CyberAlertDialogTheme</item>
+    </style>
+
+    <!-- Cinematic Cyber Window Animations for Popups -->
+    <style name="CyberDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/dialog_exit</item>
+    </style>
+
+    <!-- Dark Cyber Theme for Default Alert Dialogs -->
+    <style name="CyberAlertDialogTheme" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="android:windowAnimationStyle">@style/CyberDialogAnimation</item>
+        <item name="android:background">@drawable/bg_dialog_card</item>
+        <item name="colorSurface">#0D1117</item>
+        <item name="colorPrimary">@color/neon_cyan</item>
+        <item name="colorSecondary">@color/neon_green</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
     </style>
 </resources>

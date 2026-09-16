@@ -53,8 +53,11 @@ object PlanManager {
     private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private var appContext: Context? = null
+
     fun init(context: Context) {
         if (prefs == null) {
+            appContext = context.applicationContext
             prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             checkAndEnforceExpiry()
             enforceValidPaidStatus()
@@ -404,6 +407,15 @@ object PlanManager {
                 ?.putString(KEY_USER_EMAIL, user.email)
                 ?.putString(KEY_PAYMENT_ID, paymentId)
                 ?.apply()
+
+            // Schedule proactive expiry push notification 24h before VIP lapses
+            if (expiryTime > 0) {
+                try {
+                    appContext?.let { ctx ->
+                        com.gamervoice.app.util.VipExpiryAlarmScheduler.schedule(ctx, expiryTime)
+                    }
+                } catch (_: Exception) {}
+            }
 
             // Sync with Cloud Firestore
             syncPurchaseToFirestore(

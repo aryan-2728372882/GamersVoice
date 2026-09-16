@@ -185,6 +185,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val serviceIntent = Intent(this, VoiceService::class.java)
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
 
+        // Re-arm VIP expiry alarm (survives across sessions and reboots)
+        com.gamervoice.app.util.VipExpiryAlarmScheduler.rescheduleIfNeeded(this)
+
+        // Handle open_tab intent (from VIP expiry notification tap)
+        val openTab = intent?.getIntExtra("open_tab", -1) ?: -1
+        if (openTab >= 0) binding.root.postDelayed({ updateActiveNavTab(openTab) }, 600L)
+
         // Handle deep link: gamervoice://join/CODE or https://gamersvoice.onrender.com/join/CODE
         val autoJoinFromLink = extractRoomCodeFromIntent(intent)
         val autoJoinFromExtra = intent?.getStringExtra("auto_join_room")
@@ -711,6 +718,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun showNoiseFilterDialog() {
         val dialog = Dialog(this)
+        dialog.window?.setWindowAnimations(R.style.CyberDialogAnimation)
         val nb = DialogNoiseFilterBinding.inflate(layoutInflater)
         dialog.setContentView(nb.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -796,10 +804,18 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             updateNoiseFilterUI(selectedPercent)
             voiceService?.setNoiseFilterLevel(levelIndex)
             Toast.makeText(this, "Mic Filter updated to $selectedPercent%!", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
+            AnimationHelper.dismissWithAnimation(dialog, nb.root)
         }
 
         dialog.show()
+        AnimationHelper.enterDialog(nb.root)
+        val borderAnim = AnimationHelper.pulseNeonBorder(nb.root)
+        AnimationHelper.startAmbientPulse(nb.btnApplyNoiseSetting, 0.97f, 1.03f, 2000L)
+        AnimationHelper.attachPressAnimation(nb.btnCloseNoiseDialog) {
+            borderAnim.cancel()
+            AnimationHelper.dismissWithAnimation(dialog, nb.root)
+        }
+        dialog.setOnDismissListener { borderAnim.cancel() }
     }
 
     private fun updateNoiseFilterUI(customPercent: Int? = null) {
@@ -934,34 +950,52 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun showRedeemReferralDialog() {
-        val input = android.widget.EditText(this).apply {
-            hint = "e.g. GV-XXXX"
-            setAllCaps(true)
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#8E9BAE"))
-        }
+        val dialog = Dialog(this)
+        dialog.window?.setWindowAnimations(R.style.CyberDialogAnimation)
+        val rb = com.gamervoice.app.databinding.DialogRedeemReferralBinding.inflate(layoutInflater)
+        dialog.setContentView(rb.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val width = (resources.displayMetrics.widthPixels * 0.94).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("🎁 Redeem Squad Referral Code")
-            .setMessage("Enter a squad mate's referral code to instantly unlock 3 Days of GamerVoice VIP Pass free!")
-            .setView(input)
-            .setPositiveButton("Redeem") { _, _ ->
-                val code = input.text.toString().trim().uppercase()
-                if (code.isEmpty()) {
-                    Toast.makeText(this, "Please enter a referral code", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                Toast.makeText(this, "Verifying referral code...", Toast.LENGTH_SHORT).show()
-                com.gamervoice.app.auth.ReferralManager.redeemCode(this, code) { success, message ->
-                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-                    if (success) {
-                        updatePlanUI()
-                        refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                    }
+        fun doRedeem() {
+            val code = rb.etReferralCode.text.toString().trim().uppercase()
+            if (code.isEmpty()) {
+                AnimationHelper.shakeView(rb.etReferralCode)
+                rb.tvRedeemHint.text = "⚠️ Please enter a referral code"
+                rb.tvRedeemHint.setTextColor(Color.parseColor("#FF6B6B"))
+                return
+            }
+            rb.tvRedeemHint.text = "⏳ Verifying code..."
+            rb.tvRedeemHint.setTextColor(Color.parseColor("#FFD700"))
+            AnimationHelper.startAmbientPulse(rb.btnRedeemCode, 0.96f, 1.02f, 600L)
+            com.gamervoice.app.auth.ReferralManager.redeemCode(this, code) { success, message ->
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                if (success) {
+                    updatePlanUI()
+                    refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
+                    AnimationHelper.dismissWithAnimation(dialog, rb.root)
+                } else {
+                    AnimationHelper.shakeView(rb.etReferralCode)
+                    rb.tvRedeemHint.text = "❌ $message"
+                    rb.tvRedeemHint.setTextColor(Color.parseColor("#FF6B6B"))
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
+
+        AnimationHelper.attachPressAnimation(rb.btnRedeemCode) { doRedeem() }
+        AnimationHelper.attachPressAnimation(rb.btnCancelRedeem) {
+            AnimationHelper.dismissWithAnimation(dialog, rb.root)
+        }
+        AnimationHelper.attachPressAnimation(rb.ivCloseRedeem) {
+            AnimationHelper.dismissWithAnimation(dialog, rb.root)
+        }
+
+        dialog.show()
+        AnimationHelper.enterDialog(rb.root)
+        val borderAnim = AnimationHelper.pulseNeonBorder(rb.root)
+        AnimationHelper.startAmbientPulse(rb.btnRedeemCode, 0.97f, 1.03f, 2000L)
+        dialog.setOnDismissListener { borderAnim.cancel() }
     }
 
     // --- On-Device Installed Games Launcher ---
@@ -1229,6 +1263,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         val dialog = Dialog(this)
+        dialog.window?.setWindowAnimations(R.style.CyberDialogAnimation)
         vipUpgradeDialog = dialog
         val vipBinding = DialogVipUpgradeBinding.inflate(layoutInflater)
         dialog.setContentView(vipBinding.root)
@@ -1292,11 +1327,27 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
                 Toast.makeText(this, "🔄 VIP status revoked! Account reset to Free Plan.", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
+                AnimationHelper.dismissWithAnimation(dialog, vipBinding.root)
             }
         }
 
         dialog.show()
+        // Cinematic entrance: slide-up from 80dp + zoom-in
+        AnimationHelper.enterDialog(vipBinding.root)
+        // Ambient pulse on CTA button to draw the eye
+        val pulseAnim = AnimationHelper.startAmbientPulse(vipBinding.btnActivateVip, 0.97f, 1.03f, 1800L)
+        // Stagger the pricing cards so they appear one-by-one
+        AnimationHelper.staggerFadeIn(listOf(vipBinding.llPlanWeekly, vipBinding.llPlanMonthly, vipBinding.llPlanLifetime), 220L, 60L)
+        // Animate neon border on the root card
+        val borderAnim = AnimationHelper.pulseNeonBorder(vipBinding.root)
+
+        // Override close button to use exit animation
+        AnimationHelper.attachPressAnimation(vipBinding.ivCloseVipDialog) {
+            pulseAnim.cancel()
+            borderAnim.cancel()
+            AnimationHelper.dismissWithAnimation(dialog, vipBinding.root)
+        }
+        dialog.setOnDismissListener { pulseAnim.cancel(); borderAnim.cancel() }
     }
 
     private fun startRazorpayCheckout(tier: PlanTier, user: UserProfile) {
@@ -1386,6 +1437,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun showLegalDialog(title: String, content: String, iconRes: Int) {
         val dialog = Dialog(this)
+        dialog.window?.setWindowAnimations(R.style.CyberDialogAnimation)
         val dialogBinding = DialogLegalDocBinding.inflate(layoutInflater)
         dialog.setContentView(dialogBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -1404,15 +1456,23 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             Toast.makeText(this, "$title copied to clipboard!", Toast.LENGTH_SHORT).show()
         }
 
-        AnimationHelper.attachPressAnimation(dialogBinding.ivCloseDialog) { dialog.dismiss() }
-        AnimationHelper.attachPressAnimation(dialogBinding.btnAcknowledgeDialog) { dialog.dismiss() }
+        AnimationHelper.attachPressAnimation(dialogBinding.ivCloseDialog) {
+            AnimationHelper.dismissWithAnimation(dialog, dialogBinding.root)
+        }
+        AnimationHelper.attachPressAnimation(dialogBinding.btnAcknowledgeDialog) {
+            AnimationHelper.dismissWithAnimation(dialog, dialogBinding.root)
+        }
 
         dialog.show()
+        AnimationHelper.enterDialog(dialogBinding.root)
+        val borderAnim = AnimationHelper.pulseNeonBorder(dialogBinding.root)
+        dialog.setOnDismissListener { borderAnim.cancel() }
     }
 
     private fun showContactSupportDialog(preselectedCategory: String? = null) {
         val user = AuthManager.getCurrentUser()
         val dialog = Dialog(this)
+        dialog.window?.setWindowAnimations(R.style.CyberDialogAnimation)
         val dialogBinding = DialogContactUsBinding.inflate(layoutInflater)
         dialog.setContentView(dialogBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -1476,13 +1536,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     dialogBinding.btnSubmitContactTicket.isEnabled = true
                     Toast.makeText(this, message, Toast.LENGTH_LONG).show()
                     if (success) {
-                        dialog.dismiss()
+                        AnimationHelper.dismissWithAnimation(dialog, dialogBinding.root)
                     }
                 }
             }
         }
 
         dialog.show()
+        AnimationHelper.enterDialog(dialogBinding.root)
+        val borderAnim = AnimationHelper.pulseNeonBorder(dialogBinding.root)
+        AnimationHelper.staggerFadeIn(
+            listOf(dialogBinding.tvContactTelemetryBanner, dialogBinding.spnContactCategory),
+            180L, 60L
+        )
+        dialog.setOnDismissListener { borderAnim.cancel() }
     }
 
     private fun toggleFloatingHud() {

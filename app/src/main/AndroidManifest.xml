@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <queries>
         <!-- Popular competitive mobile games -->
@@ -123,6 +125,22 @@
         <receiver
             android:name=".service.SquadAlarmReceiver"
             android:exported="false" />
+
+        <!-- VIP Plan Expiry Reminder (24h before expiry) -->
+        <receiver
+            android:name=".receiver.VipExpiryAlarmReceiver"
+            android:exported="false" />
+
+        <!-- Boot Receiver: re-arms AlarmManager alarms after device reboot -->
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:exported="true">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
 
         <!-- Firebase Cloud Messaging Broadcast Service -->
         <service

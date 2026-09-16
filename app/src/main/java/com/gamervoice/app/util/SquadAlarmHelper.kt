@@ -79,6 +79,15 @@ object SquadAlarmHelper {
         scheduleAlarmManager(context, hour, minute, roomCode)
     }
 
+    /** Called by BootReceiver to restore daily alarm after device reboot. */
+    fun rescheduleIfEnabled(context: Context) {
+        if (!isAlarmEnabled(context)) return
+        val hour = getAlarmHour(context)
+        val minute = getAlarmMinute(context)
+        val roomCode = getPrefs(context).getString(KEY_SAVED_ROOM_CODE, "") ?: ""
+        scheduleAlarmManager(context, hour, minute, roomCode)
+    }
+
     private fun scheduleAlarmManager(context: Context, hour: Int, minute: Int, roomCode: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 

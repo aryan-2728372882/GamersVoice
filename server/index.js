@@ -520,6 +520,24 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Android App Links verification — MUST return application/json with correct CORS headers
+    if (req.method === 'GET' && (req.url === '/.well-known/assetlinks.json' || req.url === '/.well-known/assetlinks.json?')) {
+      const assetlinksPath = path.join(PUBLIC_DIR, '.well-known', 'assetlinks.json');
+      try {
+        const content = fs.readFileSync(assetlinksPath, 'utf8');
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600'
+        });
+        res.end(content);
+      } catch (e) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not found');
+      }
+      return;
+    }
+
     // Web Landing & Deep Link Preview for Squad Rooms (/join/CODE)
     if (req.method === 'GET' && req.url.startsWith('/join/')) {
       const codePart = req.url.split('?')[0].replace('/join/', '').trim().toUpperCase();
