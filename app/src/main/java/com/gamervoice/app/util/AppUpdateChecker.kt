@@ -14,6 +14,7 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.gamervoice.app.R
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -49,7 +50,7 @@ object AppUpdateChecker {
                 Log.w(TAG, "Update check failed: ${e.message}")
                 if (manualCheck) {
                     mainHandler.post {
-                        Toast.makeText(activity, "Could not reach update server. Try again later.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(activity, activity.getString(R.string.toast_update_server_unreachable), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -83,7 +84,7 @@ object AppUpdateChecker {
                         }
                     } else if (manualCheck) {
                         mainHandler.post {
-                            Toast.makeText(activity, "GamerVoice is up to date (v$currentName)!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(activity, activity.getString(R.string.toast_app_up_to_date, currentName), Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e: Exception) {
@@ -101,14 +102,14 @@ object AppUpdateChecker {
         mandatory: Boolean
     ) {
         val builder = AlertDialog.Builder(activity)
-            .setTitle("🚀 GamerVoice v$versionName Available")
-            .setMessage("A new update is available with competitive audio upgrades!\n\n$changelog\n\nWould you like to install it now?")
-            .setPositiveButton("UPDATE NOW ⚡") { _, _ ->
+            .setTitle(activity.getString(R.string.dialog_update_title, versionName))
+            .setMessage(activity.getString(R.string.dialog_update_msg, changelog))
+            .setPositiveButton(activity.getString(R.string.dialog_update_now)) { _, _ ->
                 startDownloadAndInstall(activity, downloadUrl)
             }
 
         if (!mandatory) {
-            builder.setNegativeButton("LATER", null)
+            builder.setNegativeButton(activity.getString(R.string.dialog_update_later), null)
         } else {
             builder.setCancelable(false)
         }
@@ -120,7 +121,7 @@ object AppUpdateChecker {
     private fun startDownloadAndInstall(activity: Activity, downloadUrl: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!activity.packageManager.canRequestPackageInstalls()) {
-                Toast.makeText(activity, "Please allow 'Install unknown apps' to update GamerVoice", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, activity.getString(R.string.toast_allow_install_unknown), Toast.LENGTH_LONG).show()
                 val permIntent = Intent(
                     Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:${activity.packageName}")
@@ -131,8 +132,8 @@ object AppUpdateChecker {
         }
 
         val progressDialog = ProgressDialog(activity).apply {
-            setTitle("Downloading Update")
-            setMessage("Downloading latest GamerVoice release...")
+            setTitle(activity.getString(R.string.dialog_downloading_update))
+            setMessage(activity.getString(R.string.dialog_downloading_msg))
             setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             max = 100
             isIndeterminate = false
@@ -149,7 +150,7 @@ object AppUpdateChecker {
             override fun onFailure(call: Call, e: IOException) {
                 mainHandler.post {
                     progressDialog.dismiss()
-                    Toast.makeText(activity, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(activity, activity.getString(R.string.toast_download_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
                 }
             }
 
@@ -157,7 +158,7 @@ object AppUpdateChecker {
                 if (!response.isSuccessful) {
                     mainHandler.post {
                         progressDialog.dismiss()
-                        Toast.makeText(activity, "Download server returned error: ${response.code}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(activity, activity.getString(R.string.toast_download_server_error, response.code), Toast.LENGTH_LONG).show()
                     }
                     return
                 }
@@ -201,7 +202,7 @@ object AppUpdateChecker {
                 } catch (e: Exception) {
                     mainHandler.post {
                         progressDialog.dismiss()
-                        Toast.makeText(activity, "Failed to save update: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(activity, activity.getString(R.string.toast_update_save_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -223,7 +224,7 @@ object AppUpdateChecker {
             context.startActivity(installIntent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch package installer", e)
-            Toast.makeText(context, "Could not start installer: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.toast_installer_start_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
         }
     }
 }

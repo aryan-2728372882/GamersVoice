@@ -60,6 +60,7 @@ class VoiceService : Service(),
         fun onError(message: String)
         fun onTacticalCalloutReceived(senderId: String, senderName: String, calloutId: String, calloutText: String) {}
         fun onLatencyUpdated(latencyMs: Long) {}
+        fun onPeerLatenciesUpdated(latencies: Map<String, Long>) {}
     }
 
     inner class LocalBinder : Binder() {
@@ -89,6 +90,10 @@ class VoiceService : Service(),
         private set
     var lastServerPingMs: Long = 0L
         private set
+
+    private val peerLatencies = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    fun getPeerLatency(peerId: String): Long? = peerLatencies[peerId]
+    fun getAllPeerLatencies(): Map<String, Long> = peerLatencies
 
     var isReconnecting: Boolean = false
         private set
@@ -172,16 +177,23 @@ class VoiceService : Service(),
         override fun run() {
             if (peerConnectionManager.hasActivePeers()) {
                 // Measure real WebRTC peer-to-peer latency between players
-                peerConnectionManager.queryRealP2PLatency { rttMs ->
-                    currentLatencyMs = rttMs
+                peerConnectionManager.queryPeerLatencyMap { map ->
+                    peerLatencies.putAll(map)
+                    val rttValues = map.values.filter { it > 0 }
+                    val avgRtt = if (rttValues.isNotEmpty()) rttValues.average().toLong() else 0L
+                    if (avgRtt > 0) {
+                        currentLatencyMs = avgRtt
+                    }
                     mainHandler.post {
-                        listener?.onLatencyUpdated(rttMs)
+                        listener?.onLatencyUpdated(currentLatencyMs)
+                        listener?.onPeerLatenciesUpdated(map)
                     }
                 }
             } else if (signalingClient.isConnected) {
                 // Measure live signaling server round-trip latency when alone in room
                 signalingClient.sendPing()
                 if (lastServerPingMs > 0 && currentRoomCode != null) {
+                    currentLatencyMs = lastServerPingMs
                     mainHandler.post {
                         listener?.onLatencyUpdated(lastServerPingMs)
                     }
@@ -380,6 +392,8 @@ class VoiceService : Service(),
             mainHandler.post {
                 currentRoomCode = null
                 isCallActive = false
+                currentLatencyMs = 0L
+                peerLatencies.clear()
                 stopForegroundService()
             }
         }

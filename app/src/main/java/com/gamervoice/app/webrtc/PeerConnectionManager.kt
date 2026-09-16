@@ -330,6 +330,40 @@ class PeerConnectionManager(
         }
     }
 
+    fun queryPeerLatencyMap(callback: (Map<String, Long>) -> Unit) {
+        if (peerConnections.isEmpty()) {
+            callback(emptyMap())
+            return
+        }
+        val map = java.util.concurrent.ConcurrentHashMap<String, Long>()
+        val total = peerConnections.size
+        val counter = java.util.concurrent.atomic.AtomicInteger(0)
+
+        for ((peerId, pc) in peerConnections) {
+            pc.getStats { report ->
+                try {
+                    for (stat in report.statsMap.values) {
+                        if (stat.type == "candidate-pair") {
+                            val state = stat.members["state"]
+                            val isNominated = stat.members["nominated"] as? Boolean ?: false
+                            if (state == "succeeded" || isNominated) {
+                                val rttSec = stat.members["currentRoundTripTime"] as? Double
+                                if (rttSec != null && rttSec > 0.0) {
+                                    val rttMs = (rttSec * 1000.0).toLong()
+                                    map[peerId] = rttMs
+                                    break
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Throwable) {}
+                if (counter.incrementAndGet() >= total) {
+                    callback(map)
+                }
+            }
+        }
+    }
+
     private fun optimizeSdpFor3GAndVoice(sdp: String): String {
         val isVip = com.gamervoice.app.auth.PlanManager.isVip()
         return try {

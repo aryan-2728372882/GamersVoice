@@ -35,4 +35,141 @@
     <string name="btn_back">होम पर वापस जाएं</string>
     <string name="room_code_label">सक्रिय कमरा कोड</string>
     <string name="cd_copy_room_code">कमरा कोड कॉपी करें</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_crash_diagnostic_title">पिछला क्रैश डायग्नोस्टिक</string>
+    <string name="dialog_crash_copy">त्रुटि कॉपी करें</string>
+    <string name="dialog_dismiss">खारिज करें</string>
+    <string name="dialog_squad_share_title">🔥 अच्छा मैच रहा! क्या आपको मज़ा आया?</string>
+    <string name="dialog_squad_share_msg">अपने दोस्तों के साथ अपना रेफरल कोड शेयर करें! जब वे साइन अप करेंगे, तो आप दोनों को 3 दिन का VIP पास मुफ़्त मिलेगा।</string>
+    <string name="dialog_squad_share_btn">कोड शेयर करें 🚀</string>
+    <string name="dialog_squad_share_later">बाद में</string>
+    <string name="dialog_delete_account_title">⚠️ क्या आप खाता हमेशा के लिए हटाना चाहते हैं?</string>
+    <string name="dialog_delete_account_msg">इससे आपका गेमरवॉइस खाता, VIP सदस्यता, सहेजे गए कमरे और रेफरल कोड हमेशा के लिए हटा दिए जाएंगे।\n\nयह प्रक्रिया वापस नहीं ली जा सकती। क्या आप आगे बढ़ना चाहते हैं?</string>
+    <string name="dialog_delete_account_confirm">हमेशा के लिए हटाएं</string>
+    <string name="dialog_moderation_title">स्क्वाड मॉडरेशन: %1$s</string>
+    <string name="dialog_moderation_report">🚩 रिपोर्ट करें %1$s</string>
+    <string name="dialog_moderation_kick">🚫 स्क्वाड से बाहर निकालें %1$s</string>
+    <string name="dialog_kick_title">खिलाड़ी को बाहर निकालें?</string>
+    <string name="dialog_kick_msg">क्या %1$s को कमरे से हटाना चाहते हैं?</string>
+    <string name="dialog_kick_btn">हटाएं</string>
+    <string name="dialog_report_title">%1$s की रिपोर्ट करें</string>
+    <string name="dialog_report_reason_mic">खराब माइक / चिल्लाना</string>
+    <string name="dialog_report_reason_abusive">गाली-गलौज / अभद्र भाषा</string>
+    <string name="dialog_report_reason_bot">बॉट / स्पैम ऑडियो</string>
+    <string name="dialog_report_reason_cheating">चीटिंग / मिलीभगत</string>
+    <string name="dialog_report_reason_other">अन्य अनुचित व्यवहार</string>
+    <string name="dialog_report_success">रिपोर्ट दर्ज कर ली गई है। स्क्वाड को सुरक्षित रखने के लिए धन्यवाद।</string>
+    <string name="dialog_vip_squad_title">👑 VIP कस्टम स्क्वाड</string>
+    <string name="dialog_vip_squad_msg">अपने स्क्वाड को एक कस्टम नाम दें और नियॉन थीम बैज चुनें:</string>
+    <string name="dialog_update_title">🚀 गेमरवॉइस v%1$s उपलब्ध है</string>
+    <string name="dialog_update_msg">बेहतर ऑडियो परफॉर्मेंस के साथ एक नया अपडेट उपलब्ध है!\n\n%1$s\n\nक्या आप इसे अभी इंस्टॉल करना चाहते हैं?</string>
+    <string name="dialog_update_now">अभी अपडेट करें ⚡</string>
+    <string name="dialog_update_later">बाद में</string>
+    <string name="dialog_downloading_update">अपडेट डाउनलोड हो रहा है</string>
+    <string name="dialog_downloading_msg">नवीनतम गेमरवॉइस रिलीज़ डाउनलोड हो रही है...</string>
+
+    <!-- Toasts -->
+    <string name="toast_mic_perm_required">माइक्रोफ़ोन की अनुमति आवश्यक है</string>
+    <string name="toast_room_code_length">कमरा कोड 5 अक्षरों का होना चाहिए</string>
+    <string name="toast_room_saved">कमरा %1$s आपके डैशबोर्ड में सुरक्षित कर दिया गया है!</string>
+    <string name="toast_could_not_save_room">कमरा सहेजा नहीं जा सका: %1$s</string>
+    <string name="toast_launching_game">%1$s शुरू हो रहा है...</string>
+    <string name="toast_game_not_installed">गेम %1$s इंस्टॉल नहीं है। स्टोर खोला जा रहा है...</string>
+    <string name="toast_please_sign_in">कृपया पहले साइन इन करें</string>
+    <string name="toast_please_sign_in_purchase">VIP खरीदने के लिए कृपया साइन इन करें</string>
+    <string name="toast_gamervoice_background">गेमरवॉइस बैकग्राउंड में सक्रिय है। गेम शुरू किया जा रहा है...</string>
+    <string name="toast_mic_filter_updated">माइक फ़िल्टर %1$d%% पर सेट किया गया!</string>
+    <string name="toast_audio_output">ऑडियो आउटपुट: %1$s</string>
+    <string name="toast_hud_activate_hint">स्क्वाड कमरे में शामिल होने के बाद HUD सक्रिय होगा।</string>
+    <string name="toast_hud_overlay_required">इन-गेम HUD का उपयोग करने के लिए \'अन्य ऐप्स पर दिखाएं\' की अनुमति दें</string>
+    <string name="toast_hud_join_room_first">इन-गेम HUD सक्षम करने के लिए पहले किसी स्क्वाड कमरे में जुड़ें</string>
+    <string name="toast_account_deleted_success">खाता और डेटा सफलतापूर्वक हटा दिया गया।</string>
+    <string name="toast_account_purged_local">खाता स्थानीय रूप से हटा दिया गया।</string>
+    <string name="toast_logs_copied">सभी डायग्नोस्टिक लॉग क्लिपबोर्ड पर कॉपी हो गए!</string>
+    <string name="toast_peer_removed">%1$s को स्क्वाड से हटा दिया गया</string>
+    <string name="toast_peer_muted">🔇 आपके लिए %1$s को म्यूट कर दिया गया</string>
+    <string name="toast_peer_unmuted">🔊 %1$s को अनम्यूट किया गया</string>
+    <string name="toast_squad_alarm_active">⏰ स्क्वाड मैच अलार्म प्रतिदिन %1$s के लिए सक्रिय है!</string>
+    <string name="toast_squad_alarm_off">स्क्वाड मैच अलार्म बंद कर दिया गया।</string>
+    <string name="toast_clutch_highlights_enabled">🎬 क्लच माइक हाइलाइट्स चालू (120 सेकंड बफ़र)</string>
+    <string name="toast_clutch_highlights_off">क्लच माइक हाइलाइट्स बंद</string>
+    <string name="toast_clutch_enable_first">⚠️ कृपया पहले प्रोफ़ाइल/सेटिंग्स में \'क्लच माइक हाइलाइट्स\' चालू करें!</string>
+    <string name="toast_clutch_exporting">120 सेकंड की क्लच ऑडियो क्लिप तैयार की जा रही है...</string>
+    <string name="toast_vip_revoked">⚠️ VIP स्थिति समाप्त! खाता फ़्री प्लान पर रीसेट किया गया।</string>
+    <string name="toast_verifying_payment">सर्वर से भुगतान सत्यापित किया जा रहा है...</string>
+    <string name="toast_payment_verified">🎉 भुगतान सत्यापित! %1$s सक्रिय किया गया।</string>
+    <string name="toast_payment_failed">⚠️ भुगतान विफल: %1$s</string>
+    <string name="toast_memory_cleared">⚡ मेमोरी खाली कर दी गई! (&lt; 10MB सुरक्षित)</string>
+    <string name="toast_copied_to_clipboard">%1$s क्लिपबोर्ड पर कॉपी हो गया!</string>
+    <string name="toast_app_up_to_date">गेमरवॉइस पहले से अपडेटेड है (v%1$s)!</string>
+    <string name="toast_crash_copied">क्रैश लॉग क्लिपबोर्ड पर कॉपी हो गया!</string>
+
+    <!-- Network Quality & Latency -->
+    <string name="latency_measuring">P2P लेटेंसी: मापी जा रही है...</string>
+    <string name="latency_p2p_direct">डायरेक्ट P2P • अल्ट्रा लो लेटेंसी (%1$dms)</string>
+    <string name="latency_good">अच्छा कनेक्शन (%1$dms)</string>
+    <string name="latency_weak">कमज़ोर सिग्नल (%1$dms)</string>
+    <string name="status_connected_you">जुड़े हुए हैं (आप)</string>
+    <string name="status_leader_you">लीडर (आप)</string>
+    <string name="status_muted_local">म्यूट (लोकल)</string>
+    <string name="status_connected_p2p_fmt">जुड़े हैं • 🟢 %1$dms (P2P)</string>
+    <string name="status_connected_good_fmt">जुड़े हैं • 🟡 %1$dms</string>
+    <string name="status_connected_weak_fmt">जुड़े हैं • 🔴 %1$dms</string>
+    <string name="status_connected_good">जुड़े हैं • 🟢 बढ़िया</string>
+
+    <!-- Mic Mode Live & Muted Hints -->
+    <string name="mic_hint_muted">🔴 माइक म्यूट है · स्क्वाड के साथी आपको नहीं सुन सकते</string>
+    <string name="mic_hint_live">🟢 आवाज़ लाइव है · स्क्वाड के साथी आपको सुन सकते हैं</string>
+
+    <!-- Additional Toasts -->
+    <string name="toast_error_creating_room">कमरा बनाने में त्रुटि: %1$s</string>
+    <string name="toast_error_joining_room">कमरे में जुड़ने में त्रुटि: %1$s</string>
+    <string name="toast_opening_leaderboard">स्क्वाड लीडरबोर्ड खोला जा रहा है...</string>
+    <string name="toast_low_data_enabled">3G / कमज़ोर सिग्नल मोड: चालू (12kbps Opus DTX)</string>
+    <string name="toast_low_data_disabled">3G / कमज़ोर सिग्नल मोड: बंद (HD Studio Voice)</string>
+    <string name="toast_syncing_vip">क्लाउड से VIP स्थिति सिंक हो रही है...</string>
+    <string name="toast_current_status">वर्तमान स्थिति: %1$s</string>
+    <string name="toast_vip_expires_warning">⚠️ VIP %1$d घंटों में समाप्त हो रहा है! 3 और मुफ़्त दिन पाने के लिए अपना रेफरल कोड शेयर करें।</string>
+    <string name="toast_squad_alarm_set">⏰ स्क्वाड मैच अलार्म प्रतिदिन %1$s के लिए सेट किया गया!</string>
+    <string name="toast_payment_init_error">भुगतान शुरू करने में त्रुटि: %1$s</string>
+    <string name="toast_payment_id_missing">⚠️ भुगतान आईडी गायब है। सत्यापन आगे नहीं बढ़ सकता।</string>
+    <string name="toast_payment_verified_fmt">👑 भुगतान सत्यापित (%1$s)! %3$s के लिए %2$s सक्रिय।</string>
+    <string name="toast_payment_verify_failed">❌ सत्यापन विफल या सर्वर पुष्टि लंबित। यदि राशि कट गई है, तो सहायता टिकट जमा करें।</string>
+    <string name="toast_enter_subject">कृपया एक विषय सारांश दर्ज करें</string>
+    <string name="toast_describe_issue">कृपया समस्या का विस्तार से वर्णन करें</string>
+
+    <!-- VIP Dialog and Feature Prompts -->
+    <string name="dialog_vip_squad_save">स्क्वाड सहेजें</string>
+    <string name="vip_feature_clutch_highlights">👑 क्लच हाइलाइट्स केवल VIP उपयोगकर्ताओं के लिए है! अपने 120s के ऑडियो मोमेंट्स सहेजने के लिए अपग्रेड करें।</string>
+    <string name="vip_feature_ram_purge">👑 बैकग्राउंड रैम पर्ज केवल VIP उपयोगकर्ताओं के लिए है! BGMI / Free Fire में लैग खत्म करने के लिए अपग्रेड करें।</string>
+    <string name="vip_feature_noise_shield">👑 %1$d%% AI नॉइज़ शील्ड केवल VIP उपयोगकर्ताओं के लिए है! बैकग्राउंड शोर और पंखे की आवाज़ हटाने के लिए अपग्रेड करें।</string>
+    <string name="vip_feature_room_limit">आप मुफ़्त प्लान की 2 कमरों की सीमा तक पहुँच चुके हैं! असीमित कस्टम स्क्वाड सहेजने के लिए गेमरवॉइस VIP में अपग्रेड करें।</string>
+
+    <!-- Referral Hints -->
+    <string name="hint_enter_referral_code">⚠️ कृपया एक रेफरल कोड दर्ज करें</string>
+    <string name="hint_verifying_code">⏳ कोड सत्यापित किया जा रहा है...</string>
+
+    <!-- Noise Filter Tiers -->
+    <string name="noise_tier_0_label">रॉ ऑडियो (0% फ़िल्टर)</string>
+    <string name="noise_tier_0_desc">शून्य प्रोसेसिंग ओवरहेड के साथ शुद्ध अनफ़िल्टर्ड माइक्रोफ़ोन स्ट्रीम।</string>
+    <string name="noise_tier_25_label">हल्का अकॉस्टिक क्लीन (25%)</string>
+    <string name="noise_tier_25_desc">शांत गेमिंग स्थानों के लिए हल्का रूम रेजोनेंस रद्दीकरण।</string>
+    <string name="noise_tier_50_label">मानक स्क्वाड शील्ड (50%)</string>
+    <string name="noise_tier_50_desc">संतुलित शोर कटौती। पंखे की आवाज़ और कीबोर्ड की आवाज़ को कम करता है।</string>
+    <string name="noise_tier_75_label">स्क्वाड फोकस प्रो (75%) 👑</string>
+    <string name="noise_tier_75_desc">सख्त नॉइज़ गेट सीलिंग फैन और सांस लेने की आवाज़ को हटाता है।</string>
+    <string name="noise_tier_100_label">100% अल्ट्रा साइलेंट AI शील्ड 👑</string>
+    <string name="noise_tier_100_desc">पूर्ण स्टूडियो शांति। AI केवल स्क्वाड आवाज़ को अलग करता है। 0% पंखा या कमरे का शोर।</string>
+
+    <!-- App Update Toasts -->
+    <string name="toast_update_server_unreachable">अपडेट सर्वर से संपर्क नहीं हो सका। बाद में पुनः प्रयास करें।</string>
+    <string name="toast_allow_install_unknown">गेमरवॉइस अपडेट करने के लिए \'अज्ञात ऐप्स इंस्टॉल करें\' की अनुमति दें</string>
+    <string name="toast_download_failed">डाउनलोड विफल: %1$s</string>
+    <string name="toast_download_server_error">डाउनलोड सर्वर से त्रुटि प्राप्त हुई: %1$d</string>
+    <string name="toast_update_save_failed">अपडेट सहेजने में विफल: %1$s</string>
+    <string name="toast_installer_start_failed">इंस्टॉलर शुरू नहीं हो सका: %1$s</string>
+
+    <!-- Glory Reward Toast -->
+    <string name="toast_glory_vip_equipped">🎉 %1$d दिन का VIP पास सक्रिय! आप सीज़न के चैंपियन हैं!</string>
 </resources>

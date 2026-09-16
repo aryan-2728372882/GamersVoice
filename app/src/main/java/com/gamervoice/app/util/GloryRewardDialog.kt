@@ -192,7 +192,7 @@ object GloryRewardDialog {
                 binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
             } catch (_: Exception) {}
 
-            Toast.makeText(activity, "🎉 $vipDays Days VIP Pass equipped! You are the season champion!", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, activity.getString(R.string.toast_glory_vip_equipped, vipDays), Toast.LENGTH_LONG).show()
 
             binding.rlRewardStage.animate()
                 .scaleX(0.75f)

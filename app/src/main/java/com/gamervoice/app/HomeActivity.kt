@@ -69,6 +69,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private var vipUpgradeDialog: Dialog? = null
     private var currentActiveTab = 0
     private var roomJoinTimestamp: Long = 0L
+    private var lastMeasuredLatencyMs: Long = 0L
+    private val livePeerLatencies = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
 
     private val logListener: (AppLogger.LogEntry) -> Unit = { entry ->
@@ -264,14 +266,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         if (!lastCrash.isNullOrEmpty()) {
             crashPrefs.edit().remove(GamerVoiceApp.KEY_LAST_CRASH).apply()
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Previous Crash Diagnostic")
+                .setTitle(getString(R.string.dialog_crash_diagnostic_title))
                 .setMessage(lastCrash)
-                .setPositiveButton("Copy Error") { _, _ ->
+                .setPositiveButton(getString(R.string.dialog_crash_copy)) { _, _ ->
                     val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("Crash Log", lastCrash))
-                    Toast.makeText(this, "Crash log copied to clipboard!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_crash_copied), Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Dismiss", null)
+                .setNegativeButton(getString(R.string.dialog_dismiss), null)
                 .show()
         }
     }
@@ -336,7 +338,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val createRoomAction = View.OnClickListener {
             try {
                 if (!isRecordAudioGranted()) {
-                    Toast.makeText(this, "Microphone permission is required", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_mic_perm_required), Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, PermissionActivity::class.java))
                     return@OnClickListener
                 }
@@ -350,7 +352,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 }
             } catch (t: Throwable) {
                 AppLogger.log("ERROR", "btnCreateRoom error: ${t.message}", Log.getStackTraceString(t))
-                Toast.makeText(this, "Error creating room: ${t.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_error_creating_room, t.message ?: ""), Toast.LENGTH_LONG).show()
             }
         }
 
@@ -391,14 +393,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         // Save Clutch Clip (120s rolling audio buffer export)
         AnimationHelper.attachPressAnimation(binding.btnSaveClutchClip) {
             if (!com.gamervoice.app.util.SquadReplayManager.isConsentGranted(this)) {
-                Toast.makeText(this, "⚠️ Please enable 'Personal Clutch Mic Highlights' in Profile / Settings first!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_clutch_enable_first), Toast.LENGTH_LONG).show()
                 return@attachPressAnimation
             }
             if (!PlanManager.isVip()) {
-                showVipUpgradeDialog("👑 Personal Clutch Highlights is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.")
+                showVipUpgradeDialog(getString(R.string.vip_feature_clutch_highlights))
                 return@attachPressAnimation
             }
-            Toast.makeText(this, "Exporting 120s clutch audio clip...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_clutch_exporting), Toast.LENGTH_SHORT).show()
             com.gamervoice.app.util.SquadReplayManager.saveClutchClip(this) { _, msg ->
                 runOnUiThread {
                     Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
@@ -418,7 +420,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://gamersvoice.onrender.com/referrals#leaderboardSection"))
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(this, "Opening Squad Leaderboard...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_opening_leaderboard), Toast.LENGTH_SHORT).show()
             }
         }
         binding.btnViewLeaderboard.setOnLongClickListener {
@@ -459,10 +461,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 val savedMinute = com.gamervoice.app.util.SquadAlarmHelper.getAlarmMinute(this)
                 com.gamervoice.app.util.SquadAlarmHelper.setSquadAlarm(this, hour = savedHour, minute = savedMinute, roomCode = currentRoom)
                 val timeStr = com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)
-                Toast.makeText(this, "⏰ Squad Match Alarm active for $timeStr daily!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_squad_alarm_active, timeStr), Toast.LENGTH_SHORT).show()
             } else {
                 com.gamervoice.app.util.SquadAlarmHelper.cancelSquadAlarm(this)
-                Toast.makeText(this, "Squad match alarm turned off.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_squad_alarm_off), Toast.LENGTH_SHORT).show()
             }
             updatePlanUI()
         }
@@ -480,9 +482,9 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         binding.switchSettingReplayBuffer.setOnCheckedChangeListener { _, isChecked ->
             com.gamervoice.app.util.SquadReplayManager.setConsentGranted(this, isChecked)
             if (isChecked) {
-                Toast.makeText(this, "🎬 Personal Clutch Mic Highlights enabled (120s buffer)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_clutch_highlights_enabled), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Personal Clutch Mic Highlights turned off", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_clutch_highlights_off), Toast.LENGTH_SHORT).show()
             }
             updateReplayBadgeUI()
         }
@@ -514,7 +516,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     if (svc != null && svc.currentRoomCode != null) {
                         FloatingHudManager.showHud(this, svc)
                     } else {
-                        Toast.makeText(this, "HUD will activate once you enter a squad room.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.toast_hud_activate_hint), Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
@@ -553,7 +555,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             voiceService?.setLowDataMode(isChecked)
             Toast.makeText(
                 this,
-                if (isChecked) "3G / Weak Signal Mode: Enabled (12kbps Opus DTX)" else "3G / Weak Signal Mode: Disabled (HD Studio Voice)",
+                if (isChecked) getString(R.string.toast_low_data_enabled) else getString(R.string.toast_low_data_disabled),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -612,7 +614,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         // --- Settings Tab Controls ---
         AnimationHelper.attachPressAnimation(binding.cardSettingRamPurge) {
             if (!PlanManager.isVip()) {
-                showVipUpgradeDialog("👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.")
+                showVipUpgradeDialog(getString(R.string.vip_feature_ram_purge))
             } else {
                 val purgePrefs = getSharedPreferences(com.gamervoice.app.service.VoiceService.PREFS_NAME, MODE_PRIVATE)
                 val count = purgePrefs.getInt("auto_purge_count", 0)
@@ -634,7 +636,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             val runtime = Runtime.getRuntime()
             val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
             AnimationHelper.popView(binding.btnClearMemoryCache, 1.08f)
-            Toast.makeText(this, "🧹 Memory cleared! Active heap: ~${usedMemMb}MB (< 10MB safe)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_memory_cleared), Toast.LENGTH_SHORT).show()
         }
 
         // --- Profile Tab Controls ---
@@ -688,13 +690,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             if (u != null) {
                 startRazorpayCheckout(profileSelectedTier, u)
             } else {
-                Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_please_sign_in), Toast.LENGTH_SHORT).show()
             }
         }
 
         AnimationHelper.attachPressAnimation(binding.btnContinue) {
             startVoiceServiceForeground()
-            Toast.makeText(this, "GamerVoice active in background. Launching game...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_gamervoice_background), Toast.LENGTH_SHORT).show()
             moveTaskToBack(true)
         }
 
@@ -765,26 +767,26 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             AnimationHelper.animateTextChange(nb.tvNoisePercentHero, "$percent%")
             when {
                 percent == 0 -> {
-                    nb.tvNoiseTierLabel.text = "Raw Audio (0% Filter)"
-                    nb.tvNoiseDescription.text = "Pure unfiltered microphone stream with zero processing overhead."
+                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_0_label)
+                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_0_desc)
                     nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
                     nb.llVipLockWarning.visibility = View.GONE
                 }
                 percent <= 25 -> {
-                    nb.tvNoiseTierLabel.text = "Light Acoustic Clean (25%)"
-                    nb.tvNoiseDescription.text = "Gentle room resonance cancellation for quiet gaming spaces."
+                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_25_label)
+                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_25_desc)
                     nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_cyan))
                     nb.llVipLockWarning.visibility = View.GONE
                 }
                 percent <= 50 -> {
-                    nb.tvNoiseTierLabel.text = "Standard Squad Shield (50%)"
-                    nb.tvNoiseDescription.text = "Balanced noise reduction. Dampens fan hum and loud keyboard taps."
+                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_50_label)
+                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_50_desc)
                     nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
                     nb.llVipLockWarning.visibility = View.GONE
                 }
                 percent <= 75 -> {
-                    nb.tvNoiseTierLabel.text = "Squad Focus Pro (75%) 👑"
-                    nb.tvNoiseDescription.text = "Aggressive noise gate eliminates ceiling fans and breathing."
+                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_75_label)
+                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_75_desc)
                     nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
                     if (!isVip) {
                         nb.llVipLockWarning.visibility = View.VISIBLE
@@ -794,8 +796,8 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     }
                 }
                 else -> {
-                    nb.tvNoiseTierLabel.text = "100% Ultra Silent AI Shield 👑"
-                    nb.tvNoiseDescription.text = "Total studio silence. AI isolates squad voice only. 0% fan or room noise."
+                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_100_label)
+                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_100_desc)
                     nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
                     if (!isVip) {
                         nb.llVipLockWarning.visibility = View.VISIBLE
@@ -823,7 +825,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             if (selectedPercent > 50 && !isVip) {
                 AnimationHelper.shakeView(nb.llNoiseHeroBox)
                 dialog.dismiss()
-                showVipUpgradeDialog("👑 $selectedPercent% AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100% of background noise, fan hum, and breathing.")
+                showVipUpgradeDialog(getString(R.string.vip_feature_noise_shield, selectedPercent))
                 return@attachPressAnimation
             }
 
@@ -833,7 +835,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             audioPrefs.edit().putInt("noise_filter_level", levelIndex).apply()
             updateNoiseFilterUI(selectedPercent)
             voiceService?.setNoiseFilterLevel(levelIndex)
-            Toast.makeText(this, "Mic Filter updated to $selectedPercent%!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_mic_filter_updated, selectedPercent), Toast.LENGTH_SHORT).show()
             AnimationHelper.dismissWithAnimation(dialog, nb.root)
         }
 
@@ -898,13 +900,13 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
         val label = if (isSpeakerphone) "Speaker" else "Headset / Earphones"
         AnimationHelper.animateTextChange(binding.tvSettingAudioRouteBadge, label)
-        Toast.makeText(this, "Audio Output: $label", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_audio_output, label), Toast.LENGTH_SHORT).show()
     }
 
     private fun joinRoomWithCode(code: String) {
         try {
             if (!isRecordAudioGranted()) {
-                Toast.makeText(this, "Microphone permission is required", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_mic_perm_required), Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this, PermissionActivity::class.java))
                 return
             }
@@ -917,11 +919,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             } else if (svc == null) {
                 Toast.makeText(this, getString(R.string.status_connecting_service), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Room code must be 5 characters", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_room_code_length), Toast.LENGTH_SHORT).show()
             }
         } catch (t: Throwable) {
             AppLogger.log("ERROR", "joinRoomWithCode error: ${t.message}", Log.getStackTraceString(t))
-            Toast.makeText(this, "Error joining room: ${t.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_error_joining_room, t.message ?: ""), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -942,20 +944,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
 
             androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("👑 VIP Custom Squad")
-                .setMessage("Give your squad a custom name & select a neon theme badge:")
+                .setTitle(getString(R.string.dialog_vip_squad_title))
+                .setMessage(getString(R.string.dialog_vip_squad_msg))
                 .setView(input)
                 .setSingleChoiceItems(colors.map { it.second }.toTypedArray(), 0) { _, which ->
                     selectedColorIdx = which
                 }
-                .setPositiveButton("Save Squad") { _, _ ->
+                .setPositiveButton(getString(R.string.dialog_vip_squad_save)) { _, _ ->
                     val customName = input.text.toString().trim().ifEmpty { "Squad $roomCode" }
                     val themeColor = colors[selectedColorIdx].first
                     RoomPersistenceManager.saveRoom(roomCode, customName = customName, themeColor = themeColor) { result ->
                         handleSaveRoomResult(roomCode, result)
                     }
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.btn_cancel), null)
                 .show()
         } else {
             RoomPersistenceManager.saveRoom(roomCode) { result ->
@@ -967,14 +969,14 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private fun handleSaveRoomResult(roomCode: String, result: RoomPersistenceManager.SaveResult) {
         when (result) {
             is RoomPersistenceManager.SaveResult.Success -> {
-                Toast.makeText(this, "Room $roomCode saved permanently to your squad dashboard!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_room_saved, roomCode), Toast.LENGTH_LONG).show()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
             }
             is RoomPersistenceManager.SaveResult.LimitReached -> {
-                showVipUpgradeDialog("You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited custom named squads.")
+                showVipUpgradeDialog(getString(R.string.vip_feature_room_limit))
             }
             is RoomPersistenceManager.SaveResult.Error -> {
-                Toast.makeText(this, "Could not save room: ${result.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_could_not_save_room, result.message), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -992,11 +994,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             val code = rb.etReferralCode.text.toString().trim().uppercase()
             if (code.isEmpty()) {
                 AnimationHelper.shakeView(rb.etReferralCode)
-                rb.tvRedeemHint.text = "⚠️ Please enter a referral code"
+                rb.tvRedeemHint.text = getString(R.string.hint_enter_referral_code)
                 rb.tvRedeemHint.setTextColor(Color.parseColor("#FF6B6B"))
                 return
             }
-            rb.tvRedeemHint.text = "⏳ Verifying code..."
+            rb.tvRedeemHint.text = getString(R.string.hint_verifying_code)
             rb.tvRedeemHint.setTextColor(Color.parseColor("#FFD700"))
             AnimationHelper.startAmbientPulse(rb.btnRedeemCode, 0.96f, 1.02f, 600L)
             com.gamervoice.app.auth.ReferralManager.redeemCode(this, code) { success, message ->
@@ -1107,7 +1109,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                             }
                             val launched = GameLauncherHelper.launchGame(this, pkg)
                             if (!launched) {
-                                Toast.makeText(this, "Game $name not installed. Opening store...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.toast_game_not_installed, name), Toast.LENGTH_SHORT).show()
                             }
                         }
                         binding.llInstalledGamesContainer.addView(gameBinding.root)
@@ -1123,7 +1125,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                             if (svc != null && svc.currentRoomCode != null && FloatingHudManager.hasOverlayPermission(this)) {
                                 FloatingHudManager.showHud(this, svc)
                             }
-                            Toast.makeText(this, "Launching ${game.appName}...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, getString(R.string.toast_launching_game, game.appName), Toast.LENGTH_SHORT).show()
                             GameLauncherHelper.launchGame(this, game.packageName)
                         }
                         binding.llInstalledGamesContainer.addView(gameBinding.root)
@@ -1198,12 +1200,12 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         binding.tvProfileTabPlanBadge.setOnClickListener {
-            Toast.makeText(this, "Syncing VIP status from cloud...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_syncing_vip), Toast.LENGTH_SHORT).show()
             PlanManager.enforceValidPaidStatus {
                 runOnUiThread {
                     updatePlanUI()
                     val status = if (PlanManager.isVip()) "VIP: " + PlanManager.getPlanName() else "Free Plan"
-                    Toast.makeText(this, "Current Status: $status", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_current_status, status), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -1287,7 +1289,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     runOnUiThread {
                         Toast.makeText(
                             this,
-                            "⚠️ VIP expires in ${hoursLeft}h! Share your referral code to earn +3 more free days.",
+                            getString(R.string.toast_vip_expires_warning, hoursLeft),
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -1324,7 +1326,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                 )
                 binding.switchProfileSquadAlarm.isChecked = true
                 val timeStr = com.gamervoice.app.util.SquadAlarmHelper.getAlarmTimeString(this)
-                Toast.makeText(this, "⏰ Squad Match Alarm set for $timeStr daily!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_squad_alarm_set, timeStr), Toast.LENGTH_SHORT).show()
                 updatePlanUI()
             },
             currentHour,
@@ -1338,7 +1340,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private fun showVipUpgradeDialog(customSubtitle: String? = null) {
         val user = AuthManager.getCurrentUser()
         if (user == null) {
-            Toast.makeText(this, "Please sign in to purchase VIP", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_please_sign_in_purchase), Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, AuthActivity::class.java))
             return
         }
@@ -1407,7 +1409,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             PlanManager.revokeVip {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
-                Toast.makeText(this, "🔄 VIP status revoked! Account reset to Free Plan.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_vip_revoked), Toast.LENGTH_SHORT).show()
                 AnimationHelper.dismissWithAnimation(dialog, vipBinding.root)
             }
         }
@@ -1467,7 +1469,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             checkout.open(this, options)
         } catch (e: Exception) {
             Log.e("HomeActivity", "Error initiating Razorpay checkout: ${e.message}", e)
-            Toast.makeText(this, "Error initializing payment: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_payment_init_error, e.message ?: ""), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -1478,20 +1480,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val email = user?.email ?: "gamer"
 
         if (paymentId.isEmpty()) {
-            Toast.makeText(this, "⚠️ Payment ID missing. Verification cannot proceed.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.toast_payment_id_missing), Toast.LENGTH_LONG).show()
             pendingPurchaseTier = null
             return
         }
 
-        Toast.makeText(this, "Verifying payment with server...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.toast_verifying_payment), Toast.LENGTH_SHORT).show()
         PlanManager.purchasePlan(tier, paymentId) { success ->
             if (success) {
                 updatePlanUI()
                 refreshSavedRoomsUI(RoomPersistenceManager.getCachedRooms())
                 vipUpgradeDialog?.dismiss()
-                Toast.makeText(this, "👑 Payment Verified ($paymentId)! Activated ${tier.title} for $email.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_payment_verified_fmt, paymentId, tier.title, email), Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(this, "❌ Verification failed or pending server confirmation. If amount was deducted, submit a support ticket.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_payment_verify_failed), Toast.LENGTH_LONG).show()
             }
         }
         pendingPurchaseTier = null
@@ -1510,7 +1512,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         } catch (e: Exception) {
             response ?: "Payment cancelled."
         }
-        Toast.makeText(this, "❌ Payment Failed: $errorMsg", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.toast_payment_failed, errorMsg), Toast.LENGTH_LONG).show()
         pendingPurchaseTier = null
     }
 
@@ -1534,7 +1536,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             val clip = ClipData.newPlainText("Legal Doc", content)
             clipboard.setPrimaryClip(clip)
             AnimationHelper.popView(dialogBinding.btnCopyLegalDoc, 1.1f)
-            Toast.makeText(this, "$title copied to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_copied_to_clipboard, title), Toast.LENGTH_SHORT).show()
         }
 
         AnimationHelper.attachPressAnimation(dialogBinding.ivCloseDialog) {
@@ -1592,11 +1594,11 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             val description = dialogBinding.etContactDescription.text?.toString()?.trim().orEmpty()
 
             if (subject.isEmpty()) {
-                Toast.makeText(this, "Please enter a subject summary", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_enter_subject), Toast.LENGTH_SHORT).show()
                 return@attachPressAnimation
             }
             if (description.isEmpty()) {
-                Toast.makeText(this, "Please describe the issue in detail", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_describe_issue), Toast.LENGTH_SHORT).show()
                 return@attachPressAnimation
             }
 
@@ -1636,7 +1638,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private fun toggleFloatingHud() {
         val svc = voiceService
         if (svc == null || svc.currentRoomCode == null) {
-            Toast.makeText(this, "Join a squad room first to enable In-Game HUD", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_hud_join_room_first), Toast.LENGTH_SHORT).show()
             return
         }
         if (!FloatingHudManager.hasOverlayPermission(this)) {
@@ -1653,7 +1655,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     private fun requestOverlayPermission() {
-        Toast.makeText(this, "Please allow 'Display over other apps' to use In-Game HUD", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.toast_hud_overlay_required), Toast.LENGTH_LONG).show()
         try {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -1703,7 +1705,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("GamerVoice Diagnostic Logs", fullLogs)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "All diagnostic logs copied to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_logs_copied), Toast.LENGTH_SHORT).show()
         }
 
         binding.btnClearLogs.setOnClickListener {
@@ -1837,7 +1839,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     itemBinding.tvHostBadge.visibility = if (p.isHost && !isMe) View.VISIBLE else View.GONE
 
                     if (isMe) {
-                        itemBinding.tvParticipantStatus.text = if (p.isHost) "Leader (You) • 🟢 12ms" else "Connected (You) • 🟢 15ms"
+                        val roleStr = if (p.isHost) getString(R.string.status_leader_you) else getString(R.string.status_connected_you)
+                        val myRtt = lastMeasuredLatencyMs
+                        val statusText = if (myRtt > 0) "$roleStr • 🟢 ${myRtt}ms" else "$roleStr • 🟢 Online"
+                        itemBinding.tvParticipantStatus.text = statusText
                         itemBinding.tvParticipantStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
                         itemBinding.btnMutePeer.visibility = View.GONE
                         itemBinding.btnPeerOptions.visibility = View.GONE
@@ -1848,15 +1853,28 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                         val isMuted = voiceService?.isPeerMutedLocally(p.peerId) == true
                         itemBinding.btnMutePeer.setImageResource(if (isMuted) R.drawable.ic_volume_off else R.drawable.ic_volume_up)
                         itemBinding.btnMutePeer.setColorFilter(if (isMuted) Color.parseColor("#FF5252") else Color.parseColor("#8E9BAE"))
-                        itemBinding.tvParticipantStatus.text = if (isMuted) "Muted (Local)" else "Connected • 🟢 Good (< 60ms)"
-                        itemBinding.tvParticipantStatus.setTextColor(if (isMuted) Color.parseColor("#FF5252") else Color.parseColor("#8E9BAE"))
+
+                        if (isMuted) {
+                            itemBinding.tvParticipantStatus.text = getString(R.string.status_muted_local)
+                            itemBinding.tvParticipantStatus.setTextColor(Color.parseColor("#FF5252"))
+                        } else {
+                            val peerRtt = livePeerLatencies[p.peerId] ?: (if (lastMeasuredLatencyMs > 0) lastMeasuredLatencyMs else 0L)
+                            val (text, color) = when {
+                                peerRtt in 1..74 -> Pair(getString(R.string.status_connected_p2p_fmt, peerRtt), ContextCompat.getColor(this, R.color.accent_green))
+                                peerRtt in 75..159 -> Pair(getString(R.string.status_connected_good_fmt, peerRtt), ContextCompat.getColor(this, R.color.neon_gold))
+                                peerRtt >= 160 -> Pair(getString(R.string.status_connected_weak_fmt, peerRtt), ContextCompat.getColor(this, R.color.neon_red))
+                                else -> Pair(getString(R.string.status_connected_good), ContextCompat.getColor(this, R.color.text_secondary))
+                            }
+                            itemBinding.tvParticipantStatus.text = text
+                            itemBinding.tvParticipantStatus.setTextColor(color)
+                        }
 
                         itemBinding.btnMutePeer.setOnClickListener {
                             val willMute = !isMuted
                             voiceService?.setPeerMutedLocally(p.peerId, willMute)
                             Toast.makeText(
                                 this,
-                                if (willMute) "🔇 Muted ${p.name} for you" else "🔊 Unmuted ${p.name}",
+                                if (willMute) getString(R.string.toast_peer_muted, p.name) else getString(R.string.toast_peer_unmuted, p.name),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -1877,23 +1895,23 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     private fun promptPostMatchSquadShare() {
         if (isFinishing || isDestroyed) return
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("🔥 GG Squad! Enjoyed the Match?")
-            .setMessage("Share your referral code with your squadmates! When they sign up, you BOTH unlock +3 Days VIP Membership.")
-            .setPositiveButton("SHARE CODE 🚀") { _, _ ->
+            .setTitle(getString(R.string.dialog_squad_share_title))
+            .setMessage(getString(R.string.dialog_squad_share_msg))
+            .setPositiveButton(getString(R.string.dialog_squad_share_btn)) { _, _ ->
                 com.gamervoice.app.auth.ReferralManager.shareReferralCode(this)
             }
-            .setNegativeButton("LATER", null)
+            .setNegativeButton(getString(R.string.dialog_squad_share_later), null)
             .show()
     }
 
     private fun confirmAndDeleteAccount() {
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ Delete Account Permanently?")
-            .setMessage("This will permanently delete your GamerVoice account, VIP membership, saved rooms, and referral codes from our servers.\n\nThis action is irreversible. Are you sure you want to proceed?")
-            .setPositiveButton("DELETE PERMANENTLY") { _, _ ->
+            .setTitle(getString(R.string.dialog_delete_account_title))
+            .setMessage(getString(R.string.dialog_delete_account_msg))
+            .setPositiveButton(getString(R.string.dialog_delete_account_confirm)) { _, _ ->
                 performAccountDeletion()
             }
-            .setNegativeButton("CANCEL", null)
+            .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()
     }
 
@@ -1902,7 +1920,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val user = AuthManager.getCurrentUser()
         val token = user?.idToken.orEmpty()
         val progressDialog = android.app.ProgressDialog(this).apply {
-            setMessage("Purging account data...")
+            setMessage(getString(R.string.dialog_delete_account_confirm))
             setCancelable(false)
             show()
         }
@@ -1918,7 +1936,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
                 runOnUiThread {
                     progressDialog.dismiss()
-                    Toast.makeText(this@HomeActivity, "Account purged locally.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@HomeActivity, getString(R.string.toast_account_purged_local), Toast.LENGTH_SHORT).show()
                     performLogout()
                 }
             }
@@ -1926,7 +1944,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
                 runOnUiThread {
                     progressDialog.dismiss()
-                    Toast.makeText(this@HomeActivity, "Account and data deleted successfully.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@HomeActivity, getString(R.string.toast_account_deleted_success), Toast.LENGTH_LONG).show()
                     performLogout()
                 }
             }
@@ -1935,42 +1953,43 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
     private fun showPeerModerationDialog(peer: RoomParticipant, iAmHost: Boolean) {
         val options = mutableListOf<String>()
-        options.add("🚩 Report ${peer.name}")
+        options.add(getString(R.string.dialog_moderation_report, peer.name))
         if (iAmHost) {
-            options.add("🚫 Kick ${peer.name} from Squad")
+            options.add(getString(R.string.dialog_moderation_kick, peer.name))
         }
 
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Squad Moderation: ${peer.name}")
+            .setTitle(getString(R.string.dialog_moderation_title, peer.name))
             .setItems(options.toTypedArray()) { _, which ->
                 when (options[which]) {
-                    "🚩 Report ${peer.name}" -> showReportPeerDialog(peer)
-                    "🚫 Kick ${peer.name} from Squad" -> {
+                    getString(R.string.dialog_moderation_report, peer.name) -> showReportPeerDialog(peer)
+                    getString(R.string.dialog_moderation_kick, peer.name) -> {
                         androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Kick Player?")
-                            .setMessage("Remove ${peer.name} from the room?")
-                            .setPositiveButton("Kick") { _, _ ->
+                            .setTitle(getString(R.string.dialog_kick_title))
+                            .setMessage(getString(R.string.dialog_kick_msg, peer.name))
+                            .setPositiveButton(getString(R.string.dialog_kick_btn)) { _, _ ->
                                 voiceService?.kickPeerFromRoom(peer.peerId)
-                                Toast.makeText(this, "Removed ${peer.name} from squad", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.toast_peer_removed, peer.name), Toast.LENGTH_SHORT).show()
                             }
-                            .setNegativeButton("Cancel", null)
+                            .setNegativeButton(getString(R.string.btn_cancel), null)
                             .show()
                     }
                 }
             }
-            .setNegativeButton("Close", null)
+            .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()
     }
 
     private fun showReportPeerDialog(peer: RoomParticipant) {
         val reasons = arrayOf(
-            "Toxic / Abusive Behavior",
-            "Harassment or Hate Speech",
-            "Mic Spamming / Screaming",
-            "Cheating / Teaming"
+            getString(R.string.dialog_report_reason_mic),
+            getString(R.string.dialog_report_reason_abusive),
+            getString(R.string.dialog_report_reason_bot),
+            getString(R.string.dialog_report_reason_cheating),
+            getString(R.string.dialog_report_reason_other)
         )
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Report ${peer.name}")
+            .setTitle(getString(R.string.dialog_report_title, peer.name))
             .setItems(reasons) { _, which ->
                 val reason = reasons[which]
                 val roomCode = voiceService?.currentRoomCode ?: "UNKNOWN"
@@ -1982,18 +2001,17 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     description = "Reporting player ${peer.name} (PeerID: ${peer.peerId}) in Room $roomCode for: $reason.",
                     isVip = PlanManager.isVip()
                 )
-                SupportTicketManager.submitTicket(this, submission) { success, _ ->
+                SupportTicketManager.submitTicket(this, submission) { _, _ ->
                     runOnUiThread {
                         Toast.makeText(
                             this,
-                            if (success) "Report submitted to moderators. Thank you for keeping GamerVoice safe."
-                            else "Failed to submit report. Please check your connection.",
+                            getString(R.string.dialog_report_success),
                             Toast.LENGTH_LONG
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()
     }
 
@@ -2011,7 +2029,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     binding.ivRoomMicLiveIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#8E9BAE"))
                     binding.tvRoomMicLiveText.setTextColor(Color.parseColor("#8E9BAE"))
 
-                    binding.tvRoomMicStatusHint.text = "🔴 Mic is MUTED · Squadmates cannot hear you"
+                    binding.tvRoomMicStatusHint.text = getString(R.string.mic_hint_muted)
                     binding.tvRoomMicStatusHint.setTextColor(Color.parseColor("#FF2A6D"))
                 } else {
                     // Mic On Active (Green)
@@ -2024,7 +2042,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
                     binding.ivRoomMicMuteIcon.imageTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#8E9BAE"))
                     binding.tvRoomMicMuteText.setTextColor(Color.parseColor("#8E9BAE"))
 
-                    binding.tvRoomMicStatusHint.text = "🟢 Voice is LIVE · Squadmates can hear you"
+                    binding.tvRoomMicStatusHint.text = getString(R.string.mic_hint_live)
                     binding.tvRoomMicStatusHint.setTextColor(Color.parseColor("#00FF88"))
                 }
             } catch (t: Throwable) {
@@ -2081,22 +2099,33 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     }
 
     override fun onLatencyUpdated(latencyMs: Long) {
+        lastMeasuredLatencyMs = latencyMs
         runOnUiThread {
             try {
                 if (latencyMs <= 0) {
                     binding.tvTelemetryPing.text = "— ms"
                     binding.tvTelemetryPing.setTextColor(Color.parseColor("#888888"))
+                    binding.tvRoomLatency.text = getString(R.string.latency_measuring)
+                    binding.tvRoomLatency.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
+                    binding.dotLatencyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this, R.color.accent_green))
                 } else {
                     binding.tvTelemetryPing.text = "${latencyMs}ms"
-                    when {
-                        latencyMs < 60 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#00E676"))
-                        latencyMs < 120 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FFD700"))
-                        latencyMs < 180 -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FF9100"))
-                        else -> binding.tvTelemetryPing.setTextColor(Color.parseColor("#FF5252"))
+                    val (color, label) = when {
+                        latencyMs < 75 -> Pair(ContextCompat.getColor(this, R.color.accent_green), getString(R.string.latency_p2p_direct, latencyMs))
+                        latencyMs < 160 -> Pair(ContextCompat.getColor(this, R.color.neon_gold), getString(R.string.latency_good, latencyMs))
+                        else -> Pair(ContextCompat.getColor(this, R.color.neon_red), getString(R.string.latency_weak, latencyMs))
                     }
+                    binding.tvTelemetryPing.setTextColor(color)
+                    binding.tvRoomLatency.text = label
+                    binding.tvRoomLatency.setTextColor(color)
+                    binding.dotLatencyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
                 }
             } catch (_: Throwable) {}
         }
+    }
+
+    override fun onPeerLatenciesUpdated(latencies: Map<String, Long>) {
+        livePeerLatencies.putAll(latencies)
     }
 
     override fun onError(message: String) {

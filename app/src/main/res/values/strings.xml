@@ -34,4 +34,141 @@
     <string name="btn_back">Back to Home</string>
     <string name="room_code_label">ACTIVE ROOM CODE</string>
     <string name="cd_copy_room_code">Copy Room Code</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_crash_diagnostic_title">Previous Crash Diagnostic</string>
+    <string name="dialog_crash_copy">Copy Error</string>
+    <string name="dialog_dismiss">Dismiss</string>
+    <string name="dialog_squad_share_title">🔥 GG Squad! Enjoyed the Match?</string>
+    <string name="dialog_squad_share_msg">Share your referral code with your squadmates! When they sign up, you BOTH unlock +3 Days VIP Membership.</string>
+    <string name="dialog_squad_share_btn">SHARE CODE 🚀</string>
+    <string name="dialog_squad_share_later">LATER</string>
+    <string name="dialog_delete_account_title">⚠️ Delete Account Permanently?</string>
+    <string name="dialog_delete_account_msg">This will permanently delete your GamerVoice account, VIP membership, saved rooms, and referral codes from our servers.\n\nThis action is irreversible. Are you sure you want to proceed?</string>
+    <string name="dialog_delete_account_confirm">DELETE PERMANENTLY</string>
+    <string name="dialog_moderation_title">Squad Moderation: %1$s</string>
+    <string name="dialog_moderation_report">🚩 Report %1$s</string>
+    <string name="dialog_moderation_kick">🚫 Kick %1$s from Squad</string>
+    <string name="dialog_kick_title">Kick Player?</string>
+    <string name="dialog_kick_msg">Remove %1$s from the room?</string>
+    <string name="dialog_kick_btn">Kick</string>
+    <string name="dialog_report_title">Report %1$s</string>
+    <string name="dialog_report_reason_mic">Disruptive Mic / Screaming</string>
+    <string name="dialog_report_reason_abusive">Abusive Language / Toxic</string>
+    <string name="dialog_report_reason_bot">Bot / Spam Audio</string>
+    <string name="dialog_report_reason_cheating">Cheating / Teaming</string>
+    <string name="dialog_report_reason_other">Other Inappropriate Behavior</string>
+    <string name="dialog_report_success">Report submitted. Thank you for keeping the squad safe.</string>
+    <string name="dialog_vip_squad_title">👑 VIP Custom Squad</string>
+    <string name="dialog_vip_squad_msg">Give your squad a custom name &amp; select a neon theme badge:</string>
+    <string name="dialog_update_title">🚀 GamerVoice v%1$s Available</string>
+    <string name="dialog_update_msg">A new update is available with competitive audio upgrades!\n\n%1$s\n\nWould you like to install it now?</string>
+    <string name="dialog_update_now">UPDATE NOW ⚡</string>
+    <string name="dialog_update_later">LATER</string>
+    <string name="dialog_downloading_update">Downloading Update</string>
+    <string name="dialog_downloading_msg">Downloading latest GamerVoice release...</string>
+
+    <!-- Toasts -->
+    <string name="toast_mic_perm_required">Microphone permission is required</string>
+    <string name="toast_room_code_length">Room code must be 5 characters</string>
+    <string name="toast_room_saved">Room %1$s saved permanently to your squad dashboard!</string>
+    <string name="toast_could_not_save_room">Could not save room: %1$s</string>
+    <string name="toast_launching_game">Launching %1$s...</string>
+    <string name="toast_game_not_installed">Game %1$s not installed. Opening store...</string>
+    <string name="toast_please_sign_in">Please sign in first</string>
+    <string name="toast_please_sign_in_purchase">Please sign in to purchase VIP</string>
+    <string name="toast_gamervoice_background">GamerVoice active in background. Launching game...</string>
+    <string name="toast_mic_filter_updated">Mic Filter updated to %1$d%%!</string>
+    <string name="toast_audio_output">Audio Output: %1$s</string>
+    <string name="toast_hud_activate_hint">HUD will activate once you enter a squad room.</string>
+    <string name="toast_hud_overlay_required">Please allow \'Display over other apps\' to use In-Game HUD</string>
+    <string name="toast_hud_join_room_first">Join a squad room first to enable In-Game HUD</string>
+    <string name="toast_account_deleted_success">Account and data deleted successfully.</string>
+    <string name="toast_account_purged_local">Account purged locally.</string>
+    <string name="toast_logs_copied">All diagnostic logs copied to clipboard!</string>
+    <string name="toast_peer_removed">Removed %1$s from squad</string>
+    <string name="toast_peer_muted">🔇 Muted %1$s for you</string>
+    <string name="toast_peer_unmuted">🔊 Unmuted %1$s</string>
+    <string name="toast_squad_alarm_active">⏰ Squad Match Alarm active for %1$s daily!</string>
+    <string name="toast_squad_alarm_off">Squad match alarm turned off.</string>
+    <string name="toast_clutch_highlights_enabled">🎬 Personal Clutch Mic Highlights enabled (120s buffer)</string>
+    <string name="toast_clutch_highlights_off">Personal Clutch Mic Highlights turned off</string>
+    <string name="toast_clutch_enable_first">⚠️ Please enable \'Personal Clutch Mic Highlights\' in Profile / Settings first!</string>
+    <string name="toast_clutch_exporting">Exporting 120s clutch audio clip...</string>
+    <string name="toast_vip_revoked">⚠️ VIP status revoked! Account reset to Free Plan.</string>
+    <string name="toast_verifying_payment">Verifying payment with server...</string>
+    <string name="toast_payment_verified">🎉 Payment Verified! Activated %1$s.</string>
+    <string name="toast_payment_failed">⚠️ Payment Failed: %1$s</string>
+    <string name="toast_memory_cleared">⚡ Memory cleared! (&lt; 10MB safe)</string>
+    <string name="toast_copied_to_clipboard">%1$s copied to clipboard!</string>
+    <string name="toast_app_up_to_date">GamerVoice is up to date (v%1$s)!</string>
+    <string name="toast_crash_copied">Crash log copied to clipboard!</string>
+
+    <!-- Network Quality & Latency -->
+    <string name="latency_measuring">P2P Latency: Measuring...</string>
+    <string name="latency_p2p_direct">P2P Direct • Ultra Low Latency (%1$dms)</string>
+    <string name="latency_good">Good Connection (%1$dms)</string>
+    <string name="latency_weak">Weak Signal (%1$dms)</string>
+    <string name="status_connected_you">Connected (You)</string>
+    <string name="status_leader_you">Leader (You)</string>
+    <string name="status_muted_local">Muted (Local)</string>
+    <string name="status_connected_p2p_fmt">Connected • 🟢 %1$dms (P2P)</string>
+    <string name="status_connected_good_fmt">Connected • 🟡 %1$dms</string>
+    <string name="status_connected_weak_fmt">Connected • 🔴 %1$dms</string>
+    <string name="status_connected_good">Connected • 🟢 Good</string>
+
+    <!-- Mic Mode Live & Muted Hints -->
+    <string name="mic_hint_muted">🔴 Mic is MUTED · Squadmates cannot hear you</string>
+    <string name="mic_hint_live">🟢 Voice is LIVE · Squadmates can hear you</string>
+
+    <!-- Additional Toasts -->
+    <string name="toast_error_creating_room">Error creating room: %1$s</string>
+    <string name="toast_error_joining_room">Error joining room: %1$s</string>
+    <string name="toast_opening_leaderboard">Opening Squad Leaderboard...</string>
+    <string name="toast_low_data_enabled">3G / Weak Signal Mode: Enabled (12kbps Opus DTX)</string>
+    <string name="toast_low_data_disabled">3G / Weak Signal Mode: Disabled (HD Studio Voice)</string>
+    <string name="toast_syncing_vip">Syncing VIP status from cloud...</string>
+    <string name="toast_current_status">Current Status: %1$s</string>
+    <string name="toast_vip_expires_warning">⚠️ VIP expires in %1$dh! Share your referral code to earn +3 more free days.</string>
+    <string name="toast_squad_alarm_set">⏰ Squad Match Alarm set for %1$s daily!</string>
+    <string name="toast_payment_init_error">Error initializing payment: %1$s</string>
+    <string name="toast_payment_id_missing">⚠️ Payment ID missing. Verification cannot proceed.</string>
+    <string name="toast_payment_verified_fmt">👑 Payment Verified (%1$s)! Activated %2$s for %3$s.</string>
+    <string name="toast_payment_verify_failed">❌ Verification failed or pending server confirmation. If amount was deducted, submit a support ticket.</string>
+    <string name="toast_enter_subject">Please enter a subject summary</string>
+    <string name="toast_describe_issue">Please describe the issue in detail</string>
+
+    <!-- VIP Dialog and Feature Prompts -->
+    <string name="dialog_vip_squad_save">Save Squad</string>
+    <string name="vip_feature_clutch_highlights">👑 Personal Clutch Highlights is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.</string>
+    <string name="vip_feature_ram_purge">👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.</string>
+    <string name="vip_feature_noise_shield">👑 %1$d%% AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100%% of background noise, fan hum, and breathing.</string>
+    <string name="vip_feature_room_limit">You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited custom named squads.</string>
+
+    <!-- Referral Hints -->
+    <string name="hint_enter_referral_code">⚠️ Please enter a referral code</string>
+    <string name="hint_verifying_code">⏳ Verifying code...</string>
+
+    <!-- Noise Filter Tiers -->
+    <string name="noise_tier_0_label">Raw Audio (0% Filter)</string>
+    <string name="noise_tier_0_desc">Pure unfiltered microphone stream with zero processing overhead.</string>
+    <string name="noise_tier_25_label">Light Acoustic Clean (25%)</string>
+    <string name="noise_tier_25_desc">Gentle room resonance cancellation for quiet gaming spaces.</string>
+    <string name="noise_tier_50_label">Standard Squad Shield (50%)</string>
+    <string name="noise_tier_50_desc">Balanced noise reduction. Dampens fan hum and loud keyboard taps.</string>
+    <string name="noise_tier_75_label">Squad Focus Pro (75%) 👑</string>
+    <string name="noise_tier_75_desc">Aggressive noise gate eliminates ceiling fans and breathing.</string>
+    <string name="noise_tier_100_label">100% Ultra Silent AI Shield 👑</string>
+    <string name="noise_tier_100_desc">Total studio silence. AI isolates squad voice only. 0% fan or room noise.</string>
+
+    <!-- App Update Toasts -->
+    <string name="toast_update_server_unreachable">Could not reach update server. Try again later.</string>
+    <string name="toast_allow_install_unknown">Please allow \'Install unknown apps\' to update GamerVoice</string>
+    <string name="toast_download_failed">Download failed: %1$s</string>
+    <string name="toast_download_server_error">Download server returned error: %1$d</string>
+    <string name="toast_update_save_failed">Failed to save update: %1$s</string>
+    <string name="toast_installer_start_failed">Could not start installer: %1$s</string>
+
+    <!-- Glory Reward Toast -->
+    <string name="toast_glory_vip_equipped">🎉 %1$d Days VIP Pass equipped! You are the season champion!</string>
 </resources>

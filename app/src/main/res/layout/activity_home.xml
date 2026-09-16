@@ -2201,6 +2201,37 @@
                         app:tint="@color/accent_green" />
                 </LinearLayout>
 
+                <!-- Real-Time Network Quality & P2P Latency Indicator -->
+                <LinearLayout
+                    android:id="@+id/llLatencyBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:background="@drawable/bg_terminal_box"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp">
+
+                    <View
+                        android:id="@+id/dotLatencyStatus"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/bg_fomo_badge"
+                        android:backgroundTint="@color/accent_green" />
+
+                    <TextView
+                        android:id="@+id/tvRoomLatency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:fontFamily="sans-serif-bold"
+                        android:letterSpacing="0.02"
+                        android:text="P2P Latency: Measuring..."
+                        android:textColor="@color/accent_green"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
                 <!-- Save Room Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveCurrentRoom"

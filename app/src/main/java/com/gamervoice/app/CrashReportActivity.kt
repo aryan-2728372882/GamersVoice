@@ -23,7 +23,7 @@ class CrashReportActivity : AppCompatActivity() {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("GamerVoice Crash Log", stackTrace)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "Error log copied to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_crash_copied), Toast.LENGTH_SHORT).show()
         }
     }
 }
