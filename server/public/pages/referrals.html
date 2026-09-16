@@ -127,6 +127,133 @@
       line-height: 1.65;
     }
 
+    /* Leaderboard Responsive Styling & Zero Horizontal Overflow */
+    .leaderboard-podium {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 580px;
+      margin: 0 auto 18px;
+    }
+
+    .podium-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 12px 6px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .podium-card.rank-1 { background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.35); }
+    .podium-card.rank-2 { background: rgba(192, 192, 192, 0.08); border: 1px solid rgba(192, 192, 192, 0.35); }
+    .podium-card.rank-3 { background: rgba(205, 127, 50, 0.08); border: 1px solid rgba(205, 127, 50, 0.35); }
+
+    .podium-card .icon { font-size: 1.3rem; line-height: 1; }
+    .podium-card .place { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; margin-top: 4px; }
+    .podium-card .reward { font-size: clamp(0.78rem, 2.8vw, 0.98rem); font-weight: 900; color: #fff; margin-top: 2px; white-space: nowrap; }
+
+    #leaderboardTableWrap {
+      max-width: 640px;
+      margin: 0 auto;
+      overflow-x: hidden !important;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #leaderboardTableWrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    .lb-desktop-table {
+      display: table;
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    .lb-mobile-list {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lb-mobile-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .lb-mobile-card.podium-1 {
+      border-color: rgba(255, 215, 0, 0.4);
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.09) 0%, rgba(13, 18, 31, 0.95) 100%);
+    }
+
+    .lb-mobile-card.podium-2 {
+      border-color: rgba(192, 192, 192, 0.4);
+      background: linear-gradient(135deg, rgba(192, 192, 192, 0.09) 0%, rgba(13, 18, 31, 0.95) 100%);
+    }
+
+    .lb-mobile-card.podium-3 {
+      border-color: rgba(205, 127, 50, 0.4);
+      background: linear-gradient(135deg, rgba(205, 127, 50, 0.09) 0%, rgba(13, 18, 31, 0.95) 100%);
+    }
+
+    .lb-mobile-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .lb-mobile-user-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .lb-mobile-rank {
+      font-weight: 800;
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+
+    .lb-mobile-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.94rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lb-mobile-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+
+    @media (max-width: 640px) {
+      .lb-desktop-table { display: none !important; }
+      .lb-mobile-list { display: flex !important; }
+      .leaderboard-podium { gap: 6px; }
+      .podium-card { padding: 10px 4px; }
+      .podium-card .icon { font-size: 1.15rem; }
+      .podium-card .place { font-size: 0.68rem; }
+      .podium-card .reward { font-size: 0.76rem; }
+    }
+
     @media (max-width: 768px) {
       .flow { grid-template-columns: 1fr; }
       .referral-box { padding: 24px 16px; margin: 24px auto; }
@@ -200,21 +327,21 @@
         <p class="ref-hint" style="margin-bottom:16px">Top 10 squad leaders competing for monthly VIP rewards. Invite teammates to climb the ranks!</p>
 
         <!-- Monthly Prize Podium Banner -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;max-width:580px;margin:0 auto 18px">
-          <div style="background:rgba(255, 215, 0, 0.08);border:1px solid rgba(255, 215, 0, 0.35);border-radius:12px;padding:12px;text-align:center">
-            <div style="font-size:1.4rem;line-height:1">🥇</div>
-            <div style="font-size:0.75rem;font-weight:800;color:var(--gold);text-transform:uppercase;margin-top:4px">1st Place</div>
-            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+14 Days VIP</div>
+        <div class="leaderboard-podium">
+          <div class="podium-card rank-1">
+            <div class="icon">🥇</div>
+            <div class="place" style="color:var(--gold)">1st Place</div>
+            <div class="reward">+14 Days VIP</div>
           </div>
-          <div style="background:rgba(192, 192, 192, 0.08);border:1px solid rgba(192, 192, 192, 0.35);border-radius:12px;padding:12px;text-align:center">
-            <div style="font-size:1.4rem;line-height:1">🥈</div>
-            <div style="font-size:0.75rem;font-weight:800;color:#c0c0c0;text-transform:uppercase;margin-top:4px">2nd Place</div>
-            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+7 Days VIP</div>
+          <div class="podium-card rank-2">
+            <div class="icon">🥈</div>
+            <div class="place" style="color:#c0c0c0">2nd Place</div>
+            <div class="reward">+7 Days VIP</div>
           </div>
-          <div style="background:rgba(205, 127, 50, 0.08);border:1px solid rgba(205, 127, 50, 0.35);border-radius:12px;padding:12px;text-align:center">
-            <div style="font-size:1.4rem;line-height:1">🥉</div>
-            <div style="font-size:0.75rem;font-weight:800;color:#cd7f32;text-transform:uppercase;margin-top:4px">3rd Place</div>
-            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+3 Days VIP</div>
+          <div class="podium-card rank-3">
+            <div class="icon">🥉</div>
+            <div class="place" style="color:#cd7f32">3rd Place</div>
+            <div class="reward">+3 Days VIP</div>
           </div>
         </div>
 
@@ -222,8 +349,9 @@
           ⚡ Loading recruiter rankings...
         </div>
 
-        <div id="leaderboardTableWrap" style="display:none;max-width:640px;margin:0 auto;overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.92rem">
+        <div id="leaderboardTableWrap" style="display:none">
+          <!-- Desktop Table (visible on screen > 640px) -->
+          <table class="lb-desktop-table">
             <thead>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:var(--muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em">
                 <th style="padding:10px 8px;width:55px;text-align:center">Rank</th>
@@ -235,6 +363,9 @@
             </thead>
             <tbody id="leaderboardBody"></tbody>
           </table>
+
+          <!-- Mobile Cards List (visible on screen <= 640px, NO horizontal slider) -->
+          <div class="lb-mobile-list" id="leaderboardMobileList"></div>
         </div>
 
         <div id="leaderboardEmpty" style="display:none;padding:24px;color:var(--muted);font-size:0.92rem">
@@ -397,6 +528,7 @@
         if (loading) loading.style.display = "none";
 
         if (json.success && Array.isArray(json.leaderboard) && json.leaderboard.length > 0) {
+          // 1. Render Desktop Table Rows
           tbody.innerHTML = json.leaderboard.map(item => {
             let rankBadge = "#" + item.rank;
             let rankColor = "#8e9bae";
@@ -417,7 +549,6 @@
 
             const vipTag = item.isVip ? `<span style="font-size:0.7rem;background:rgba(255,215,0,0.15);border:1px solid #ffd700;color:#ffd700;padding:1px 5px;border-radius:6px;margin-left:6px;font-weight:700">VIP</span>` : "";
 
-            // Code: ensure last 2 characters are masked
             let codeDisplay = item.referralCode || "—";
             if (codeDisplay !== "—" && !codeDisplay.endsWith("**") && codeDisplay.length > 2) {
               codeDisplay = codeDisplay.slice(0, -2) + "**";
@@ -431,6 +562,53 @@
               <td style="padding:10px 8px;text-align:right">${rewardHtml}</td>
             </tr>`;
           }).join("");
+
+          // 2. Render Mobile Responsive Cards (100% width, zero horizontal slider)
+          const mobileList = document.getElementById("leaderboardMobileList");
+          if (mobileList) {
+            mobileList.innerHTML = json.leaderboard.map(item => {
+              let podiumClass = item.rank <= 3 ? `podium-${item.rank}` : "";
+              let rankBadge = "#" + item.rank;
+              let rankColor = "#8e9bae";
+              let rewardHtml = `<span style="font-size:0.72rem;color:var(--muted)">Top 10</span>`;
+              if (item.rank === 1) {
+                rankBadge = "🥇 #1";
+                rankColor = "#ffd700";
+                rewardHtml = `<span style="font-size:0.72rem;font-weight:800;color:#ffd700;background:rgba(255,215,0,0.14);border:1px solid rgba(255,215,0,0.45);padding:2px 7px;border-radius:6px;white-space:nowrap">🏆 14 Days VIP</span>`;
+              } else if (item.rank === 2) {
+                rankBadge = "🥈 #2";
+                rankColor = "#c0c0c0";
+                rewardHtml = `<span style="font-size:0.72rem;font-weight:800;color:#c0c0c0;background:rgba(192,192,192,0.14);border:1px solid rgba(192,192,192,0.45);padding:2px 7px;border-radius:6px;white-space:nowrap">⚡ 7 Days VIP</span>`;
+              } else if (item.rank === 3) {
+                rankBadge = "🥉 #3";
+                rankColor = "#cd7f32";
+                rewardHtml = `<span style="font-size:0.72rem;font-weight:800;color:#cd7f32;background:rgba(205,127,50,0.14);border:1px solid rgba(205,127,50,0.45);padding:2px 7px;border-radius:6px;white-space:nowrap">✨ 3 Days VIP</span>`;
+              }
+
+              const vipTag = item.isVip ? `<span style="font-size:0.68rem;background:rgba(255,215,0,0.15);border:1px solid #ffd700;color:#ffd700;padding:1px 5px;border-radius:5px;margin-left:4px;font-weight:700">VIP</span>` : "";
+
+              let codeDisplay = item.referralCode || "—";
+              if (codeDisplay !== "—" && !codeDisplay.endsWith("**") && codeDisplay.length > 2) {
+                codeDisplay = codeDisplay.slice(0, -2) + "**";
+              }
+
+              return `<div class="lb-mobile-card ${podiumClass}">
+                <div class="lb-mobile-top">
+                  <div class="lb-mobile-user-row">
+                    <span class="lb-mobile-rank" style="color:${rankColor}">${rankBadge}</span>
+                    <span class="lb-mobile-name">${item.name}</span>
+                    ${vipTag}
+                  </div>
+                  <div>${rewardHtml}</div>
+                </div>
+                <div class="lb-mobile-bottom">
+                  <span style="color:var(--text-dim);font-size:0.78rem">Code: <strong style="font-family:var(--font-mono);color:var(--cyan);letter-spacing:0.04em">${codeDisplay}</strong></span>
+                  <span style="color:var(--mint);font-weight:700;font-size:0.8rem">${item.referralCount} Recruits <span style="color:var(--muted);font-weight:500">(+${item.referralCount * 3}d)</span></span>
+                </div>
+              </div>`;
+            }).join("");
+          }
+
           if (wrap) wrap.style.display = "block";
           if (empty) empty.style.display = "none";
         } else {

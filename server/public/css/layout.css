@@ -8,17 +8,24 @@
   padding: 0 24px;
 }
 
+#gv-header {
+  width: 100%;
+  display: block;
+}
+
 /* 1. Header Navigation */
 .nav {
   position: sticky;
   top: 0;
   z-index: 50;
+  width: 100%;
   height: var(--nav-h);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   background: rgba(5, 7, 13, 0.78);
   border-bottom: 1px solid var(--line);
   transition: background 0.3s ease, border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .nav.scrolled {
@@ -28,6 +35,7 @@
 }
 
 .nav-inner {
+  width: 100%;
   max-width: var(--max);
   margin: 0 auto;
   height: 100%;
@@ -36,6 +44,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  box-sizing: border-box;
 }
 
 /* Brand */
@@ -294,13 +303,15 @@
 
 @media (max-width: 1024px) {
   .nav-links { display: none; }
-  .hamburger { display: flex; align-items: center; justify-content: center; }
+  .nav-actions { margin-left: auto; }
+  .hamburger { display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 
 @media (max-width: 768px) {
-  .nav-inner { padding: 0 14px; gap: 10px; }
+  .nav-inner { width: 100%; padding: 0 16px; gap: 12px; box-sizing: border-box; }
   .wrap { padding: 0 14px; }
+  .nav-actions { margin-left: auto; }
   
   /* On mobile nav: hide download button and simplify user pill to avatar only */
   .nav-actions .btn { display: none; }
@@ -327,7 +338,7 @@
 }
 
 @media (max-width: 480px) {
-  .nav-inner { padding: 0 10px; gap: 6px; }
+  .nav-inner { width: 100%; padding: 0 14px; gap: 8px; box-sizing: border-box; }
   .wrap { padding: 0 12px; }
   .brand-mark { width: 34px; height: 34px; }
   .brand-name { font-size: 0.95rem; letter-spacing: -0.02em; }

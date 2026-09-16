@@ -24,8 +24,29 @@
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
       s.src = src;
+      s.async = false;
       s.onload = resolve;
-      s.onerror = reject;
+      s.onerror = () => {
+        // Fallback to official Google CDN if local script fails
+        let cdnUrl = null;
+        if (src.includes("firebase-app-compat")) {
+          cdnUrl = "https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js";
+        } else if (src.includes("firebase-auth-compat")) {
+          cdnUrl = "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js";
+        } else if (src.includes("firebase-firestore-compat")) {
+          cdnUrl = "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js";
+        }
+        if (cdnUrl) {
+          const fb = document.createElement("script");
+          fb.src = cdnUrl;
+          fb.async = false;
+          fb.onload = resolve;
+          fb.onerror = reject;
+          document.head.appendChild(fb);
+        } else {
+          reject(new Error("Failed to load script: " + src));
+        }
+      };
       document.head.appendChild(s);
     });
   }
@@ -633,13 +654,23 @@
 
   async function initFirebase() {
     try {
-      // Load SDKs from local server without blocking initial render
+      // 1. firebase-app-compat MUST load and execute first to initialize window.firebase
+      if (!window.firebase) {
+        await loadScript("/js/vendor/firebase-app-compat.js");
+      }
+      // 2. Auth and Firestore compat SDKs can now safely register
       await Promise.all([
-        loadScript("/js/vendor/firebase-app-compat.js"),
         loadScript("/js/vendor/firebase-auth-compat.js"),
         loadScript("/js/vendor/firebase-firestore-compat.js")
       ]);
-      firebase.initializeApp(firebaseConfig);
+
+      if (!window.firebase || typeof window.firebase.initializeApp !== "function") {
+        throw new Error("Firebase SDK failed to load");
+      }
+
+      if (!firebase.apps || !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
       auth = firebase.auth();
       db = firebase.firestore();
 

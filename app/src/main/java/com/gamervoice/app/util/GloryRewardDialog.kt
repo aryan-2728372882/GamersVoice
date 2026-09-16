@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
@@ -17,8 +18,8 @@ import com.gamervoice.app.R
 import com.gamervoice.app.databinding.DialogSeasonGloryRewardBinding
 
 /**
- * Free Fire / Regional Esports Weapon Glory style Loot Crate Opening Ceremony
- * Triggered on Season Reset (31st day) for Top 3 recruiters.
+ * AAA Free Fire Grandmaster Regional Weapon Glory style Season Loot Crate Ceremony.
+ * Triggers full-screen immersive cutscene for Top 3 monthly recruiters.
  */
 object GloryRewardDialog {
 
@@ -32,37 +33,37 @@ object GloryRewardDialog {
         val dialog = Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val binding = DialogSeasonGloryRewardBinding.inflate(activity.layoutInflater)
         dialog.setContentView(binding.root)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.BLACK))
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         dialog.setCancelable(false)
 
-        // 1. Continuous rotating sunburst god-rays
+        // 1. Continuous rotating celestial sunburst god-rays
         val sunburstAnim = ObjectAnimator.ofFloat(binding.ivGlorySunburst, View.ROTATION, 0f, 360f).apply {
-            duration = 18000L
+            duration = 16000L
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             start()
         }
 
-        // Configure Crest & Text according to rank
+        // Configure 3D Crest & Rank Badges
         val crestRes: Int
         val rankTitle: String
         val subtitle: String
         when (rank) {
             1 -> {
-                crestRes = R.drawable.ic_glory_crest_gold
-                rankTitle = "🥇 REGIONAL CHAMPION"
-                subtitle = "1st Place · Monthly Recruiter Victory"
+                crestRes = R.drawable.ff_glory_crest_gold
+                rankTitle = "★ REGIONAL WEAPON GLORY ★"
+                subtitle = "RANK 1 · GRANDMASTER CHAMPION"
             }
             2 -> {
-                crestRes = R.drawable.ic_glory_crest_silver
-                rankTitle = "🥈 ELITE RUNNER-UP"
-                subtitle = "2nd Place · Monthly Recruiter Podium"
+                crestRes = R.drawable.ff_glory_crest_silver
+                rankTitle = "★ REGIONAL WEAPON GLORY ★"
+                subtitle = "RANK 2 · MASTER CHAMPION"
             }
             else -> {
-                crestRes = R.drawable.ic_glory_crest_bronze
-                rankTitle = "🥉 SQUAD BRONZE LEGEND"
-                subtitle = "3rd Place · Monthly Recruiter Podium"
+                crestRes = R.drawable.ff_glory_crest_bronze
+                rankTitle = "★ HEROIC WEAPON GLORY ★"
+                subtitle = "RANK 3 · HEROIC PODIUM"
             }
         }
         binding.ivGloryCrest.setImageResource(crestRes)
@@ -70,23 +71,33 @@ object GloryRewardDialog {
         binding.tvGlorySubtitle.text = subtitle
         binding.tvVipDaysBadge.text = "+$vipDays DAYS VIP UNLOCKED 👑"
 
-        // 2. Initial Crate Drop Animation
-        binding.llCrateStage.translationY = -600f
-        binding.llCrateStage.alpha = 0f
-        binding.llCrateStage.animate()
+        // 2. Initial Crate Slam & Ground Impact
+        binding.llCrateContainer.translationY = -800f
+        binding.llCrateContainer.alpha = 0f
+        var hoverAnim: ObjectAnimator? = null
+
+        binding.llCrateContainer.animate()
             .translationY(0f)
             .alpha(1f)
-            .setDuration(600L)
-            .setInterpolator(DecelerateInterpolator(2f))
+            .setDuration(650L)
+            .setInterpolator(DecelerateInterpolator(2.2f))
             .withEndAction {
-                // Heavy landing impact: haptic shake
-                AnimationHelper.shakeView(binding.llCrateStage, 16f)
+                // Heavy landing impact: screen shake & haptic feedback
+                AnimationHelper.shakeView(binding.llCrateContainer, 18f)
                 try {
                     binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                 } catch (_: Exception) {}
 
-                // Ambient breathing glow on tap prompt
-                AnimationHelper.startAmbientPulse(binding.tvCratePrompt, 0.94f, 1.06f, 1200L)
+                // Ambient floating hover animation (bobbing up and down gently)
+                hoverAnim = ObjectAnimator.ofFloat(binding.ivLootCrate, View.TRANSLATION_Y, 0f, -14f, 0f).apply {
+                    duration = 1800L
+                    repeatCount = ValueAnimator.INFINITE
+                    interpolator = AccelerateDecelerateInterpolator()
+                    start()
+                }
+
+                // Ambient pulsing glow on prompt
+                AnimationHelper.startAmbientPulse(binding.tvCratePrompt, 0.93f, 1.07f, 1100L)
             }
             .start()
 
@@ -95,40 +106,77 @@ object GloryRewardDialog {
         val openCrateAction = View.OnClickListener {
             if (opened) return@OnClickListener
             opened = true
+            hoverAnim?.cancel()
 
-            // Trigger strong haptic buzz
+            // Strong impact haptic feedback
             try {
                 binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             } catch (_: Exception) {}
 
-            // Crate violent shake before exploding open
-            AnimationHelper.shakeView(binding.ivLootCrate, 22f)
+            // Screen trauma shake
+            AnimationHelper.shakeView(binding.rlCrateStage, 24f)
 
-            binding.llCrateStage.animate()
-                .scaleX(1.25f)
-                .scaleY(1.25f)
+            // Blinding white flash overlay
+            binding.vFlashOverlay.alpha = 0f
+            binding.vFlashOverlay.animate()
+                .alpha(0.85f)
+                .setDuration(90L)
+                .withEndAction {
+                    binding.vFlashOverlay.animate()
+                        .alpha(0f)
+                        .setDuration(220L)
+                        .start()
+                }
+                .start()
+
+            // Reveal Exploding Supply Crate Burst
+            binding.rlCrateStage.visibility = View.GONE
+            binding.ivCrateBurst.visibility = View.VISIBLE
+            binding.ivCrateBurst.scaleX = 0.8f
+            binding.ivCrateBurst.scaleY = 0.8f
+            binding.ivCrateBurst.alpha = 1f
+
+            // Accelerated spinning god-rays for explosive celestial victory
+            sunburstAnim.duration = 4500L
+
+            binding.ivCrateBurst.animate()
+                .scaleX(1.35f)
+                .scaleY(1.35f)
                 .alpha(0f)
-                .setDuration(350L)
+                .setDuration(400L)
                 .setInterpolator(AccelerateInterpolator())
                 .withEndAction {
-                    binding.llCrateStage.visibility = View.GONE
+                    binding.ivCrateBurst.visibility = View.GONE
 
-                    // Phase 2: Glory Stage Emergence
-                    binding.llRewardStage.visibility = View.VISIBLE
-                    binding.llRewardStage.scaleX = 0.2f
-                    binding.llRewardStage.scaleY = 0.2f
-                    binding.llRewardStage.alpha = 0f
+                    // Phase 2: Glory Victory Screen Emergence
+                    binding.rlRewardStage.visibility = View.VISIBLE
+                    binding.ivGloryCrest.scaleX = 0.15f
+                    binding.ivGloryCrest.scaleY = 0.15f
+                    binding.ivGloryCrest.translationY = 250f
+                    binding.ivGloryCrest.alpha = 0f
 
-                    binding.llRewardStage.animate()
+                    binding.llTopRibbon.alpha = 0f
+                    binding.llTopRibbon.translationY = -60f
+
+                    // Shoot 3D Crest up with grand overshoot
+                    binding.ivGloryCrest.animate()
                         .scaleX(1.0f)
                         .scaleY(1.0f)
+                        .translationY(0f)
                         .alpha(1f)
-                        .setDuration(650L)
-                        .setInterpolator(OvershootInterpolator(2.2f))
+                        .setDuration(750L)
+                        .setInterpolator(OvershootInterpolator(2.0f))
                         .withEndAction {
-                            AnimationHelper.popView(binding.ivGloryCrest, 1.15f)
-                            AnimationHelper.startAmbientPulse(binding.btnClaimGlory, 0.97f, 1.04f, 1500L)
+                            AnimationHelper.startAmbientPulse(binding.btnClaimGlory, 0.96f, 1.04f, 1300L)
                         }
+                        .start()
+
+                    // Slide down top title ribbon
+                    binding.llTopRibbon.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(500L)
+                        .setInterpolator(DecelerateInterpolator())
                         .start()
                 }
                 .start()
@@ -146,12 +194,11 @@ object GloryRewardDialog {
 
             Toast.makeText(activity, "🎉 $vipDays Days VIP Pass equipped! You are the season champion!", Toast.LENGTH_LONG).show()
 
-            // Dismiss animation
-            binding.llRewardStage.animate()
-                .scaleX(0.7f)
-                .scaleY(0.7f)
+            binding.rlRewardStage.animate()
+                .scaleX(0.75f)
+                .scaleY(0.75f)
                 .alpha(0f)
-                .setDuration(250L)
+                .setDuration(260L)
                 .withEndAction {
                     try { dialog.dismiss() } catch (_: Exception) {}
                     onClaimed?.invoke()

@@ -3,159 +3,201 @@
     android:id="@+id/flGloryOverlayRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E6050811"
+    android:background="#FF020408"
     android:clickable="true"
     android:focusable="true">
 
-    <!-- Rotating Sunburst God Rays Background -->
+    <!-- 360 Rotating Golden God Rays Background -->
     <ImageView
         android:id="@+id/ivGlorySunburst"
-        android:layout_width="440dp"
-        android:layout_height="440dp"
+        android:layout_width="550dp"
+        android:layout_height="550dp"
         android:layout_gravity="center"
-        android:alpha="0.45"
+        android:alpha="0.55"
         android:contentDescription="Glory Sunburst"
         android:src="@drawable/ic_glory_sunburst" />
 
-    <!-- Phase 1: Loot Crate Stage (Interactive Chest Drop) -->
-    <LinearLayout
-        android:id="@+id/llCrateStage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp">
-
-        <TextView
-            android:id="@+id/tvCrateSeasonTag"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/bg_vip_card_gold"
-            android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.08"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="5dp"
-            android:text="👑 MONTHLY SQUAD CHAMPIONSHIP"
-            android:textColor="@color/neon_gold"
-            android:textSize="11sp" />
-
-        <ImageView
-            android:id="@+id/ivLootCrate"
-            android:layout_width="190dp"
-            android:layout_height="190dp"
-            android:contentDescription="Season Glory Crate"
-            android:src="@drawable/ic_loot_crate_cyber" />
-
-        <TextView
-            android:id="@+id/tvCratePrompt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.12"
-            android:text="⚡ TAP CRATE TO UNLOCK GLORY ⚡"
-            android:textColor="@color/neon_cyan"
-            android:textSize="13sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="Season Ended • Top 3 Recruiter Victory"
-            android:textColor="@color/text_secondary"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-    <!-- Phase 2: Glory Reward Ceremony Card (Revealed on Open) -->
-    <LinearLayout
-        android:id="@+id/llRewardStage"
+    <!-- Phase 1: Interactive 3D Free Fire Supply Crate Stage -->
+    <RelativeLayout
+        android:id="@+id/rlCrateStage"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent">
+
+        <!-- Glowing Neon Pedestal on Ground -->
+        <View
+            android:id="@+id/vPedestal"
+            android:layout_width="260dp"
+            android:layout_height="60dp"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="160dp"
+            android:background="@drawable/bg_cyber_pedestal" />
+
+        <!-- Crate Body + Badges -->
+        <LinearLayout
+            android:id="@+id/llCrateContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvCrateSeasonTag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_vip_card_gold"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.08"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="6dp"
+                android:text="👑 MONTHLY SQUAD CHAMPIONSHIP"
+                android:textColor="@color/neon_gold"
+                android:textSize="11sp" />
+
+            <ImageView
+                android:id="@+id/ivLootCrate"
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:contentDescription="Season Glory Crate"
+                android:src="@drawable/ff_glory_crate" />
+
+            <TextView
+                android:id="@+id/tvCratePrompt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.14"
+                android:text="⚡ TAP CRATE TO UNLOCK SQUAD GLORY ⚡"
+                android:textColor="@color/neon_cyan"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Free Fire Regional Weapon Glory Victory"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- Exploding Supply Crate Burst Overlay -->
+    <ImageView
+        android:id="@+id/ivCrateBurst"
+        android:layout_width="320dp"
+        android:layout_height="320dp"
         android:layout_gravity="center"
-        android:layout_marginHorizontal="24dp"
-        android:background="@drawable/bg_glory_reward_card"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp"
+        android:contentDescription="Crate Burst"
+        android:src="@drawable/ff_glory_crate_burst"
+        android:visibility="gone" />
+
+    <!-- Phase 2: Fullscreen Free Fire Regional Weapon Glory Victory Screen -->
+    <RelativeLayout
+        android:id="@+id/rlRewardStage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone">
 
-        <!-- Wings & Crest -->
+        <!-- Top Victory Header Banner -->
+        <LinearLayout
+            android:id="@+id/llTopRibbon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="52dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvGloryRankTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.12"
+                android:text="★ REGIONAL WEAPON GLORY ★"
+                android:textColor="@color/neon_gold"
+                android:textSize="19sp" />
+
+            <TextView
+                android:id="@+id/tvGlorySubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif-bold"
+                android:letterSpacing="0.08"
+                android:text="RANK 1 · GRANDMASTER CHAMPION"
+                android:textColor="@color/neon_cyan"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+
+        <!-- Center 3D Grandmaster Crest Emblem -->
         <ImageView
             android:id="@+id/ivGloryCrest"
-            android:layout_width="170dp"
-            android:layout_height="150dp"
+            android:layout_width="290dp"
+            android:layout_height="290dp"
+            android:layout_centerInParent="true"
             android:contentDescription="Glory Rank Crest"
-            android:src="@drawable/ic_glory_crest_gold" />
+            android:src="@drawable/ff_glory_crest_gold" />
 
-        <!-- Title of Rank -->
-        <TextView
-            android:id="@+id/tvGloryRankTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.06"
-            android:text="🥇 REGIONAL CHAMPION"
-            android:textColor="@color/neon_gold"
-            android:textSize="17sp" />
-
-        <TextView
-            android:id="@+id/tvGlorySubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="1st Place · Top Squad Recruiter"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <!-- Neon Separator -->
-        <View
+        <!-- Bottom Victory Pass Details & Equip Button -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="14dp"
-            android:background="#33FFD700" />
-
-        <!-- Big VIP Days Unlocked Badge -->
-        <TextView
-            android:id="@+id/tvVipDaysBadge"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-black"
-            android:letterSpacing="0.04"
-            android:text="+14 DAYS VIP UNLOCKED"
-            android:textColor="@color/white"
-            android:textSize="20sp" />
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="40dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp">
 
-        <TextView
-            android:id="@+id/tvVipPerksHint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:gravity="center"
-            android:text="👑 VIP Studio AI Noise Gate • Unlimited Rooms • Priority Relay"
-            android:textColor="@color/neon_cyan"
-            android:textSize="11sp" />
+            <TextView
+                android:id="@+id/tvVipDaysBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.05"
+                android:text="+14 DAYS VIP UNLOCKED 👑"
+                android:textColor="@color/white"
+                android:textSize="22sp" />
 
-        <!-- Claim & Equip CTA -->
-        <TextView
-            android:id="@+id/btnClaimGlory"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_glory_btn_claim"
-            android:clickable="true"
-            android:focusable="true"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:letterSpacing="0.08"
-            android:text="🔥 CLAIM &amp; EQUIP VIP PERKS 🔥"
-            android:textColor="@color/black"
-            android:textSize="14sp" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tvVipPerksHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="👑 VIP AI Noise Suppression · Unlimited Squad Rooms · 0ms Relay"
+                android:textColor="#A0AEC0"
+                android:textSize="11.5sp" />
+
+            <!-- Radiant Free Fire CTA Button -->
+            <TextView
+                android:id="@+id/btnClaimGlory"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_glory_btn_claim"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-black"
+                android:gravity="center"
+                android:letterSpacing="0.08"
+                android:text="🔥 CLAIM &amp; EQUIP VIP PERKS 🔥"
+                android:textColor="@color/black"
+                android:textSize="14.5sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- White Flash Light Burst on Crate Open -->
+    <View
+        android:id="@+id/vFlashOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="#FFFFFF" />
 
 </FrameLayout>
