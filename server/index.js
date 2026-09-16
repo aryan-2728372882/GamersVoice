@@ -960,37 +960,79 @@ const server = http.createServer(async (req, res) => {
         snapshot = await adminDb.collection('users')
           .where('referralCount', '>', 0)
           .orderBy('referralCount', 'desc')
-          .limit(20)
+          .limit(10)
           .get();
       } catch (_idxErr) {
         snapshot = await adminDb.collection('users')
           .orderBy('referralCount', 'desc')
-          .limit(20)
+          .limit(10)
           .get();
       }
 
-      const list = [];
-      let rank = 1;
+      const rawItems = [];
       snapshot.forEach(doc => {
         const d = doc.data() || {};
         const count = Number(d.referralCount) || 0;
         if (count > 0) {
-          let name = d.displayName || d.name || '';
-          if (!name && d.email) {
-            const parts = d.email.split('@');
-            name = parts[0].slice(0, 3) + '***@' + (parts[1] || 'squad');
-          } else if (!name) {
-            name = 'SquadLeader_' + doc.id.slice(-4);
-          }
-          list.push({
-            rank: rank++,
-            name: name,
-            referralCode: d.referralCode || '',
-            referralCount: count,
-            isVip: Boolean(d.isVip)
-          });
+          rawItems.push({ id: doc.id, d, count });
         }
       });
+
+      const list = [];
+      for (let i = 0; i < rawItems.length; i++) {
+        const { id, d, count } = rawItems[i];
+        let name = d.displayName || d.name || '';
+
+        // If name is missing or placeholder, resolve from Firebase Auth and heal Firestore
+        if ((!name || name.startsWith('SquadLeader_')) && adminAuth) {
+          try {
+            const authRecord = await adminAuth.getUser(id);
+            if (authRecord.displayName) {
+              name = authRecord.displayName;
+            } else if (authRecord.email) {
+              name = authRecord.email.split('@')[0];
+            }
+            if (name) {
+              adminDb.collection('users').doc(id).set({
+                displayName: name,
+                name: name,
+                email: authRecord.email || d.email || ''
+              }, { merge: true }).catch(() => {});
+            }
+          } catch (_authErr) {}
+        }
+
+        if (!name && d.email) {
+          name = d.email.split('@')[0];
+        }
+        if (!name) {
+          name = 'SquadLeader_' + id.slice(-4);
+        }
+
+        // Hide ONLY the last 2 digits of the referral code (keep name completely visible)
+        const rawCode = (d.referralCode || '').trim();
+        let maskedCode = rawCode;
+        if (rawCode.length > 2) {
+          maskedCode = rawCode.slice(0, -2) + '**';
+        } else if (rawCode.length > 0) {
+          maskedCode = '**';
+        }
+
+        const rank = i + 1;
+        let monthlyPrize = null;
+        if (rank === 1) monthlyPrize = '14 Days VIP';
+        else if (rank === 2) monthlyPrize = '7 Days VIP';
+        else if (rank === 3) monthlyPrize = '3 Days VIP';
+
+        list.push({
+          rank,
+          name,
+          referralCode: maskedCode,
+          referralCount: count,
+          isVip: Boolean(d.isVip),
+          monthlyPrize
+        });
+      }
 
       leaderboardCache = {
         data: list,
@@ -1001,6 +1043,14 @@ const server = http.createServer(async (req, res) => {
         success: true,
         cached: false,
         updatedAt: new Date(now).toISOString(),
+        monthlyCompetition: {
+          title: "Monthly Squad Leader Championship",
+          prizes: {
+            first: "14 Days VIP",
+            second: "7 Days VIP",
+            third: "3 Days VIP"
+          }
+        },
         leaderboard: list
       });
     } catch (err) {

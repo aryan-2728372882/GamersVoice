@@ -190,27 +190,47 @@
         </div>
       </section>
 
-      <!-- Section 3: Top Recruiters Leaderboard -->
+      <!-- Section 3: Top 10 Recruiters Leaderboard & Monthly Competition -->
       <section class="referral-box" style="border-color:var(--line-gold);background:linear-gradient(180deg, rgba(255, 215, 0, 0.05) 0%, rgba(13, 18, 31, 0.95) 100%);margin-top:24px" id="leaderboardSection">
         <div style="display:flex;align-items:center;justify-content:center;gap:8px">
           <span style="font-size:1.2rem">👑</span>
-          <p class="ref-kicker" style="color:var(--gold);margin:0">Squad Hall of Fame</p>
+          <p class="ref-kicker" style="color:var(--gold);margin:0">Monthly Squad Championship</p>
         </div>
-        <h2 style="font-size:clamp(1.2rem, 3.5vw, 1.6rem);font-weight:800;color:#fff;margin:6px 0 8px">Top Squad Recruiters</h2>
-        <p class="ref-hint" style="margin-bottom:18px">Elite squad leaders earning infinite free VIP days by recruiting their teammates.</p>
+        <h2 style="font-size:clamp(1.2rem, 3.5vw, 1.6rem);font-weight:800;color:#fff;margin:6px 0 8px">Top 10 Squad Recruiters</h2>
+        <p class="ref-hint" style="margin-bottom:16px">Top 10 squad leaders competing for monthly VIP rewards. Invite teammates to climb the ranks!</p>
+
+        <!-- Monthly Prize Podium Banner -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;max-width:580px;margin:0 auto 18px">
+          <div style="background:rgba(255, 215, 0, 0.08);border:1px solid rgba(255, 215, 0, 0.35);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:1.4rem;line-height:1">🥇</div>
+            <div style="font-size:0.75rem;font-weight:800;color:var(--gold);text-transform:uppercase;margin-top:4px">1st Place</div>
+            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+14 Days VIP</div>
+          </div>
+          <div style="background:rgba(192, 192, 192, 0.08);border:1px solid rgba(192, 192, 192, 0.35);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:1.4rem;line-height:1">🥈</div>
+            <div style="font-size:0.75rem;font-weight:800;color:#c0c0c0;text-transform:uppercase;margin-top:4px">2nd Place</div>
+            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+7 Days VIP</div>
+          </div>
+          <div style="background:rgba(205, 127, 50, 0.08);border:1px solid rgba(205, 127, 50, 0.35);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:1.4rem;line-height:1">🥉</div>
+            <div style="font-size:0.75rem;font-weight:800;color:#cd7f32;text-transform:uppercase;margin-top:4px">3rd Place</div>
+            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:2px">+3 Days VIP</div>
+          </div>
+        </div>
 
         <div id="leaderboardLoading" style="padding:20px;color:var(--muted);font-size:0.92rem;text-align:center">
           ⚡ Loading recruiter rankings...
         </div>
 
-        <div id="leaderboardTableWrap" style="display:none;max-width:580px;margin:0 auto;overflow-x:auto">
+        <div id="leaderboardTableWrap" style="display:none;max-width:640px;margin:0 auto;overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;text-align:left;font-size:0.92rem">
             <thead>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:var(--muted);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em">
-                <th style="padding:10px 8px;width:50px;text-align:center">Rank</th>
+                <th style="padding:10px 8px;width:55px;text-align:center">Rank</th>
                 <th style="padding:10px 8px">Recruiter</th>
                 <th style="padding:10px 8px;text-align:center">Squad Code</th>
-                <th style="padding:10px 8px;text-align:right">Recruits</th>
+                <th style="padding:10px 8px;text-align:center">Recruits</th>
+                <th style="padding:10px 8px;text-align:right">Monthly Reward</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -218,7 +238,7 @@
         </div>
 
         <div id="leaderboardEmpty" style="display:none;padding:24px;color:var(--muted);font-size:0.92rem">
-          🎮 No recruiter rankings yet today. Be the first to invite your squad and claim the #1 spot!
+          🎮 No recruiter rankings yet this month. Be the first to invite your squad and claim the #1 spot!
         </div>
       </section>
 
@@ -380,17 +400,35 @@
           tbody.innerHTML = json.leaderboard.map(item => {
             let rankBadge = "#" + item.rank;
             let rankColor = "#8e9bae";
-            if (item.rank === 1) { rankBadge = "🥇 #1"; rankColor = "#ffd700"; }
-            else if (item.rank === 2) { rankBadge = "🥈 #2"; rankColor = "#c0c0c0"; }
-            else if (item.rank === 3) { rankBadge = "🥉 #3"; rankColor = "#cd7f32"; }
+            let rewardHtml = `<span style="font-size:0.75rem;color:var(--muted)">Top 10 Squad</span>`;
+            if (item.rank === 1) {
+              rankBadge = "🥇 #1";
+              rankColor = "#ffd700";
+              rewardHtml = `<span style="font-size:0.75rem;font-weight:800;color:#ffd700;background:rgba(255,215,0,0.14);border:1px solid rgba(255,215,0,0.45);padding:3px 8px;border-radius:6px;white-space:nowrap">🏆 14 Days VIP</span>`;
+            } else if (item.rank === 2) {
+              rankBadge = "🥈 #2";
+              rankColor = "#c0c0c0";
+              rewardHtml = `<span style="font-size:0.75rem;font-weight:800;color:#c0c0c0;background:rgba(192,192,192,0.14);border:1px solid rgba(192,192,192,0.45);padding:3px 8px;border-radius:6px;white-space:nowrap">⚡ 7 Days VIP</span>`;
+            } else if (item.rank === 3) {
+              rankBadge = "🥉 #3";
+              rankColor = "#cd7f32";
+              rewardHtml = `<span style="font-size:0.75rem;font-weight:800;color:#cd7f32;background:rgba(205,127,50,0.14);border:1px solid rgba(205,127,50,0.45);padding:3px 8px;border-radius:6px;white-space:nowrap">✨ 3 Days VIP</span>`;
+            }
 
             const vipTag = item.isVip ? `<span style="font-size:0.7rem;background:rgba(255,215,0,0.15);border:1px solid #ffd700;color:#ffd700;padding:1px 5px;border-radius:6px;margin-left:6px;font-weight:700">VIP</span>` : "";
+
+            // Code: ensure last 2 characters are masked
+            let codeDisplay = item.referralCode || "—";
+            if (codeDisplay !== "—" && !codeDisplay.endsWith("**") && codeDisplay.length > 2) {
+              codeDisplay = codeDisplay.slice(0, -2) + "**";
+            }
 
             return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.15s ease">
               <td style="padding:10px 8px;text-align:center;font-weight:800;color:${rankColor}">${rankBadge}</td>
               <td style="padding:10px 8px;font-weight:700;color:#fff">${item.name} ${vipTag}</td>
-              <td style="padding:10px 8px;text-align:center"><span style="font-family:var(--font-mono);font-size:0.82rem;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);padding:2px 8px;border-radius:6px;color:var(--cyan)">${item.referralCode || "—"}</span></td>
-              <td style="padding:10px 8px;text-align:right;font-weight:800;color:var(--mint)">${item.referralCount} <span style="font-size:0.75rem;color:var(--muted);font-weight:500">(+${item.referralCount * 3}d)</span></td>
+              <td style="padding:10px 8px;text-align:center"><span style="font-family:var(--font-mono);font-size:0.82rem;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);padding:2px 8px;border-radius:6px;color:var(--cyan)">${codeDisplay}</span></td>
+              <td style="padding:10px 8px;text-align:center;font-weight:800;color:var(--mint)">${item.referralCount} <span style="font-size:0.72rem;color:var(--muted);font-weight:500">(+${item.referralCount * 3}d)</span></td>
+              <td style="padding:10px 8px;text-align:right">${rewardHtml}</td>
             </tr>`;
           }).join("");
           if (wrap) wrap.style.display = "block";
