@@ -1686,6 +1686,21 @@
                                 app:strokeColor="#66FFFFFF"
                                 app:strokeWidth="1dp" />
                         </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/btnViewLeaderboard"
+                            android:layout_width="match_parent"
+                            android:layout_height="32dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_vip_card_gold"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:letterSpacing="0.05"
+                            android:text="👑 VIEW SQUAD HALL OF FAME LEADERBOARD ›"
+                            android:textColor="@color/neon_gold"
+                            android:textSize="10.5sp"
+                            android:clickable="true"
+                            android:focusable="true" />
                     </LinearLayout>
 
                     <!-- Squad Match Alarm Setting (Customizable Time) -->

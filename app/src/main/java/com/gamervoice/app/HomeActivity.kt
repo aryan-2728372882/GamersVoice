@@ -417,12 +417,20 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
         }
 
-        // Referral Engine (Share & Redeem)
+        // Referral Engine (Share & Redeem & Leaderboard)
         AnimationHelper.attachPressAnimation(binding.btnShareReferral) {
             com.gamervoice.app.auth.ReferralManager.shareReferral(this)
         }
         AnimationHelper.attachPressAnimation(binding.btnRedeemReferral) {
             showRedeemReferralDialog()
+        }
+        AnimationHelper.attachPressAnimation(binding.btnViewLeaderboard) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://gamersvoice.onrender.com/referrals#leaderboardSection"))
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Opening Squad Leaderboard...", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Squad Match Alarm Switch (Customizable Reminder Time)
