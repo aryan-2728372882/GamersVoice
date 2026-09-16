@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+    <!-- Base Shadow -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M20,135 Q80,155 140,135 Q80,120 20,135 Z" />
+    <!-- Chest Lower Body -->
+    <path
+        android:fillColor="#101726"
+        android:strokeColor="#FFD700"
+        android:strokeWidth="2.5"
+        android:pathData="M25,65 L135,65 L125,130 L35,130 Z" />
+    <!-- Metallic Reinforcements -->
+    <path
+        android:fillColor="#1A2438"
+        android:pathData="M40,65 L55,65 L50,130 L38,130 Z" />
+    <path
+        android:fillColor="#1A2438"
+        android:pathData="M105,65 L120,65 L122,130 L110,130 Z" />
+    <!-- Chest Lid -->
+    <path
+        android:fillColor="#172238"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="2.5"
+        android:pathData="M18,65 L142,65 L132,35 L28,35 Z" />
+    <!-- Top Crown Emblem on Lid -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M65,48 L72,55 L80,42 L88,55 L95,48 L93,58 L67,58 Z" />
+    <!-- Central Core Reactor Lock (Pulsing Glow Center) -->
+    <path
+        android:fillColor="#00E5FF"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M70,75 L90,75 L85,98 L75,98 Z" />
+    <!-- Neon Energy Lines -->
+    <path
+        android:strokeColor="#00FF88"
+        android:strokeWidth="2"
+        android:pathData="M32,100 L65,100 M95,100 L128,100" />
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="2"
+        android:pathData="M48,50 L112,50" />
+</vector>

@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="180dp"
+    android:viewportWidth="200"
+    android:viewportHeight="180">
+    <!-- Left Wing Feathers -->
+    <path
+        android:fillColor="#CD7F32"
+        android:strokeColor="#FFD1A4"
+        android:strokeWidth="1.2"
+        android:pathData="M100,75 L45,45 L15,65 L50,90 L20,110 L60,125 L100,130 Z" />
+    <!-- Right Wing Feathers -->
+    <path
+        android:fillColor="#CD7F32"
+        android:strokeColor="#FFD1A4"
+        android:strokeWidth="1.2"
+        android:pathData="M100,75 L155,45 L185,65 L150,90 L180,110 L140,125 L100,130 Z" />
+    <!-- Central Shield Body -->
+    <path
+        android:fillColor="#0E1726"
+        android:strokeColor="#CD7F32"
+        android:strokeWidth="3"
+        android:pathData="M100,45 L145,65 L140,120 L100,165 L60,120 L55,65 Z" />
+    <!-- Inner Cyber Core -->
+    <path
+        android:fillColor="#15243E"
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="1.5"
+        android:pathData="M100,60 L130,75 L125,115 L100,148 L75,115 L70,75 Z" />
+    <!-- Diamond Inset -->
+    <path
+        android:fillColor="#CD7F32"
+        android:pathData="M100,85 L112,97 L100,109 L88,97 Z" />
+</vector>

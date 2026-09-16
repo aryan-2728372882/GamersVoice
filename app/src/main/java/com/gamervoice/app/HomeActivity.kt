@@ -48,6 +48,10 @@ import com.gamervoice.app.util.LegalDocsHelper
 import com.razorpay.Checkout
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, PaymentResultWithDataListener {
@@ -253,6 +257,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             refreshSavedRoomsUI(freshRooms)
         }
         updatePlanUI()
+        checkSeasonGloryReward()
     }
 
     override fun onStop() {
@@ -431,6 +436,18 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             } catch (e: Exception) {
                 Toast.makeText(this, "Opening Squad Leaderboard...", Toast.LENGTH_SHORT).show()
             }
+        }
+        binding.btnViewLeaderboard.setOnLongClickListener {
+            // Instant Test Preview of Free Fire Glory Crate Opening!
+            com.gamervoice.app.util.GloryRewardDialog.showGloryCeremony(
+                this,
+                rank = 1,
+                vipDays = 14,
+                recruitsCount = 1
+            ) {
+                updatePlanUI()
+            }
+            true
         }
 
         // Squad Match Alarm Switch (Customizable Reminder Time)
@@ -1004,6 +1021,57 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         val borderAnim = AnimationHelper.pulseNeonBorder(rb.root)
         AnimationHelper.startAmbientPulse(rb.btnRedeemCode, 0.97f, 1.03f, 2000L)
         dialog.setOnDismissListener { borderAnim.cancel() }
+    }
+
+    private fun checkSeasonGloryReward() {
+        val user = AuthManager.getCurrentUser() ?: return
+        val prefs = getSharedPreferences("gamervoice_season_rewards", Context.MODE_PRIVATE)
+        val currentMonth = java.text.SimpleDateFormat("yyyy_MM", java.util.Locale.US).format(java.util.Date())
+        if (prefs.getBoolean("claimed_$currentMonth", false)) return
+
+        Thread {
+            try {
+                val url = "https://gamersvoice.onrender.com/api/season/user-reward?uid=${user.uid}"
+                val req = Request.Builder().url(url).get().build()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(6, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(6, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+                client.newCall(req).execute().use { resp ->
+                    if (resp.isSuccessful) {
+                        val body = resp.body?.string() ?: ""
+                        val json = JSONObject(body)
+                        if (json.optBoolean("hasReward", false)) {
+                            val rank = json.optInt("rank", 1)
+                            val vipDays = json.optInt("vipDays", 14)
+                            val recruits = json.optInt("recruits", 0)
+                            runOnUiThread {
+                                com.gamervoice.app.util.GloryRewardDialog.showGloryCeremony(
+                                    this,
+                                    rank = rank,
+                                    vipDays = vipDays,
+                                    recruitsCount = recruits
+                                ) {
+                                    prefs.edit().putBoolean("claimed_$currentMonth", true).apply()
+                                    Thread {
+                                        try {
+                                            val claimJson = JSONObject().put("uid", user.uid).toString()
+                                            val claimBody = claimJson.toRequestBody("application/json; charset=utf-8".toMediaType())
+                                            val claimReq = Request.Builder()
+                                                .url("https://gamersvoice.onrender.com/api/season/claim-reward")
+                                                .post(claimBody)
+                                                .build()
+                                            client.newCall(claimReq).execute().close()
+                                        } catch (_: Exception) {}
+                                    }.start()
+                                    updatePlanUI()
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }.start()
     }
 
     // --- On-Device Installed Games Launcher ---

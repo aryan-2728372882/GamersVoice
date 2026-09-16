@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="400dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+    <!-- Center glow ring -->
+    <path
+        android:fillColor="#1A00E5FF"
+        android:pathData="M200,200 m-120,0 a120,120 0 1,0 240,0 a120,120 0 1,0 -240,0" />
+    <path
+        android:fillColor="#33FFD700"
+        android:pathData="M200,200 m-60,0 a60,60 0 1,0 120,0 a60,60 0 1,0 -120,0" />
+    <!-- 12 Radiant Beams -->
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L180,0 L220,0 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L290,26 L324,60 Z" />
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L374,110 L400,150 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L400,180 L400,220 Z" />
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L400,250 L374,290 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L324,340 L290,374 Z" />
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L220,400 L180,400 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L110,374 L76,340 Z" />
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L26,290 L0,250 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L0,220 L0,180 Z" />
+    <path android:fillColor="#15FFD700" android:pathData="M200,200 L0,150 L26,110 Z" />
+    <path android:fillColor="#1500E5FF" android:pathData="M200,200 L76,60 L110,26 Z" />
+</vector>

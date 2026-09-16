@@ -1064,6 +1064,152 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // API 2E: Season Glory Reward Check (Top 3 Crate Opening)
+  if (req.method === 'GET' && req.url.startsWith('/api/season/user-reward')) {
+    try {
+      const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      const uid = parsedUrl.searchParams.get('uid');
+      if (!uid || !adminDb) {
+        sendResponse(res, 200, { hasReward: false });
+        return;
+      }
+
+      const userDoc = await adminDb.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        sendResponse(res, 200, { hasReward: false });
+        return;
+      }
+
+      const d = userDoc.data();
+      const reward = d.pendingSeasonReward;
+      if (reward && !reward.claimed) {
+        sendResponse(res, 200, {
+          hasReward: true,
+          rank: Number(reward.rank) || 1,
+          vipDays: Number(reward.vipDays) || (reward.rank === 1 ? 14 : (reward.rank === 2 ? 7 : 3)),
+          seasonId: reward.seasonId || 'season_current',
+          recruits: Number(d.referralCount) || 0
+        });
+        return;
+      }
+
+      sendResponse(res, 200, { hasReward: false });
+    } catch (err) {
+      console.warn('[Season Reward Error]', err.message);
+      sendResponse(res, 200, { hasReward: false });
+    }
+    return;
+  }
+
+  // API 2F: Claim Season Glory Reward
+  if (req.method === 'POST' && req.url === '/api/season/claim-reward') {
+    try {
+      const { uid } = await parseJsonBody(req);
+      if (!uid || !adminDb) {
+        sendResponse(res, 400, { success: false, error: 'Missing uid' });
+        return;
+      }
+
+      const userRef = adminDb.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        sendResponse(res, 404, { success: false, error: 'User not found' });
+        return;
+      }
+
+      const d = userDoc.data();
+      const reward = d.pendingSeasonReward;
+      if (!reward || reward.claimed) {
+        sendResponse(res, 200, { success: true, message: 'Reward already claimed' });
+        return;
+      }
+
+      const vipDays = Number(reward.vipDays) || (reward.rank === 1 ? 14 : (reward.rank === 2 ? 7 : 3));
+      const now = Date.now();
+      const rewardDurationMs = vipDays * 24 * 60 * 60 * 1000;
+      let baseTs = now;
+      if (d.expiryTimestamp && Number(d.expiryTimestamp) > now) {
+        baseTs = Number(d.expiryTimestamp);
+      }
+      const newExpTs = baseTs + rewardDurationMs;
+      const newExpDate = new Date(newExpTs).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+      await userRef.set({
+        isVip: true,
+        expiryTimestamp: newExpTs,
+        expiresAt: newExpDate,
+        pendingSeasonReward: {
+          ...reward,
+          claimed: true,
+          claimedAt: new Date().toISOString()
+        }
+      }, { merge: true });
+
+      sendResponse(res, 200, {
+        success: true,
+        message: `🎉 Successfully claimed ${vipDays} Days VIP!`,
+        newExpiryTimestamp: newExpTs,
+        expiresAt: newExpDate
+      });
+    } catch (err) {
+      sendResponse(res, 500, { success: false, error: err.message });
+    }
+    return;
+  }
+
+  // API 2G: Admin / Test Trigger Season Reset
+  if (req.method === 'POST' && req.url === '/api/season/trigger-monthly-reset') {
+    try {
+      if (!adminDb) {
+        sendResponse(res, 500, { error: 'Database not ready' });
+        return;
+      }
+
+      const snapshot = await adminDb.collection('users')
+        .where('referralCount', '>', 0)
+        .orderBy('referralCount', 'desc')
+        .limit(3)
+        .get();
+
+      const top3 = [];
+      const seasonId = new Date().toISOString().slice(0, 7); // e.g. "2026-09"
+      let rank = 1;
+
+      for (const doc of snapshot.docs) {
+        const d = doc.data();
+        const vipDays = rank === 1 ? 14 : (rank === 2 ? 7 : 3);
+        const rewardData = {
+          seasonId,
+          rank,
+          vipDays,
+          claimed: false,
+          grantedAt: new Date().toISOString()
+        };
+
+        await doc.ref.set({
+          pendingSeasonReward: rewardData
+        }, { merge: true });
+
+        top3.push({
+          uid: doc.id,
+          name: d.displayName || d.name || 'Champion',
+          rank,
+          vipDays
+        });
+        rank++;
+      }
+
+      sendResponse(res, 200, {
+        success: true,
+        message: `Monthly reset executed for season ${seasonId}`,
+        top3
+      });
+    } catch (err) {
+      sendResponse(res, 500, { error: err.message });
+    }
+    return;
+  }
+
   // API 3: Cryptographic Razorpay Payment Verification
   if (req.method === 'POST' && req.url === '/api/verify-payment') {
     try {
