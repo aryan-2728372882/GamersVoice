@@ -82,7 +82,7 @@ function updateUserInterface(user) {
 
 function subscribeToUserPlan(uid) {
   if (!db) return;
-  db.collection("users").doc(uid).onSnapshot((doc) => {
+  db.collection("users").doc(uid).get().then((doc) => {
     if (doc.exists) {
       const data = doc.data();
       currentVipPlan = data;
@@ -108,7 +108,7 @@ function subscribeToUserPlan(uid) {
         simBadge.innerText = isVip ? ("VIP " + planType) : "FREE PLAN";
       }
     }
-  }, (err) => {
+  }).catch((err) => {
     console.warn("[Firestore Subscription]", err.message);
   });
 }

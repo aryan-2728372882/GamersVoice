@@ -510,9 +510,10 @@
     return data;
   };
 
-  function subscribeToUserPlan(uid) {
+  async function fetchUserPlan(uid) {
     if (!db) return;
-    db.collection("users").doc(uid).onSnapshot((doc) => {
+    try {
+      const doc = await db.collection("users").doc(uid).get();
       if (!doc.exists) return;
       const data = doc.data();
       GV.currentVipPlan = data;
@@ -526,8 +527,14 @@
         simBadge.textContent = data.isVip ? "VIP " + (data.planType || "MEMBER") : "FREE PLAN";
         simBadge.style.color = data.isVip ? "var(--gold)" : "var(--cyan)";
       }
-    });
+    } catch (err) {
+      console.warn("[Plan] Plan fetch skipped:", err.message);
+    }
   }
+
+  GV.refreshUserPlan = function() {
+    if (GV.currentUser && db) fetchUserPlan(GV.currentUser.uid);
+  };
 
   function loadRazorpaySdk() {
     return new Promise((resolve) => {
@@ -679,7 +686,7 @@
           updateUserInterface(user);
           if (user) {
             GV.registerReferralCode(user);
-            if (db) subscribeToUserPlan(user.uid);
+            if (db) fetchUserPlan(user.uid);
           }
           // Dispatch event so pages can listen without polling
           document.dispatchEvent(new CustomEvent("gv:authready", { detail: { user } }));
