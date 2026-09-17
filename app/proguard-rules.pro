@@ -4,6 +4,14 @@
 -keepclasseswithmembers class com.gamervoice.app.** { *; }
 -dontwarn com.gamervoice.app.**
 
+-keep class com.appforgamers.gamersvoice.** { *; }
+-keepclassmembers class com.appforgamers.gamersvoice.** { *; }
+-keepclasseswithmembers class com.appforgamers.gamersvoice.** { *; }
+-dontwarn com.appforgamers.gamersvoice.**
+
+-keepclassmembers class * implements android.os.Parcelable { static ** CREATOR; }
+-keepclassmembers class * implements java.io.Serializable { *; }
+
 # Keep ALL WebRTC classes, interfaces, enums, fields, and native JNI methods
 -keep class org.webrtc.** { *; }
 -keepclassmembers class org.webrtc.** { *; }
@@ -25,13 +33,8 @@
 }
 
 # AndroidX & Material Components
--keep class com.google.android.material.** { *; }
--keepclassmembers class com.google.android.material.** { *; }
--keep class androidx.appcompat.** { *; }
--keepclassmembers class androidx.appcompat.** { *; }
--keep class androidx.constraintlayout.** { *; }
--keepclassmembers class androidx.constraintlayout.** { *; }
 -dontwarn com.google.android.material.**
+-dontwarn androidx.**
 
 # OkHttp ProGuard Rules
 -keep class okhttp3.** { *; }
@@ -48,26 +51,11 @@
 -optimizations !method/inlining/*
 -keepclasseswithmembers class * { public void onPayment*(...); }
 
-# Google Mobile Ads & User Messaging Platform (UMP)
--keep class com.google.android.gms.ads.** { *; }
--keep interface com.google.android.gms.ads.** { *; }
--keep class com.google.android.ump.** { *; }
--keep interface com.google.android.ump.** { *; }
--dontwarn com.google.android.gms.ads.**
--dontwarn com.google.android.ump.**
-
-# Google Play Services & DataTransport
--keep class com.google.android.gms.** { *; }
--keepclassmembers class com.google.android.gms.** { *; }
+# Google Play Services & Firebase
 -dontwarn com.google.android.gms.**
--keep class com.google.android.datatransport.** { *; }
--keepclassmembers class com.google.android.datatransport.** { *; }
 -dontwarn com.google.android.datatransport.**
-
-# Firebase Cloud Messaging, Crashlytics & Core
--keep class com.google.firebase.** { *; }
--keepclassmembers class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
+
 
 
 

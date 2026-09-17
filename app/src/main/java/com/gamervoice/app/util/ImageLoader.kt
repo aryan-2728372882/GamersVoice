@@ -24,19 +24,21 @@ object ImageLoader {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val httpClient = OkHttpClient.Builder().build()
 
-    private val memoryCache: LruCache<String, Bitmap> = object : LruCache<String, Bitmap>(4 * 1024 * 1024) {
+    // Ultra-lean 512KB memory cache for small avatar thumbnails
+    private val memoryCache: LruCache<String, Bitmap> = object : LruCache<String, Bitmap>(512 * 1024) {
         override fun sizeOf(key: String, value: Bitmap): Int {
             return value.byteCount
         }
     }
 
     /**
-     * Completely evicts all cached bitmaps from memory.
-     * Called when the app is minimized so Free Fire runs with < 10MB RAM.
+     * Completely evicts all cached bitmaps from memory and requests immediate GC.
+     * Called when the app is minimized so Free Fire/BGMI runs with minimum PSS RAM.
      */
     fun clearMemoryCache() {
         try {
             memoryCache.evictAll()
+            System.gc()
         } catch (_: Throwable) {}
     }
 
@@ -87,8 +89,27 @@ object ImageLoader {
                 if (!response.isSuccessful) return
                 val bytes = response.body?.bytes() ?: return
                 try {
-                    val rawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return
+                    // Downsample to max 96x96 thumbnail to keep RAM ultra lean (<40KB per bitmap)
+                    val opts = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+
+                    val targetSize = 96
+                    var sampleSize = 1
+                    while (opts.outWidth / (sampleSize * 2) >= targetSize && opts.outHeight / (sampleSize * 2) >= targetSize) {
+                        sampleSize *= 2
+                    }
+
+                    val decodeOpts = BitmapFactory.Options().apply {
+                        inSampleSize = sampleSize
+                        inPreferredConfig = Bitmap.Config.ARGB_8888
+                    }
+                    val rawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOpts) ?: return
                     val circularBitmap = getCircularBitmap(rawBitmap)
+                    if (rawBitmap != circularBitmap && !rawBitmap.isRecycled) {
+                        rawBitmap.recycle()
+                    }
                     memoryCache.put(url, circularBitmap)
 
                     mainHandler.post {
@@ -96,7 +117,7 @@ object ImageLoader {
                             imageView.setImageBitmap(circularBitmap)
                         }
                     }
-                } catch (t: Throwable) {
+                } catch (_: Throwable) {
                     // Ignore decode issues
                 }
             }
@@ -124,7 +145,7 @@ object ImageLoader {
         val rect = Rect(0, 0, size, size)
         canvas.drawBitmap(squared, rect, rect, paint)
 
-        if (squared != bitmap) {
+        if (squared != bitmap && !squared.isRecycled) {
             squared.recycle()
         }
 

@@ -141,7 +141,7 @@
     <!-- VIP Dialog and Feature Prompts -->
     <string name="dialog_vip_squad_save">Save Squad</string>
     <string name="vip_feature_clutch_highlights">👑 Personal Clutch Highlights is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.</string>
-    <string name="vip_feature_ram_purge">👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.</string>
+    <string name="vip_feature_ram_purge">👑 Automatic Background RAM Purging runs every 5 minutes for VIP members (Free tier: once per 30 minutes). Upgrade to VIP to eliminate gaming lag automatically!</string>
     <string name="vip_feature_noise_shield">👑 Ultra Noise Suppression is an exclusive VIP feature! Upgrade to eliminate background noise, fan hum, and room resonance.</string>
     <string name="vip_feature_room_limit">You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited custom named squads.</string>
 

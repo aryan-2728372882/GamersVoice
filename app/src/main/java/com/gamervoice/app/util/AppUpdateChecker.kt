@@ -1,8 +1,9 @@
+@file:Suppress("DEPRECATION")
+
 package com.gamervoice.app.util
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -156,15 +157,36 @@ object AppUpdateChecker {
             }
         }
 
-        val progressDialog = ProgressDialog(activity).apply {
-            setTitle(activity.getString(R.string.dialog_downloading_update))
-            setMessage(activity.getString(R.string.dialog_downloading_msg))
-            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
-            max = 100
-            isIndeterminate = false
-            setCancelable(false)
-            show()
+        val pad = (20 * activity.resources.displayMetrics.density).toInt()
+        val container = android.widget.LinearLayout(activity).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
         }
+        val msgTv = android.widget.TextView(activity).apply {
+            text = activity.getString(R.string.dialog_downloading_msg)
+            textSize = 14f
+            setPadding(0, 0, 0, (12 * activity.resources.displayMetrics.density).toInt())
+        }
+        val progressBar = android.widget.ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = false
+            max = 100
+            progress = 0
+        }
+        val statusTv = android.widget.TextView(activity).apply {
+            text = "0%"
+            textSize = 12f
+            setPadding(0, (8 * activity.resources.displayMetrics.density).toInt(), 0, 0)
+        }
+        container.addView(msgTv)
+        container.addView(progressBar)
+        container.addView(statusTv)
+
+        val progressDialog = AlertDialog.Builder(activity)
+            .setTitle(activity.getString(R.string.dialog_downloading_update))
+            .setView(container)
+            .setCancelable(false)
+            .create()
+        progressDialog.show()
 
         val request = Request.Builder()
             .url(downloadUrl)
@@ -211,7 +233,10 @@ object AppUpdateChecker {
                                 if (contentLength > 0) {
                                     val progress = ((totalBytesRead * 100) / contentLength).toInt()
                                     mainHandler.post {
-                                        progressDialog.progress = progress
+                                        progressBar.progress = progress
+                                        val mbRead = totalBytesRead / (1024f * 1024f)
+                                        val mbTotal = contentLength / (1024f * 1024f)
+                                        statusTv.text = String.format(java.util.Locale.US, "%d%% (%.1f MB / %.1f MB)", progress, mbRead, mbTotal)
                                     }
                                 }
                             }

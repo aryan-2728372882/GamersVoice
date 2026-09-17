@@ -29,7 +29,7 @@ object AppLogger {
         }
     }
 
-    private const val MAX_LOGS = 500
+    private const val MAX_LOGS = 50
     private const val LOG_FILE_NAME = "gamervoice_debug.log"
     private const val PREV_LOG_FILE_NAME = "gamervoice_prev.log"
 
@@ -153,6 +153,10 @@ object AppLogger {
         } else {
             currentLogs
         }
+    }
+
+    fun clearInMemoryLogs() {
+        logBuffer.clear()
     }
 
     fun clear() {

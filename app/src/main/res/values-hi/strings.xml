@@ -142,7 +142,7 @@
     <!-- VIP Dialog and Feature Prompts -->
     <string name="dialog_vip_squad_save">स्क्वाड सहेजें</string>
     <string name="vip_feature_clutch_highlights">👑 क्लच हाइलाइट्स केवल VIP उपयोगकर्ताओं के लिए है! अपने 120s के ऑडियो मोमेंट्स सहेजने के लिए अपग्रेड करें।</string>
-    <string name="vip_feature_ram_purge">👑 बैकग्राउंड रैम पर्ज केवल VIP उपयोगकर्ताओं के लिए है! BGMI / Free Fire में लैग खत्म करने के लिए अपग्रेड करें।</string>
+    <string name="vip_feature_ram_purge">👑 ऑटोमैटिक बैकग्राउंड रैम पर्ज VIP में हर 5 मिनट पर चलता है (फ्री में हर 30 मिनट)। गेमिंग लैग खत्म करने के लिए अपग्रेड करें!</string>
     <string name="vip_feature_noise_shield">👑 अल्ट्रा नॉइज़ सप्रेशन केवल VIP सदस्यों के लिए है! पंखे और कमरे के शोर को शांत करने के लिए अपग्रेड करें।</string>
     <string name="vip_feature_room_limit">आप मुफ़्त प्लान की 2 कमरों की सीमा तक पहुँच चुके हैं! असीमित कस्टम स्क्वाड सहेजने के लिए गेमरवॉइस VIP में अपग्रेड करें।</string>
 

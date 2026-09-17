@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.gamervoice.app
 
 import android.annotation.SuppressLint
@@ -47,6 +49,7 @@ import com.gamervoice.app.util.AppLogger
 import com.gamervoice.app.util.GameLauncherHelper
 import com.gamervoice.app.util.ImageLoader
 import com.gamervoice.app.util.LegalDocsHelper
+import com.gamervoice.app.util.RamPurgeHelper
 import com.razorpay.Checkout
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
@@ -249,8 +252,10 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
     override fun onStop() {
         super.onStop()
         AppLogger.removeListener(logListener)
-        // Immediately flush bitmap cache when minimized to maintain < 10MB RAM footprint
+        // Immediately flush bitmap cache and logs when minimized to maintain < 10MB RAM footprint
         ImageLoader.clearMemoryCache()
+        AppLogger.clearInMemoryLogs()
+        System.runFinalization()
         System.gc()
     }
 
@@ -598,30 +603,30 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         // --- Settings Tab Controls ---
         AnimationHelper.attachPressAnimation(binding.cardSettingRamPurge) {
-            if (!PlanManager.isVip()) {
-                showVipUpgradeDialog(getString(R.string.vip_feature_ram_purge))
-            } else {
-                val purgePrefs = getSharedPreferences(com.gamervoice.app.service.VoiceService.PREFS_NAME, MODE_PRIVATE)
-                val count = purgePrefs.getInt("auto_purge_count", 0)
-                val lastTs = purgePrefs.getLong("last_auto_purge_ts", 0L)
-                val lastMb = purgePrefs.getLong("last_auto_purge_mb", 0L)
-                val info = if (count > 0 && lastTs > 0) {
-                    val minsAgo = ((System.currentTimeMillis() - lastTs) / 60000L).coerceAtLeast(0)
-                    "👑 VIP Auto-Purge is ACTIVE!\n• Total Purges: #$count\n• Last Cleaned: ${minsAgo} min ago\n• Active Heap: ~${lastMb}MB (< 10MB target)"
+            val status = RamPurgeHelper.getPurgeStatus(this)
+            if (status.isVip) {
+                val info = if (status.totalPurges > 0 && status.lastPurgeTs > 0) {
+                    "👑 VIP Auto-Purge is ACTIVE!\n• Schedule: Every 5 minutes in background\n• Total Purges: #${status.totalPurges}\n• Last Cleaned: ${status.minutesSinceLastPurge} min ago\n• Active Heap: ~${status.lastPurgeMb}MB (< 10MB target)"
                 } else {
-                    "👑 VIP Auto-Purge is ACTIVE and scheduled every 3 minutes in background."
+                    "👑 VIP Auto-Purge is ACTIVE!\n• Schedule: Every 5 minutes in background\n• Memory Guard: < 10MB target"
                 }
                 Toast.makeText(this, info, Toast.LENGTH_LONG).show()
+            } else {
+                if (!status.canPurge) {
+                    val info = "🛡️ Free Tier RAM Purge\n• Status: Cooldown active (${status.remainingMinutes} min left)\n• Policy: Run once every 30 minutes\n\n👑 Upgrade to VIP for automatic 5-min background purging!"
+                    Toast.makeText(this, info, Toast.LENGTH_LONG).show()
+                } else {
+                    val info = "🛡️ Free Tier RAM Purge\n• Status: Ready to purge!\n• Policy: Run once every 30 minutes\n• Tap PURGE NOW below to optimize memory\n\n👑 Upgrade to VIP for automatic 5-min background purging!"
+                    Toast.makeText(this, info, Toast.LENGTH_LONG).show()
+                }
             }
         }
 
         AnimationHelper.attachPressAnimation(binding.btnClearMemoryCache) {
-            ImageLoader.clearMemoryCache()
-            System.gc()
-            val runtime = Runtime.getRuntime()
-            val usedMemMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+            val result = RamPurgeHelper.performPurge(this, isAuto = false)
             AnimationHelper.popView(binding.btnClearMemoryCache, 1.08f)
-            Toast.makeText(this, getString(R.string.toast_memory_cleared), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+            updatePlanUI()
         }
 
         // --- Profile Tab Controls ---
@@ -1187,19 +1192,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabCountdown.text = "Expires in: " + countdown
 
             binding.tvSettingRamPurgeTitle.text = "Auto RAM Purge 👑"
-            val purgePrefs = getSharedPreferences(com.gamervoice.app.service.VoiceService.PREFS_NAME, MODE_PRIVATE)
-            val purgeCount = purgePrefs.getInt("auto_purge_count", 0)
-            val lastTs = purgePrefs.getLong("last_auto_purge_ts", 0L)
-            val lastMb = purgePrefs.getLong("last_auto_purge_mb", 0L)
-            if (purgeCount > 0 && lastTs > 0) {
-                val minsAgo = ((System.currentTimeMillis() - lastTs) / 60000L).coerceAtLeast(0)
-                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Cleaned ${minsAgo}m ago (~${lastMb}MB heap • #$purgeCount purges)"
+            val purgeStatus = RamPurgeHelper.getPurgeStatus(this)
+            if (purgeStatus.totalPurges > 0 && purgeStatus.lastPurgeTs > 0) {
+                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Cleaned ${purgeStatus.minutesSinceLastPurge}m ago (~${purgeStatus.lastPurgeMb}MB heap • #${purgeStatus.totalPurges} purges)"
             } else {
-                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Auto clean every 3 min (< 10MB memory guard)"
+                binding.tvSettingRamPurgeSubtitle.text = "VIP Active: Auto clean every 5 min (< 10MB memory guard)"
             }
-            binding.tvSettingRamPurgeBadge.text = "ACTIVE"
+            binding.tvSettingRamPurgeBadge.text = "ACTIVE (5M)"
             binding.tvSettingRamPurgeBadge.setTextColor(Color.parseColor("#FFD700"))
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_vip)
+            binding.btnClearMemoryCache.text = "PURGE NOW"
         } else {
             binding.llSponsorBannerAd.visibility = View.VISIBLE
             binding.btnSaveClutchClip.text = "🎬 CLUTCH CLIP (👑 VIP)"
@@ -1213,8 +1215,16 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             binding.tvProfileTabCountdown.text = "2 Cloud Rooms Quota • Standard Filter"
 
             binding.tvSettingRamPurgeTitle.text = "Auto RAM Purge"
-            binding.tvSettingRamPurgeSubtitle.text = "Free tier: Tap PURGE NOW manually before games"
-            binding.tvSettingRamPurgeBadge.text = "VIP ONLY"
+            val purgeStatus = RamPurgeHelper.getPurgeStatus(this)
+            if (purgeStatus.canPurge) {
+                binding.tvSettingRamPurgeSubtitle.text = "Free tier: Ready to purge (Available once per 30 mins)"
+                binding.tvSettingRamPurgeBadge.text = "READY"
+                binding.btnClearMemoryCache.text = "PURGE NOW"
+            } else {
+                binding.tvSettingRamPurgeSubtitle.text = "Free tier: Cooldown active (${purgeStatus.remainingMinutes}m left of 30m)"
+                binding.tvSettingRamPurgeBadge.text = "${purgeStatus.remainingMinutes}M WAIT"
+                binding.btnClearMemoryCache.text = "COOLDOWN (${purgeStatus.remainingMinutes}M)"
+            }
             binding.tvSettingRamPurgeBadge.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
             binding.tvSettingRamPurgeBadge.setBackgroundResource(R.drawable.bg_plan_badge_free)
         }
@@ -1628,6 +1638,7 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         } catch (_: Exception) {}
     }
 
+    @Suppress("DEPRECATION")
     private fun performLogout() {
         AuthManager.signOut()
         try {

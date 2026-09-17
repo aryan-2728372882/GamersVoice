@@ -69,16 +69,20 @@ class GamerVoiceApp : Application() {
         super.onTrimMemory(level)
         if (level >= TRIM_MEMORY_UI_HIDDEN) {
             // App UI is hidden (user switched to Free Fire / home screen)
-            // Immediately drop all cached bitmaps to keep background RAM < 10MB!
+            // Immediately drop all cached bitmaps and logs to keep background RAM < 10MB!
             com.gamervoice.app.util.ImageLoader.clearMemoryCache()
+            com.gamervoice.app.util.AppLogger.clearInMemoryLogs()
+            System.runFinalization()
             System.gc()
-            Log.d("GamerVoiceApp", "onTrimMemory: Bitmaps evicted for background Free Fire gaming, level=$level")
+            Log.d("GamerVoiceApp", "onTrimMemory: Evicted caches for background Free Fire gaming, level=$level")
         }
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
         com.gamervoice.app.util.ImageLoader.clearMemoryCache()
+        com.gamervoice.app.util.AppLogger.clearInMemoryLogs()
+        System.runFinalization()
         System.gc()
     }
 }

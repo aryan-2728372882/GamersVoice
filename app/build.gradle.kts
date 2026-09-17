@@ -11,7 +11,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.gamervoice.app"
+        applicationId = "com.appforgamers.gamersvoice"
         minSdk = 26
         targetSdk = 35
         versionCode = 10
@@ -57,8 +57,8 @@ android {
     buildTypes {
         release {
             signingConfig = if (keystorePropertiesFile.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

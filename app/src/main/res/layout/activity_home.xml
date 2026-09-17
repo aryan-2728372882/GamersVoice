@@ -962,7 +962,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="1dp"
                                 android:fontFamily="sans-serif"
-                                android:text="VIP: Auto background clean every 3 min | Free: Tap PURGE NOW"
+                                android:text="VIP: Auto background clean every 5 min | Free: Available every 30 min"
                                 android:textColor="#A0AEC0"
                                 android:textSize="9sp" />
                         </LinearLayout>
