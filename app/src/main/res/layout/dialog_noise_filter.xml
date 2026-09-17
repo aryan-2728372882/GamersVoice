@@ -207,7 +207,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:background="@drawable/bg_badge_pill_neon"
+                    android:background="@drawable/bg_plan_badge_vip"
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="1dp"
                     android:text="👑 VIP"
