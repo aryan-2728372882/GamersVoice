@@ -91,7 +91,7 @@
     const ctx = canvas.getContext("2d");
     let animationFrameId;
     let phase = 0;
-    let currentMode = 75; // default 75% neural
+    let currentMode = 75; // default 75% suppression
 
     function resize() {
       canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio || 600;

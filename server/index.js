@@ -282,8 +282,65 @@ async function isWelcomeEmailSent(email) {
 }
 
 // In-memory data structures
-const rooms = new Map();
-const clients = new Map();
+const rooms = new Map(); // Active rooms: roomCode -> { code, ownerUid, hostPeerId, peers: Map, cleanupTimer, settings }
+const clients = new Map(); // Connected sockets: ws -> { peerId, roomCode, name, avatar, isHost, uid }
+const persistentRooms = new Map(); // Persistent room registry: roomCode -> { roomCode, ownerUid, ownerName, createdAt, updatedAt, settings }
+
+async function getPersistentRoom(roomCode) {
+  const code = (roomCode || '').toUpperCase().trim();
+  if (persistentRooms.has(code)) {
+    return persistentRooms.get(code);
+  }
+  if (adminDb) {
+    try {
+      const doc = await adminDb.collection('persistent_rooms').doc(code).get();
+      if (doc.exists) {
+        const data = doc.data();
+        persistentRooms.set(code, data);
+        return data;
+      }
+    } catch (err) {
+      console.warn('[Persistent Rooms] Error fetching room from Firestore:', err.message);
+    }
+  }
+  return null;
+}
+
+async function savePersistentRoom(roomData) {
+  const code = (roomData.roomCode || '').toUpperCase().trim();
+  persistentRooms.set(code, roomData);
+  if (adminDb) {
+    try {
+      await adminDb.collection('persistent_rooms').doc(code).set(roomData, { merge: true });
+    } catch (err) {
+      console.warn('[Persistent Rooms] Error saving room to Firestore:', err.message);
+    }
+  }
+}
+
+async function deletePersistentRoom(roomCode) {
+  const code = (roomCode || '').toUpperCase().trim();
+  persistentRooms.delete(code);
+  if (adminDb) {
+    try {
+      await adminDb.collection('persistent_rooms').doc(code).delete();
+    } catch (err) {
+      console.warn('[Persistent Rooms] Error deleting room from Firestore:', err.message);
+    }
+  }
+}
+
+async function getUidFromToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const cleanToken = token.replace(/^Bearer\s+/i, '').trim();
+  if (!cleanToken || !adminAuth) return null;
+  try {
+    const decoded = await adminAuth.verifyIdToken(cleanToken);
+    return decoded?.uid || null;
+  } catch (_) {
+    return null;
+  }
+}
 
 // Zero-Firestore-Burn Referral Leaderboard Cache (15-Minute TTL)
 let leaderboardCache = {
@@ -1119,12 +1176,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API 2F: Claim Season Glory Reward
+  // API 2F: Claim Season Glory Reward (Secured with User Auth)
   if (req.method === 'POST' && req.url === '/api/season/claim-reward') {
     try {
-      const { uid } = await parseJsonBody(req);
-      if (!uid || !adminDb) {
-        sendResponse(res, 400, { success: false, error: 'Missing uid' });
+      const authUser = await verifyUserAuth(req);
+      if (!authUser || !authUser.uid) {
+        sendResponse(res, 401, { success: false, error: 'Unauthorized: Valid user authentication required' });
+        return;
+      }
+
+      const uid = authUser.uid;
+      if (!adminDb) {
+        sendResponse(res, 500, { success: false, error: 'Database not ready' });
         return;
       }
 
@@ -1175,11 +1238,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API 2G: Admin / Test Trigger Season Reset
+  // API 2G: Admin / Test Trigger Season Reset (Secured with Admin Authorization)
   if (req.method === 'POST' && req.url === '/api/season/trigger-monthly-reset') {
     try {
+      const authAdmin = await isAuthorizedAdmin(req);
+      if (!authAdmin) {
+        sendResponse(res, 401, { success: false, error: 'Unauthorized: Administrative credentials required' });
+        return;
+      }
+
       if (!adminDb) {
-        sendResponse(res, 500, { error: 'Database not ready' });
+        sendResponse(res, 500, { success: false, error: 'Database not ready' });
         return;
       }
 
@@ -1223,7 +1292,7 @@ const server = http.createServer(async (req, res) => {
         top3
       });
     } catch (err) {
-      sendResponse(res, 500, { error: err.message });
+      sendResponse(res, 500, { success: false, error: err.message });
     }
     return;
   }
@@ -2039,6 +2108,18 @@ wss.on('connection', (ws, req) => {
         handleKickPeer(ws, data);
         break;
 
+      case 'transfer-ownership':
+        handleTransferOwnership(ws, data);
+        break;
+
+      case 'delete-room':
+        handleDeleteRoom(ws, data);
+        break;
+
+      case 'update-room-settings':
+        handleUpdateRoomSettings(ws, data);
+        break;
+
       default:
         sendError(ws, `Unknown message type: ${data.type}`);
         break;
@@ -2072,145 +2153,239 @@ wss.on('close', () => {
 
 // --- Message Handlers ---
 
-function generateRoomCode() {
+async function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
+  let attempts = 0;
   do {
     code = '';
     for (let i = 0; i < 5; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-  } while (rooms.has(code));
+    attempts++;
+    if (attempts > 50) break;
+  } while (rooms.has(code) || (await getPersistentRoom(code)));
   return code;
 }
 
-function handleCreateRoom(ws, data = {}) {
-  // If client is already in a room, leave first
-  handleLeaveRoom(ws);
+async function handleCreateRoom(ws, data = {}) {
+  try {
+    // If client is already in a room, leave first
+    handleLeaveRoom(ws);
 
-  const roomCode = generateRoomCode();
-  const peerId = randomUUID();
-  const name = data.name || 'Gamer';
-  const avatar = data.avatar || 'avatar_1';
-
-  const room = {
-    code: roomCode,
-    hostPeerId: peerId,
-    peers: new Map()
-  };
-
-  room.peers.set(peerId, { ws, peerId, name, avatar, isHost: true });
-  rooms.set(roomCode, room);
-  clients.set(ws, { peerId, roomCode, name, avatar, isHost: true });
-
-  sendJson(ws, {
-    type: 'room-created',
-    roomCode,
-    peerId,
-    name,
-    avatar,
-    isHost: true
-  });
-
-  console.log(`[Create] Room ${roomCode} created by ${name} (${peerId})`);
-}
-
-function handleJoinRoom(ws, data = {}) {
-  const clientIp = ws.clientIp || 'unknown';
-
-  // Room code brute-force protection: max 12 attempts per minute
-  if (isRateLimited(roomAttemptLimits, clientIp, 12, 60000)) {
-    console.warn(`[Brute-Force Protection] Join rate limit exceeded by ${clientIp}`);
-    sendError(ws, 'Too many room join attempts. Please wait 1 minute before trying again.');
-    return;
-  }
-
-  const requestedCode = typeof data === 'string' ? data : data.roomCode;
-  if (!requestedCode || typeof requestedCode !== 'string') {
-    sendError(ws, 'Invalid room code');
-    return;
-  }
-
-  const roomCode = requestedCode.toUpperCase().trim();
-  if (!/^[A-Z0-9]{5}$/.test(roomCode)) {
-    sendError(ws, 'Invalid room code format (must be 5 alphanumeric characters)');
-    return;
-  }
-  let room = rooms.get(roomCode);
-
-  if (!room) {
-    // If it's a valid 5-character alphanumeric room code (e.g. persistent room saved in Firestore),
-    // re-create the room in memory on demand so returning squad members can rejoin anytime even with 0 members!
-    if (/^[A-Z0-9]{5}$/.test(roomCode)) {
-      room = {
-        code: roomCode,
-        peers: new Map(),
-        cleanupTimer: null
-      };
-      rooms.set(roomCode, room);
-      console.log(`[Rejoin] Persistent room ${roomCode} re-opened in memory`);
-    } else {
-      sendError(ws, 'Room not found');
-      return;
+    let uid = null;
+    const token = data.authToken || data.token;
+    if (token) {
+      uid = await getUidFromToken(token);
     }
-  } else if (room.cleanupTimer) {
-    clearTimeout(room.cleanupTimer);
-    room.cleanupTimer = null;
-    console.log(`[Grace Period Cancelled] Peer joined room ${roomCode} — cancelling idle cleanup timer`);
-  }
 
-  if (room.peers.size >= 5) {
-    sendError(ws, 'Room is full (max 5 members)');
-    return;
-  }
+    let roomCode = (data.roomCode || data.customRoomCode || '').toUpperCase().trim();
+    if (roomCode) {
+      if (!/^[A-Z0-9]{5}$/.test(roomCode)) {
+        sendError(ws, 'Invalid custom room code format (must be 5 alphanumeric characters)');
+        return;
+      }
+      // Concurrency / duplicate claim check
+      const existingPersistent = await getPersistentRoom(roomCode);
+      const existingActive = rooms.get(roomCode);
+      if (existingPersistent && existingPersistent.ownerUid && existingPersistent.ownerUid !== uid) {
+        sendError(ws, 'Room code is already owned by another user');
+        return;
+      }
+      if (existingActive && existingActive.ownerUid && existingActive.ownerUid !== uid) {
+        sendError(ws, 'Room code is already owned by another user');
+        return;
+      }
+    } else {
+      roomCode = await generateRoomCode();
+    }
 
-  // Leave any existing room first
-  handleLeaveRoom(ws);
+    const peerId = randomUUID();
+    const name = data.name || 'Gamer';
+    const avatar = data.avatar || 'avatar_1';
 
-  const peerId = randomUUID();
-  const name = data.name || 'Gamer';
-  const avatar = data.avatar || 'avatar_1';
+    const room = {
+      code: roomCode,
+      ownerUid: uid || null,
+      hostPeerId: peerId,
+      peers: new Map(),
+      cleanupTimer: null,
+      settings: {
+        isPrivate: !!data.isPrivate,
+        pin: data.pin || ''
+      }
+    };
 
-  const existingPeerIds = Array.from(room.peers.keys());
-  const existingMembers = Array.from(room.peers.values()).map(p => ({
-    peerId: p.peerId,
-    name: p.name || 'Gamer',
-    avatar: p.avatar || 'avatar_1'
-  }));
+    room.peers.set(peerId, { ws, peerId, name, avatar, isHost: true });
+    rooms.set(roomCode, room);
+    clients.set(ws, { peerId, roomCode, name, avatar, isHost: true, uid: uid || null });
 
-  // Notify existing members about the new peer
-  for (const [existingId, peerObj] of room.peers.entries()) {
-    if (peerObj.ws.readyState === WebSocket.OPEN) {
-      sendJson(peerObj.ws, {
-        type: 'peer-joined',
-        peerId,
-        name,
-        avatar
+    if (uid) {
+      await savePersistentRoom({
+        roomCode,
+        ownerUid: uid,
+        ownerName: name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        settings: room.settings
       });
     }
+
+    sendJson(ws, {
+      type: 'room-created',
+      roomCode,
+      peerId,
+      name,
+      avatar,
+      isHost: true,
+      isOwner: !!uid
+    });
+
+    console.log(`[Create] Room ${roomCode} created by ${name} (${peerId}) [Owner: ${uid || 'Guest'}]`);
+  } catch (err) {
+    console.error('[Create Room Error]', err.message);
+    sendError(ws, 'Failed to create room: ' + err.message);
   }
+}
 
-  if (!room.hostPeerId) {
-    room.hostPeerId = existingPeerIds[0] || peerId;
+async function handleJoinRoom(ws, data = {}) {
+  try {
+    const clientIp = ws.clientIp || 'unknown';
+
+    // Room code brute-force protection: max 12 attempts per minute
+    if (isRateLimited(roomAttemptLimits, clientIp, 12, 60000)) {
+      console.warn(`[Brute-Force Protection] Join rate limit exceeded by ${clientIp}`);
+      sendError(ws, 'Too many room join attempts. Please wait 1 minute before trying again.');
+      return;
+    }
+
+    const requestedCode = typeof data === 'string' ? data : data.roomCode;
+    if (!requestedCode || typeof requestedCode !== 'string') {
+      sendError(ws, 'Invalid room code');
+      return;
+    }
+
+    const roomCode = requestedCode.toUpperCase().trim();
+    if (!/^[A-Z0-9]{5}$/.test(roomCode)) {
+      sendError(ws, 'Invalid room code format (must be 5 alphanumeric characters)');
+      return;
+    }
+
+    let uid = null;
+    const token = typeof data === 'object' ? (data.authToken || data.token) : null;
+    if (token) {
+      uid = await getUidFromToken(token);
+    }
+
+    let room = rooms.get(roomCode);
+
+    if (!room) {
+      // Check persistent room registry in memory / Firestore
+      const persistent = await getPersistentRoom(roomCode);
+      if (persistent) {
+        room = {
+          code: roomCode,
+          ownerUid: persistent.ownerUid || null,
+          hostPeerId: null,
+          peers: new Map(),
+          cleanupTimer: null,
+          settings: persistent.settings || {}
+        };
+        rooms.set(roomCode, room);
+        console.log(`[Rejoin] Persistent room ${roomCode} (Owner: ${persistent.ownerUid}) re-opened in memory`);
+      } else {
+        // Room does NOT exist! Never silently create arbitrary rooms on join!
+        sendError(ws, 'Room not found');
+        return;
+      }
+    } else if (room.cleanupTimer) {
+      clearTimeout(room.cleanupTimer);
+      room.cleanupTimer = null;
+      console.log(`[Grace Period Cancelled] Peer joined room ${roomCode} — cancelling idle cleanup timer`);
+    }
+
+    // Check PIN if room is PIN-protected and joining peer is not the owner
+    const isOwner = !!(uid && room.ownerUid && uid === room.ownerUid);
+    if (room.settings?.pin && room.settings.pin !== data.pin && !isOwner) {
+      sendError(ws, 'Invalid room PIN');
+      return;
+    }
+
+    if (room.peers.size >= 5) {
+      sendError(ws, 'Room is full (max 5 members)');
+      return;
+    }
+
+    // Leave any existing room first
+    handleLeaveRoom(ws);
+
+    const peerId = randomUUID();
+    const name = (typeof data === 'object' ? data.name : null) || 'Gamer';
+    const avatar = (typeof data === 'object' ? data.avatar : null) || 'avatar_1';
+
+    const existingPeerIds = Array.from(room.peers.keys());
+    const existingMembers = Array.from(room.peers.values()).map(p => ({
+      peerId: p.peerId,
+      name: p.name || 'Gamer',
+      avatar: p.avatar || 'avatar_1'
+    }));
+
+    // Notify existing members about the new peer (without exposing sensitive tokens or UID)
+    for (const [existingId, peerObj] of room.peers.entries()) {
+      if (peerObj.ws.readyState === WebSocket.OPEN) {
+        sendJson(peerObj.ws, {
+          type: 'peer-joined',
+          peerId,
+          name,
+          avatar
+        });
+      }
+    }
+
+    let isHost = false;
+    if (isOwner) {
+      // Reconnecting legitimate owner always regains host privileges
+      if (room.hostPeerId && room.hostPeerId !== peerId) {
+        const prevHostPeer = room.peers.get(room.hostPeerId);
+        if (prevHostPeer) {
+          prevHostPeer.isHost = false;
+          const prevHostClient = clients.get(prevHostPeer.ws);
+          if (prevHostClient) prevHostClient.isHost = false;
+        }
+      }
+      room.hostPeerId = peerId;
+      isHost = true;
+    } else {
+      // If room has no active host, assign acting host, but NEVER change room.ownerUid!
+      if (!room.hostPeerId || room.peers.size === 0) {
+        room.hostPeerId = peerId;
+        isHost = true;
+      } else {
+        isHost = false;
+      }
+    }
+
+    // Add new peer to room
+    room.peers.set(peerId, { ws, peerId, name, avatar, isHost });
+    clients.set(ws, { peerId, roomCode, name, avatar, isHost, uid: uid || null });
+
+    // Send confirmation, peer IDs, and member info to joiner
+    sendJson(ws, {
+      type: 'room-joined',
+      roomCode,
+      peerId,
+      hostPeerId: room.hostPeerId,
+      isHost,
+      isOwner,
+      peers: existingPeerIds,
+      members: existingMembers
+    });
+
+    console.log(`[Join] ${name} (${peerId}) joined room ${roomCode} (${room.peers.size}/5 members) [Owner: ${isOwner ? 'YES' : 'NO'}]`);
+  } catch (err) {
+    console.error('[Join Room Error]', err.message);
+    sendError(ws, 'Failed to join room: ' + err.message);
   }
-  const isHost = room.hostPeerId === peerId;
-
-  // Add new peer to room
-  room.peers.set(peerId, { ws, peerId, name, avatar, isHost });
-  clients.set(ws, { peerId, roomCode, name, avatar, isHost });
-
-  // Send confirmation, peer IDs, and rich member info to joiner
-  sendJson(ws, {
-    type: 'room-joined',
-    roomCode,
-    peerId,
-    hostPeerId: room.hostPeerId,
-    isHost,
-    peers: existingPeerIds,
-    members: existingMembers
-  });
-
-  console.log(`[Join] ${name} (${peerId}) joined room ${roomCode} (${room.peers.size}/5 members)`);
 }
 
 function handleRelaySignal(ws, data) {
@@ -2278,16 +2453,19 @@ function handleKickPeer(ws, data = {}) {
     return;
   }
 
-  const { peerId: senderPeerId, roomCode, name: senderName } = clientInfo;
+  const { peerId: senderPeerId, roomCode, name: senderName, uid: senderUid } = clientInfo;
   const room = rooms.get(roomCode);
   if (!room) {
     sendError(ws, 'Room not found');
     return;
   }
 
-  // Only the squad host who created the room can kick members
-  if (room.hostPeerId && room.hostPeerId !== senderPeerId) {
-    sendError(ws, 'Only the squad leader/host can kick participants from this room.');
+  const isOwner = !!(senderUid && room.ownerUid && senderUid === room.ownerUid);
+  const isHost = room.hostPeerId && room.hostPeerId === senderPeerId;
+
+  // Only the squad owner or squad host can kick members
+  if (!isOwner && !isHost) {
+    sendError(ws, 'Only the room owner or squad leader can kick participants from this room.');
     return;
   }
 
@@ -2296,13 +2474,164 @@ function handleKickPeer(ws, data = {}) {
 
   const targetPeer = room.peers.get(targetPeerId);
   if (targetPeer && targetPeer.ws) {
-    console.log(`[Kick] ${targetPeer.name} (${targetPeerId}) kicked from room ${roomCode} by host ${senderName}`);
+    const targetClient = clients.get(targetPeer.ws);
+    // Disallow kicking the legitimate room owner!
+    if (targetClient && targetClient.uid && room.ownerUid && targetClient.uid === room.ownerUid) {
+      sendError(ws, 'Cannot kick the room owner.');
+      return;
+    }
+
+    console.log(`[Kick] ${targetPeer.name} (${targetPeerId}) kicked from room ${roomCode} by ${senderName}`);
     sendJson(targetPeer.ws, {
       type: 'kicked-from-room',
       roomCode,
       reason: data.reason || 'You were removed from the room by the squad host.'
     });
     handleLeaveRoom(targetPeer.ws);
+  }
+}
+
+async function handleTransferOwnership(ws, data = {}) {
+  const clientInfo = clients.get(ws);
+  if (!clientInfo) {
+    sendError(ws, 'You are not in a room');
+    return;
+  }
+
+  const room = rooms.get(clientInfo.roomCode);
+  if (!room) {
+    sendError(ws, 'Room not found');
+    return;
+  }
+
+  const isOwner = !!(clientInfo.uid && room.ownerUid && clientInfo.uid === room.ownerUid);
+  if (!isOwner) {
+    sendError(ws, 'Only the verified room owner can transfer room ownership.');
+    return;
+  }
+
+  const targetPeerId = data.targetPeerId;
+  if (!targetPeerId || targetPeerId === clientInfo.peerId) {
+    sendError(ws, 'Invalid target peer for ownership transfer.');
+    return;
+  }
+
+  const targetPeer = room.peers.get(targetPeerId);
+  if (!targetPeer) {
+    sendError(ws, 'Target peer not found in this room.');
+    return;
+  }
+
+  const targetClient = clients.get(targetPeer.ws);
+  const targetUid = (targetClient && targetClient.uid) || data.targetUid;
+  if (!targetUid) {
+    sendError(ws, 'Target member must be signed in with a valid account to receive room ownership.');
+    return;
+  }
+
+  // Transfer ownership
+  room.ownerUid = targetUid;
+  room.hostPeerId = targetPeerId;
+  targetPeer.isHost = true;
+  if (targetClient) targetClient.isHost = true;
+  clientInfo.isHost = false;
+
+  await savePersistentRoom({
+    roomCode: room.code,
+    ownerUid: targetUid,
+    ownerName: targetPeer.name,
+    updatedAt: new Date().toISOString(),
+    settings: room.settings
+  });
+
+  // Notify all members about the transfer
+  for (const peer of room.peers.values()) {
+    if (peer.ws.readyState === WebSocket.OPEN) {
+      sendJson(peer.ws, {
+        type: 'ownership-transferred',
+        roomCode: room.code,
+        newOwnerPeerId: targetPeerId,
+        newOwnerName: targetPeer.name
+      });
+    }
+  }
+
+  console.log(`[Ownership Transfer] Room ${room.code} ownership transferred to ${targetUid} by ${clientInfo.uid}`);
+}
+
+async function handleDeleteRoom(ws, data = {}) {
+  const clientInfo = clients.get(ws);
+  if (!clientInfo) {
+    sendError(ws, 'You are not in a room');
+    return;
+  }
+
+  const room = rooms.get(clientInfo.roomCode);
+  if (!room) {
+    sendError(ws, 'Room not found');
+    return;
+  }
+
+  const isOwner = !!(clientInfo.uid && room.ownerUid && clientInfo.uid === room.ownerUid);
+  if (!isOwner) {
+    sendError(ws, 'Only the verified room owner can delete this persistent room.');
+    return;
+  }
+
+  const roomCode = room.code;
+
+  // Notify all peers and disconnect
+  for (const peer of room.peers.values()) {
+    if (peer.ws.readyState === WebSocket.OPEN) {
+      sendJson(peer.ws, {
+        type: 'room-deleted',
+        roomCode,
+        reason: 'The room owner closed this room.'
+      });
+    }
+    clients.delete(peer.ws);
+  }
+
+  rooms.delete(roomCode);
+  await deletePersistentRoom(roomCode);
+
+  console.log(`[Room Deleted] Room ${roomCode} deleted by owner ${clientInfo.uid}`);
+}
+
+async function handleUpdateRoomSettings(ws, data = {}) {
+  const clientInfo = clients.get(ws);
+  if (!clientInfo) {
+    sendError(ws, 'You are not in a room');
+    return;
+  }
+
+  const room = rooms.get(clientInfo.roomCode);
+  if (!room) {
+    sendError(ws, 'Room not found');
+    return;
+  }
+
+  const isOwner = !!(clientInfo.uid && room.ownerUid && clientInfo.uid === room.ownerUid);
+  if (!isOwner) {
+    sendError(ws, 'Only the verified room owner can modify persistent room settings.');
+    return;
+  }
+
+  if (data.settings && typeof data.settings === 'object') {
+    room.settings = { ...room.settings, ...data.settings };
+    await savePersistentRoom({
+      roomCode: room.code,
+      ownerUid: room.ownerUid,
+      updatedAt: new Date().toISOString(),
+      settings: room.settings
+    });
+
+    sendJson(ws, {
+      type: 'room-settings-updated',
+      roomCode: room.code,
+      settings: room.settings
+    });
+    console.log(`[Room Settings Updated] Room ${room.code} settings updated by owner ${clientInfo.uid}`);
   }
 }
 
@@ -2316,6 +2645,19 @@ function handleLeaveRoom(ws) {
   const room = rooms.get(roomCode);
   if (room) {
     room.peers.delete(peerId);
+
+    // If leaving peer was the active host, select acting host among remaining peers without changing room.ownerUid!
+    if (room.hostPeerId === peerId) {
+      const remaining = Array.from(room.peers.values());
+      if (remaining.length > 0) {
+        room.hostPeerId = remaining[0].peerId;
+        remaining[0].isHost = true;
+        const remainingClient = clients.get(remaining[0].ws);
+        if (remainingClient) remainingClient.isHost = true;
+      } else {
+        room.hostPeerId = null;
+      }
+    }
 
     // Notify remaining members
     for (const [remainingId, peerObj] of room.peers.entries()) {
@@ -2335,10 +2677,10 @@ function handleLeaveRoom(ws) {
       room.cleanupTimer = setTimeout(() => {
         if (room.peers.size === 0) {
           rooms.delete(roomCode);
-          console.log(`[Clean] Room ${roomCode} deleted after 3-minute idle grace period`);
+          console.log(`[Clean] Room ${roomCode} unloaded from memory after 3-minute idle grace period`);
         }
       }, 180000); // 3 minutes = 180,000ms
-      console.log(`[Grace Period] Room ${roomCode} empty — keeping alive for 3 minutes for player reconnect`);
+      console.log(`[Grace Period] Room ${roomCode} empty — keeping alive in memory for 3 minutes for player reconnect`);
     }
   }
 }
@@ -2464,8 +2806,8 @@ function buildWelcomeHtml(name, email) {
               <td width="4%"></td>
               <td width="48%" class="feature-col" valign="top" style="background: #0F172A; border: 1px solid #1E293B; border-radius: 12px; padding: 16px;">
                 <div style="font-size: 20px; margin-bottom: 6px;">🔒</div>
-                <div style="font-size: 14px; font-weight: 700; color: #F1F5F9; margin-bottom: 4px;">100% Peer-to-Peer</div>
-                <div style="font-size: 12px; color: #94A3B8; line-height: 1.5;">Direct encrypted streams. We don’t record or store your voice, ever.</div>
+                <div style="font-size: 14px; font-weight: 700; color: #F1F5F9; margin-bottom: 4px;">P2P with Relay Fallback</div>
+                <div style="font-size: 12px; color: #94A3B8; line-height: 1.5;">Encrypted WebRTC voice. We never record or store your squad voice on our servers.</div>
               </td>
             </tr>
           </table>
@@ -2474,7 +2816,7 @@ function buildWelcomeHtml(name, email) {
               <tr>
                 <td width="28" valign="top" style="font-size: 18px; line-height: 1;">👑</td>
                 <td style="font-size: 13px; line-height: 1.6; color: #C4B5FD;">
-                  <strong style="color: #DDD6FE;">VIP Squad Access:</strong> Unlocks extras like noise-cancelled comms and permanent private squad rooms. No rush though &mdash; only whenever you’re ready.
+                  <strong style="color: #DDD6FE;">VIP Squad Access:</strong> Unlocks extras like ultra noise suppression and permanent private squad rooms. No rush though &mdash; only whenever you’re ready.
                 </td>
               </tr>
             </table>
@@ -2603,6 +2945,19 @@ module.exports = {
   server,
   rooms,
   clients,
+  persistentRooms,
+  getPersistentRoom,
+  savePersistentRoom,
+  deletePersistentRoom,
+  handleCreateRoom,
+  handleJoinRoom,
+  handleKickPeer,
+  handleTransferOwnership,
+  handleDeleteRoom,
+  handleUpdateRoomSettings,
+  isAuthorizedAdmin,
+  verifyUserAuth,
   isPaymentUsed,
-  recordUsedPayment
+  recordUsedPayment,
+  ADMIN_SECRET_KEY
 };

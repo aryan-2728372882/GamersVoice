@@ -838,7 +838,7 @@ const PUSH_PRESETS = {
   },
   vip_invite: {
     title: "Free 3 Days VIP Pass Waiting! 🎁",
-    body: "A squadmate invited you! Enjoy 100% Studio AI Noise Filter & zero lag.",
+    body: "A squadmate invited you! Enjoy Studio Ultra Noise Filter & zero lag.",
     room: "",
     actionLabel: "CLAIM VIP 👑",
     imageUrl: ""

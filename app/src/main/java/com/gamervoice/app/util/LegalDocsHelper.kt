@@ -47,7 +47,7 @@ object LegalDocsHelper {
         Version: 1.0.0-beta
 
         1. DIGITAL SERVICES & REFUND POLICY
-        All payments made for GamerVoice VIP memberships (Weekly, Monthly, or Lifetime VIP Pass) grant instantaneous digital access to VIP features (AI Ultra-Silent Noise Shield, Unlimited Squad Rooms, Autonomous RAM Purging). Because digital services are provisioned immediately upon transaction confirmation, purchases are generally non-refundable once activated. This policy does not prejudice any statutory consumer rights under applicable Indian laws or the rules of the app distribution platform.
+        All payments made for GamerVoice VIP memberships (Weekly, Monthly, or Lifetime VIP Pass) grant instantaneous digital access to VIP features (Ultra Noise Suppression, Unlimited Squad Rooms, Autonomous RAM Purging). Because digital services are provisioned immediately upon transaction confirmation, purchases are generally non-refundable once activated. This policy does not prejudice any statutory consumer rights under applicable Indian laws or the rules of the app distribution platform.
 
         2. RBI & STATUTORY E-COMMERCE COMPLIANCE
         - Payments are processed via authorized payment aggregators (Razorpay) compliant with the Reserve Bank of India (RBI) regulations and the Payment and Settlement Systems Act, 2007.

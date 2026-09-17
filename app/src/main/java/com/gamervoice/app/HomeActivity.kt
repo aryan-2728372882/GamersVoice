@@ -759,61 +759,43 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
 
         val isVip = PlanManager.isVip()
         val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
-        val savedPercent = audioPrefs.getInt("noise_filter_percent", if (noiseFilterLevel == 1) 100 else 50)
+        var selectedMode = audioPrefs.getInt("noise_filter_level", noiseFilterLevel)
 
-        nb.sliderNoiseLevel.value = savedPercent.toFloat().coerceIn(0f, 100f)
-
-        fun updateHeroUI(percent: Int) {
-            AnimationHelper.animateTextChange(nb.tvNoisePercentHero, "$percent%")
-            when {
-                percent == 0 -> {
-                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_0_label)
-                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_0_desc)
-                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+        fun updateUI() {
+            if (selectedMode == 1) {
+                nb.rbModeStandard.isChecked = false
+                nb.rbModeUltra.isChecked = true
+                nb.tvNoisePercentHero.text = "Ultra Mode"
+                nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
+                nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_100_label)
+                nb.tvNoiseDescription.text = getString(R.string.noise_tier_100_desc)
+                if (!isVip) {
+                    nb.llVipLockWarning.visibility = View.VISIBLE
+                    AnimationHelper.shakeView(nb.llVipLockWarning)
+                } else {
                     nb.llVipLockWarning.visibility = View.GONE
                 }
-                percent <= 25 -> {
-                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_25_label)
-                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_25_desc)
-                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_cyan))
-                    nb.llVipLockWarning.visibility = View.GONE
-                }
-                percent <= 50 -> {
-                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_50_label)
-                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_50_desc)
-                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
-                    nb.llVipLockWarning.visibility = View.GONE
-                }
-                percent <= 75 -> {
-                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_75_label)
-                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_75_desc)
-                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
-                    if (!isVip) {
-                        nb.llVipLockWarning.visibility = View.VISIBLE
-                        AnimationHelper.shakeView(nb.llVipLockWarning)
-                    } else {
-                        nb.llVipLockWarning.visibility = View.GONE
-                    }
-                }
-                else -> {
-                    nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_100_label)
-                    nb.tvNoiseDescription.text = getString(R.string.noise_tier_100_desc)
-                    nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_gold))
-                    if (!isVip) {
-                        nb.llVipLockWarning.visibility = View.VISIBLE
-                        AnimationHelper.shakeView(nb.llVipLockWarning)
-                    } else {
-                        nb.llVipLockWarning.visibility = View.GONE
-                    }
-                }
+            } else {
+                nb.rbModeStandard.isChecked = true
+                nb.rbModeUltra.isChecked = false
+                nb.tvNoisePercentHero.text = "Standard Mode"
+                nb.tvNoisePercentHero.setTextColor(ContextCompat.getColor(this, R.color.neon_green))
+                nb.tvNoiseTierLabel.text = getString(R.string.noise_tier_50_label)
+                nb.tvNoiseDescription.text = getString(R.string.noise_tier_50_desc)
+                nb.llVipLockWarning.visibility = View.GONE
             }
         }
 
-        updateHeroUI(savedPercent)
+        updateUI()
 
-        nb.sliderNoiseLevel.addOnChangeListener { _, value, _ ->
-            val p = value.toInt()
-            updateHeroUI(p)
+        nb.cardModeStandard.setOnClickListener {
+            selectedMode = 0
+            updateUI()
+        }
+
+        nb.cardModeUltra.setOnClickListener {
+            selectedMode = 1
+            updateUI()
         }
 
         AnimationHelper.attachPressAnimation(nb.btnCloseNoiseDialog) {
@@ -821,21 +803,22 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         }
 
         AnimationHelper.attachPressAnimation(nb.btnApplyNoiseSetting) {
-            val selectedPercent = nb.sliderNoiseLevel.value.toInt()
-            if (selectedPercent > 50 && !isVip) {
+            if (selectedMode == 1 && !isVip) {
                 AnimationHelper.shakeView(nb.llNoiseHeroBox)
                 dialog.dismiss()
-                showVipUpgradeDialog(getString(R.string.vip_feature_noise_shield, selectedPercent))
+                showVipUpgradeDialog(getString(R.string.vip_feature_noise_shield))
                 return@attachPressAnimation
             }
 
-            audioPrefs.edit().putInt("noise_filter_percent", selectedPercent).apply()
-            val levelIndex = if (selectedPercent >= 75) 1 else 0
-            noiseFilterLevel = levelIndex
-            audioPrefs.edit().putInt("noise_filter_level", levelIndex).apply()
-            updateNoiseFilterUI(selectedPercent)
-            voiceService?.setNoiseFilterLevel(levelIndex)
-            Toast.makeText(this, getString(R.string.toast_mic_filter_updated, selectedPercent), Toast.LENGTH_SHORT).show()
+            noiseFilterLevel = selectedMode
+            audioPrefs.edit()
+                .putInt("noise_filter_level", selectedMode)
+                .putInt("noise_filter_percent", if (selectedMode == 1) 100 else 50)
+                .apply()
+            updateNoiseFilterUI()
+            voiceService?.setNoiseFilterLevel(selectedMode)
+            val msg = if (selectedMode == 1) "Ultra Noise Suppression activated 👑" else "Standard Noise Suppression activated"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             AnimationHelper.dismissWithAnimation(dialog, nb.root)
         }
 
@@ -850,24 +833,19 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
         dialog.setOnDismissListener { borderAnim.cancel() }
     }
 
-    private fun updateNoiseFilterUI(customPercent: Int? = null) {
+    private fun updateNoiseFilterUI() {
         val isVip = PlanManager.isVip()
         val audioPrefs = getSharedPreferences("gamervoice_audio_settings", Context.MODE_PRIVATE)
-        var p = customPercent ?: audioPrefs.getInt("noise_filter_percent", if (noiseFilterLevel == 1) 100 else 50)
-        if (!isVip && p > 50) {
-            p = 50
+        var level = audioPrefs.getInt("noise_filter_level", noiseFilterLevel)
+        if (!isVip && level > 0) {
+            level = 0
             noiseFilterLevel = 0
             audioPrefs.edit()
-                .putInt("noise_filter_percent", 50)
                 .putInt("noise_filter_level", 0)
+                .putInt("noise_filter_percent", 50)
                 .apply()
         }
-        val label = when {
-            p >= 100 -> "100% AI Shield 👑"
-            p >= 75 -> "75% Squad Pro 👑"
-            p > 0 -> "$p% Standard"
-            else -> "Off (Raw)"
-        }
+        val label = if (level == 1) "Ultra Noise 👑" else "Standard Noise"
         AnimationHelper.animateTextChange(binding.tvSettingNoiseFilterBadge, label)
     }
 

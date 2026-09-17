@@ -164,7 +164,7 @@
           '<div class="footer-grid">' +
             "<div>" +
               '<div class="brand" style="margin-bottom:16px">' + logoHtml() + '<span class="brand-name">GAMER<span>VOICE</span></span></div>' +
-              '<p style="color:var(--text-dim);max-width:340px;line-height:1.7">Ultra-low latency squad VOIP for Free Fire & BGMI. Encrypted WebRTC peer-to-peer audio, studio AI noise suppression, and in-game floating HUD.</p>' +
+              '<p style="color:var(--text-dim);max-width:340px;line-height:1.7">Ultra-low latency squad VOIP for Free Fire & BGMI. Encrypted WebRTC peer-to-peer audio, studio ultra noise suppression, and in-game floating HUD.</p>' +
               '<div class="chip" style="margin-top:16px"><span class="chip-dot"></span> WebRTC Mesh Active</div>' +
             "</div>" +
             "<div><h4>PRODUCT</h4>" +

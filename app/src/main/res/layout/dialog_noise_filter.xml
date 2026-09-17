@@ -33,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-black"
-                android:text="AI NOISE REDUCTION"
+                android:text="NOISE SUPPRESSION"
                 android:textColor="@color/white"
                 android:textSize="16sp" />
 
@@ -41,7 +41,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
-                android:text="Real-time WebRTC Opus Acoustic DSP"
+                android:text="Real-time WebRTC Acoustic DSP Pipeline"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -65,7 +65,7 @@
         android:layout_marginVertical="16dp"
         android:background="#1AFFFFFF" />
 
-    <!-- Current Percentage Hero Box -->
+    <!-- Current Mode Hero Box -->
     <LinearLayout
         android:id="@+id/llNoiseHeroBox"
         android:layout_width="match_parent"
@@ -81,8 +81,8 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-black"
             android:textColor="@color/neon_green"
-            android:textSize="36sp"
-            tools:text="50%" />
+            android:textSize="26sp"
+            tools:text="Standard Mode" />
 
         <TextView
             android:id="@+id/tvNoiseTierLabel"
@@ -92,7 +92,7 @@
             android:fontFamily="sans-serif-bold"
             android:textColor="@color/white"
             android:textSize="13sp"
-            tools:text="Standard Mic Filter (Balanced)" />
+            tools:text="Standard Acoustic Filter (Balanced)" />
 
         <TextView
             android:id="@+id/tvNoiseDescription"
@@ -102,67 +102,128 @@
             android:gravity="center"
             android:textColor="@color/text_secondary"
             android:textSize="11sp"
-            tools:text="Filters keyboard clicks and room resonance while keeping natural team voice." />
+            tools:text="Filters keyboard clicks and room resonance while keeping natural squad voice." />
     </LinearLayout>
 
-    <!-- Slider Container -->
+    <!-- Mode Selection Cards -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="18dp"
         android:fontFamily="sans-serif-bold"
-        android:text="SUPPRESSION LEVEL"
+        android:text="SELECT PROCESSING MODE"
         android:textColor="@color/text_secondary"
         android:textSize="10.5sp" />
 
-    <com.google.android.material.slider.Slider
-        android:id="@+id/sliderNoiseLevel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:stepSize="25"
-        android:value="50"
-        android:valueFrom="0"
-        android:valueTo="100"
-        app:haloColor="#3300FF88"
-        app:thumbColor="@color/accent_green"
-        app:thumbRadius="10dp"
-        app:trackColorActive="@color/accent_green"
-        app:trackColorInactive="#22FFFFFF"
-        app:trackHeight="6dp" />
-
-    <!-- Slider Markers -->
+    <!-- Mode 1: Standard Card -->
     <LinearLayout
+        android:id="@+id/cardModeStandard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_vip_card_neon"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
 
-        <TextView
+        <RadioButton
+            android:id="@+id/rbModeStandard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:focusable="false"
+            app:buttonTint="@color/neon_green" />
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:gravity="start"
-            android:text="0%\n(Off)"
-            android:textColor="@color/text_secondary"
-            android:textSize="9.5sp" />
+            android:orientation="vertical">
 
-        <TextView
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-bold"
+                android:text="Standard Noise Suppression"
+                android:textColor="@color/white"
+                android:textSize="13.5sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Balanced room resonance filter for all squad members."
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Mode 2: Ultra Card (VIP) -->
+    <LinearLayout
+        android:id="@+id/cardModeUltra"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_vip_card_gold"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="14dp">
+
+        <RadioButton
+            android:id="@+id/rbModeUltra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:focusable="false"
+            app:buttonTint="@color/neon_gold" />
+
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:gravity="center"
-            android:text="50%\n(Standard)"
-            android:textColor="@color/white"
-            android:textSize="9.5sp" />
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="end"
-            android:text="100% 👑\n(Ultra Silent)"
-            android:textColor="@color/neon_gold"
-            android:textSize="9.5sp" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:text="Ultra Noise Suppression"
+                    android:textColor="@color/white"
+                    android:textSize="13.5sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_badge_pill_neon"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="1dp"
+                    android:text="👑 VIP"
+                    android:textColor="@color/neon_gold"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Aggressively suppresses ceiling fans, keyboard clicks, and heavy breathing."
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- VIP Banner if locked -->
@@ -170,7 +231,7 @@
         android:id="@+id/llVipLockWarning"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="14dp"
         android:background="@drawable/bg_vip_card_gold"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -190,7 +251,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:fontFamily="sans-serif-medium"
-            android:text="100% Ultra Silent AI Shield is locked to VIP members. Upgrade to unlock full studio silence."
+            android:text="Ultra Noise Suppression is locked to VIP members. Upgrade to unlock maximum studio isolation."
             android:textColor="@color/white"
             android:textSize="11sp" />
     </LinearLayout>
@@ -199,7 +260,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="18dp"
         android:orientation="horizontal">
 
         <Button

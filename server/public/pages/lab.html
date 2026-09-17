@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Noise Suppression Lab — GamerVoice Studio Audio</title>
-  <meta name="description" content="Interactive audio visualizer demonstrating GamerVoice's on-device neural noise suppression. Test ambient room noise vs 100% VIP studio silence.">
+  <meta name="description" content="Interactive audio visualizer demonstrating GamerVoice's on-device real-time noise suppression. Test ambient room noise vs VIP studio silence.">
   <link rel="icon" href="/logo.png">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/tokens.css">
@@ -21,8 +21,8 @@
     <main class="wrap">
       <header class="page-hero reveal">
         <div class="chip"><span class="chip-dot"></span> Audio Engineering Lab</div>
-        <h1>Test on-device neural noise suppression.</h1>
-        <p>In hot gaming rooms, high-speed ceiling fans and mechanical keyboard clicks ruin squad communication. See how GamerVoice's neural DSP cleans your audio in real-time with zero processing latency.</p>
+        <h1>Test on-device real-time noise suppression.</h1>
+        <p>In hot gaming rooms, high-speed ceiling fans and mechanical keyboard clicks ruin squad communication. See how GamerVoice's acoustic DSP cleans your audio in real-time with zero processing latency.</p>
       </header>
 
       <!-- Noise Lab Interactive Card -->
@@ -33,7 +33,7 @@
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span style="font-family:var(--font-mono);font-size:0.9rem;color:var(--cyan);font-weight:600">NEURAL SUPPRESSION STRENGTH</span>
+            <span style="font-family:var(--font-mono);font-size:0.9rem;color:var(--cyan);font-weight:600">NOISE SUPPRESSION STRENGTH</span>
             <b id="noiseValueDisplay" style="font-family:var(--font-mono);font-size:1.3rem;color:var(--cyan)">75%</b>
           </div>
 
@@ -43,7 +43,7 @@
             <button class="preset" data-val="0" type="button" onclick="setNoisePreset(0)">0% Raw (Fan & Room Noise)</button>
             <button class="preset" data-val="50" type="button" onclick="setNoisePreset(50)">50% Standard Noise Gate</button>
             <button class="preset active" data-val="75" type="button" onclick="setNoisePreset(75)">75% High Suppression</button>
-            <button class="preset" data-val="100" type="button" onclick="setNoisePreset(100)">100% Studio Ultra Silent (VIP 👑)</button>
+            <button class="preset" data-val="100" type="button" onclick="setNoisePreset(100)">Ultra Noise Suppression (VIP 👑)</button>
           </div>
 
           <!-- Viral Squad Lab Share Banner -->
@@ -84,8 +84,8 @@
           </div>
           <div class="card reveal delay-2 tilt-card" style="border-color:rgba(255,215,0,0.4)">
             <p class="kicker" style="color:var(--gold)">Stage 3 (VIP)</p>
-            <h3>100% Neural Studio Filter</h3>
-            <p>Our deep recurrent neural network runs on mobile NPU/NEON vector extensions, stripping out continuous fan wind and keyboard clicks even while you talk.</p>
+            <h3>Ultra Noise Suppression</h3>
+            <p>Our optimized WebRTC acoustic DSP runs on mobile NEON vector extensions, stripping out continuous fan wind and keyboard clicks even while you talk.</p>
           </div>
         </div>
       </section>

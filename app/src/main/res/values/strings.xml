@@ -142,24 +142,25 @@
     <string name="dialog_vip_squad_save">Save Squad</string>
     <string name="vip_feature_clutch_highlights">👑 Personal Clutch Highlights is an exclusive VIP feature! Upgrade to save your 120s clutch audio moments.</string>
     <string name="vip_feature_ram_purge">👑 Automatic Background RAM Purging is a VIP exclusive feature! Upgrade to eliminate low-memory lag in BGMI / Free Fire automatically.</string>
-    <string name="vip_feature_noise_shield">👑 %1$d%% AI Noise Shield is an exclusive VIP feature! Upgrade to eliminate 100%% of background noise, fan hum, and breathing.</string>
+    <string name="vip_feature_noise_shield">👑 Ultra Noise Suppression is an exclusive VIP feature! Upgrade to eliminate background noise, fan hum, and room resonance.</string>
     <string name="vip_feature_room_limit">You have reached the 2-room limit for the Free plan! Upgrade to GamerVoice VIP to save unlimited custom named squads.</string>
 
     <!-- Referral Hints -->
     <string name="hint_enter_referral_code">⚠️ Please enter a referral code</string>
     <string name="hint_verifying_code">⏳ Verifying code...</string>
 
-    <!-- Noise Filter Tiers -->
-    <string name="noise_tier_0_label">Raw Audio (0% Filter)</string>
-    <string name="noise_tier_0_desc">Pure unfiltered microphone stream with zero processing overhead.</string>
-    <string name="noise_tier_25_label">Light Acoustic Clean (25%)</string>
-    <string name="noise_tier_25_desc">Gentle room resonance cancellation for quiet gaming spaces.</string>
-    <string name="noise_tier_50_label">Standard Squad Shield (50%)</string>
-    <string name="noise_tier_50_desc">Balanced noise reduction. Dampens fan hum and loud keyboard taps.</string>
-    <string name="noise_tier_75_label">Squad Focus Pro (75%) 👑</string>
-    <string name="noise_tier_75_desc">Aggressive noise gate eliminates ceiling fans and breathing.</string>
-    <string name="noise_tier_100_label">100% Ultra Silent AI Shield 👑</string>
-    <string name="noise_tier_100_desc">Total studio silence. AI isolates squad voice only. 0% fan or room noise.</string>
+    <!-- Noise Filter Modes -->
+    <string name="noise_tier_0_label">Standard Noise Suppression</string>
+    <string name="noise_tier_0_desc">Balanced acoustic noise reduction for natural squad voice without room echoes.</string>
+    <string name="noise_tier_25_label">Standard Noise Suppression</string>
+    <string name="noise_tier_25_desc">Balanced acoustic noise reduction for natural squad voice without room echoes.</string>
+    <string name="noise_tier_50_label">Standard Noise Suppression</string>
+    <string name="noise_tier_50_desc">Balanced acoustic noise reduction for natural squad voice without room echoes.</string>
+    <string name="noise_tier_75_label">Ultra Noise Suppression 👑</string>
+    <string name="noise_tier_75_desc">High-isolation acoustic filter. Aggressively suppresses ceiling fans, keyboard clicks, and heavy breathing.</string>
+    <string name="noise_tier_100_label">Ultra Noise Suppression 👑</string>
+    <string name="noise_tier_100_desc">High-isolation acoustic filter. Aggressively suppresses ceiling fans, keyboard clicks, and heavy breathing.</string>
+    <string name="privacy_replay_buffer_disclosure">GamerVoice never records or stores your squad voice on our servers. Optional Clutch Replay maintains a temporary 120s buffer in device RAM only, exported solely on demand.</string>
 
     <!-- App Update Toasts -->
     <string name="toast_update_server_unreachable">Could not reach update server. Try again later.</string>

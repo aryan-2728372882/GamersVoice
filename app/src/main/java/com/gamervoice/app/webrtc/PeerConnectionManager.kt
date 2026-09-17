@@ -211,18 +211,18 @@ class PeerConnectionManager(
 
             setMicTransmitting(!isPttMode)
 
-            val is100 = (currentNoiseFilterLevel == 1 && com.gamervoice.app.auth.PlanManager.isVip())
-            listener.onLog(if (is100) "Audio Engine: 100% Ultra Silent AI Noise Shield Active 👑" else "Audio Engine: 50% Standard Room Noise Filter Active")
+            val isUltra = (currentNoiseFilterLevel == 1 && com.gamervoice.app.auth.PlanManager.isVip())
+            listener.onLog(if (isUltra) "Audio Engine: Ultra Noise Suppression Active 👑" else "Audio Engine: Standard Noise Suppression Active")
         } catch (e: Throwable) {
             Log.e(TAG, "Critical error initializing PeerConnectionManager", e)
             listener.onLog("WebRTC Init Warning: ${e.message}")
         }
     }
 
-    private fun createAudioConstraints(is100Percent: Boolean): MediaConstraints {
+    private fun createAudioConstraints(isUltraMode: Boolean): MediaConstraints {
         return MediaConstraints().apply {
-            if (is100Percent) {
-                // VIP ULTRA-STUDIO AI NOISE SHIELD: 100% Background Noise Elimination
+            if (isUltraMode) {
+                // VIP ULTRA NOISE SUPPRESSION: Advanced WebRTC Acoustic DSP
                 // Eliminates ceiling fans, TV noise, keystrokes, breathing, and phone back taps
                 val vipKeys = listOf(
                     "googEchoCancellation" to "true",
@@ -244,19 +244,15 @@ class PeerConnectionManager(
                     optional.add(MediaConstraints.KeyValuePair(k, v))
                 }
             } else {
-                // FREE: 50% Standard Noise Filter (Standard voice isolation, allows natural room ambiance)
-                val freeKeys = listOf(
+                // STANDARD: Balanced voice acoustic filtering
+                val standardKeys = listOf(
                     "googEchoCancellation" to "true",
                     "googAutoGainControl" to "true",
                     "googNoiseSuppression" to "true",
-                    "googNoiseSuppression2" to "false",
-                    "googExperimentalNoiseSuppression" to "false",
-                    "googHighpassFilter" to "false",
-                    "googVeryHighpassFilter" to "false",
-                    "googTypingNoiseDetection" to "false",
+                    "googHighpassFilter" to "true",
                     "googAudioMirroring" to "false"
                 )
-                for ((k, v) in freeKeys) {
+                for ((k, v) in standardKeys) {
                     mandatory.add(MediaConstraints.KeyValuePair(k, v))
                     optional.add(MediaConstraints.KeyValuePair(k, v))
                 }
@@ -266,7 +262,7 @@ class PeerConnectionManager(
 
     fun setNoiseFilterLevel(level: Int) {
         this.currentNoiseFilterLevel = level
-        val is100 = (level == 1 && com.gamervoice.app.auth.PlanManager.isVip())
+        val isUltra = (level == 1 && com.gamervoice.app.auth.PlanManager.isVip())
         try {
             adm?.setNoiseSuppressorEnabled(true)
         } catch (_: Throwable) {}
@@ -274,7 +270,7 @@ class PeerConnectionManager(
         // Dynamically rebuild the local audio track and hot-swap across all active peer senders
         try {
             val f = factory ?: return
-            val newConstraints = createAudioConstraints(is100)
+            val newConstraints = createAudioConstraints(isUltra)
             val newSource = f.createAudioSource(newConstraints)
             val newTrack = f.createAudioTrack("ARDAMSa0_" + System.currentTimeMillis(), newSource)
             newTrack.setEnabled(isMicTransmitting)
@@ -293,7 +289,7 @@ class PeerConnectionManager(
             audioSource = newSource
             localAudioTrack = newTrack
 
-            listener.onLog("Noise Filter dynamically switched: ${if (is100) "100% Ultra Silent AI Shield 👑" else "50% Standard Noise Filter"}")
+            listener.onLog("Noise Filter dynamically switched: ${if (isUltra) "Ultra Noise Suppression 👑" else "Standard Noise Suppression"}")
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to dynamically update noise filter track", e)
         }
@@ -301,7 +297,23 @@ class PeerConnectionManager(
 
     fun setLowDataMode(enabled: Boolean) {
         this.isLowDataMode = enabled
-        listener.onLog("3G / Weak Signal Mode: ${if (enabled) "ENABLED (12kbps Opus DTX)" else "DISABLED (HD Studio)"}")
+        val targetBitrate = if (enabled) 12000 else (if (com.gamervoice.app.auth.PlanManager.isVip()) 48000 else 24000)
+        try {
+            for (pc in peerConnections.values) {
+                for (sender in pc.senders) {
+                    if (sender.track()?.kind() == "audio") {
+                        val params = sender.parameters
+                        if (params.encodings.isNotEmpty()) {
+                            params.encodings[0].maxBitrateBps = targetBitrate
+                            sender.parameters = params
+                        }
+                    }
+                }
+            }
+            listener.onLog("Low-Data Mode: ${if (enabled) "ENABLED (12kbps Opus DTX)" else "DISABLED (${targetBitrate / 1000}kbps)"}")
+        } catch (e: Throwable) {
+            Log.w(TAG, "Error dynamically updating RtpSender bitrate parameters", e)
+        }
     }
 
     fun hasActivePeers(): Boolean = peerConnections.isNotEmpty()
@@ -372,8 +384,8 @@ class PeerConnectionManager(
                 regex.replace(sdp) { match ->
                     val existing = match.groupValues[1]
                     if (isLowDataMode) {
-                        // 3G WEAK SIGNAL: Extreme data compression (8kbps SILK Speech), Discontinuous Transmission (zero packets when silent), In-Band Forward Error Correction (FEC), and packet grouping up to 60ms to cut radio overhead
-                        "a=fmtp:111 minptime=20;ptime=20;maxptime=60;useinbandfec=1;maxaveragebitrate=8000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
+                        // 3G / LOW-DATA WEAK SIGNAL: Low-bitrate Opus voice (12kbps DTX, In-Band FEC), zero packets when silent, and packet grouping up to 60ms
+                        "a=fmtp:111 minptime=20;ptime=20;maxptime=60;useinbandfec=1;maxaveragebitrate=12000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=16000;sprop-maxcapturerate=16000;$existing"
                     } else if (isVip) {
                         // VIP: 64kbps HD 48kHz Studio Voice + DTX + In-Band FEC
                         "a=fmtp:111 minptime=10;useinbandfec=1;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;usedtx=1;cbr=0;maxplaybackrate=48000;sprop-maxcapturerate=48000;$existing"

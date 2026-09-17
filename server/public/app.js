@@ -682,7 +682,7 @@ const policyData = {
       <p>Users agree to use squad communication channels responsibly. You must not utilize the signaling relays for denial-of-service attempts, unauthorized packet relaying, commercial advertising, or harassment of squad members.</p>
 
       <h4>4. VIP Subscriptions &amp; Payments</h4>
-      <p>VIP plans unlock dedicated TURN relays, high-fidelity AI noise suppression compute, and custom permanent squad rooms. Subscriptions are billed through certified payment partner Razorpay. Terms governing cancellations are detailed in our Refund Policy.</p>
+      <p>VIP plans unlock dedicated TURN relays, high-fidelity Ultra noise suppression audio processing, and custom permanent squad rooms. Subscriptions are billed through certified payment partner Razorpay. Terms governing cancellations are detailed in our Refund Policy.</p>
 
       <h4>5. Service Reliability &amp; Limitation of Liability</h4>
       <p>While our redundant server architecture strives for 99.9% network availability, GamerVoice is provided on an "as-is" and "as-available" basis without warranties of uninterrupted uptime during unexpected carrier network disruptions.</p>

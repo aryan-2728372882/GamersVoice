@@ -2037,7 +2037,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
                             android:fontFamily="sans-serif"
-                            android:text="✔ Save Unlimited Squad Rooms in Cloud Firestore\n✔ Ultra Silent AI Noise Shield (&lt; 10% Noise)\n✔ 0 Latency Priority Server Routing\n✔ Floating In-Game HUD overlay for all games\n✔ 100% Ad-Free Experience"
+                            android:text="✔ Save Unlimited Squad Rooms in Cloud Firestore\n✔ Ultra Noise Suppression (Fan &amp; Ambient Isolation)\n✔ 0 Latency Priority Server Routing\n✔ Floating In-Game HUD overlay for all games\n✔ 100% Ad-Free Experience"
                             android:textColor="#CBD5E0"
                             android:textSize="10.5sp" />
                     </LinearLayout>

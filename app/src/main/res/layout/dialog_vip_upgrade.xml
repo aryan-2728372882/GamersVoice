@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:lineSpacingExtra="2dp"
-            android:text="Dominate Free Fire and BGMI with Studio-Grade AI Noise Filtering, 48kHz HD Audio Turbo and Permanent Squad Rooms."
+            android:text="Dominate Free Fire and BGMI with Studio-Grade Ultra Noise Filtering, 48kHz HD Audio Turbo and Permanent Squad Rooms."
             android:textColor="#CBD5E0"
             android:textSize="11.5sp" />
 
@@ -135,7 +135,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Studio AI Noise Shield (&lt; 10% Noise, 100% Fan Muted)"
+                    android:text="Studio Ultra Noise Suppression (Fan &amp; Ambient Muted)"
                     android:textColor="@color/white"
                     android:textSize="11.5sp" />
             </LinearLayout>

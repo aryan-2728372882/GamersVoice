@@ -143,24 +143,25 @@
     <string name="dialog_vip_squad_save">स्क्वाड सहेजें</string>
     <string name="vip_feature_clutch_highlights">👑 क्लच हाइलाइट्स केवल VIP उपयोगकर्ताओं के लिए है! अपने 120s के ऑडियो मोमेंट्स सहेजने के लिए अपग्रेड करें।</string>
     <string name="vip_feature_ram_purge">👑 बैकग्राउंड रैम पर्ज केवल VIP उपयोगकर्ताओं के लिए है! BGMI / Free Fire में लैग खत्म करने के लिए अपग्रेड करें।</string>
-    <string name="vip_feature_noise_shield">👑 %1$d%% AI नॉइज़ शील्ड केवल VIP उपयोगकर्ताओं के लिए है! बैकग्राउंड शोर और पंखे की आवाज़ हटाने के लिए अपग्रेड करें।</string>
+    <string name="vip_feature_noise_shield">👑 अल्ट्रा नॉइज़ सप्रेशन केवल VIP सदस्यों के लिए है! पंखे और कमरे के शोर को शांत करने के लिए अपग्रेड करें।</string>
     <string name="vip_feature_room_limit">आप मुफ़्त प्लान की 2 कमरों की सीमा तक पहुँच चुके हैं! असीमित कस्टम स्क्वाड सहेजने के लिए गेमरवॉइस VIP में अपग्रेड करें।</string>
 
     <!-- Referral Hints -->
     <string name="hint_enter_referral_code">⚠️ कृपया एक रेफरल कोड दर्ज करें</string>
     <string name="hint_verifying_code">⏳ कोड सत्यापित किया जा रहा है...</string>
 
-    <!-- Noise Filter Tiers -->
-    <string name="noise_tier_0_label">रॉ ऑडियो (0% फ़िल्टर)</string>
-    <string name="noise_tier_0_desc">शून्य प्रोसेसिंग ओवरहेड के साथ शुद्ध अनफ़िल्टर्ड माइक्रोफ़ोन स्ट्रीम।</string>
-    <string name="noise_tier_25_label">हल्का अकॉस्टिक क्लीन (25%)</string>
-    <string name="noise_tier_25_desc">शांत गेमिंग स्थानों के लिए हल्का रूम रेजोनेंस रद्दीकरण।</string>
-    <string name="noise_tier_50_label">मानक स्क्वाड शील्ड (50%)</string>
-    <string name="noise_tier_50_desc">संतुलित शोर कटौती। पंखे की आवाज़ और कीबोर्ड की आवाज़ को कम करता है।</string>
-    <string name="noise_tier_75_label">स्क्वाड फोकस प्रो (75%) 👑</string>
-    <string name="noise_tier_75_desc">सख्त नॉइज़ गेट सीलिंग फैन और सांस लेने की आवाज़ को हटाता है।</string>
-    <string name="noise_tier_100_label">100% अल्ट्रा साइलेंट AI शील्ड 👑</string>
-    <string name="noise_tier_100_desc">पूर्ण स्टूडियो शांति। AI केवल स्क्वाड आवाज़ को अलग करता है। 0% पंखा या कमरे का शोर।</string>
+    <!-- Noise Filter Modes -->
+    <string name="noise_tier_0_label">मानक नॉइज़ सप्रेशन</string>
+    <string name="noise_tier_0_desc">प्राकृतिक आवाज़ के साथ संतुलित शोर कटौती।</string>
+    <string name="noise_tier_25_label">मानक नॉइज़ सप्रेशन</string>
+    <string name="noise_tier_25_desc">प्राकृतिक आवाज़ के साथ संतुलित शोर कटौती।</string>
+    <string name="noise_tier_50_label">मानक नॉइज़ सप्रेशन</string>
+    <string name="noise_tier_50_desc">प्राकृतिक आवाज़ के साथ संतुलित शोर कटौती।</string>
+    <string name="noise_tier_75_label">अल्ट्रा नॉइज़ सप्रेशन 👑</string>
+    <string name="noise_tier_75_desc">सख्त अकॉस्टिक फ़िल्टर। सीलिंग फैन, कीबोर्ड और सांसों की आवाज़ को हटाता है।</string>
+    <string name="noise_tier_100_label">अल्ट्रा नॉइज़ सप्रेशन 👑</string>
+    <string name="noise_tier_100_desc">सख्त अकॉस्टिक फ़िल्टर। सीलिंग फैन, कीबोर्ड और सांसों की आवाज़ को हटाता है।</string>
+    <string name="privacy_replay_buffer_disclosure">गेमरवॉइस कभी भी आपकी आवाज़ सर्वर पर रिकॉर्ड या स्टोर नहीं करता। वैकल्पिक क्लच रीप्ले केवल डिवाइस रैम में 120 सेकंड का बफ़र रखता है।</string>
 
     <!-- App Update Toasts -->
     <string name="toast_update_server_unreachable">अपडेट सर्वर से संपर्क नहीं हो सका। बाद में पुनः प्रयास करें।</string>

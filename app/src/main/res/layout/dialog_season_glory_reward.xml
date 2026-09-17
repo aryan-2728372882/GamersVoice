@@ -170,7 +170,7 @@
                 android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
-                android:text="👑 VIP AI Noise Suppression · Unlimited Squad Rooms · 0ms Relay"
+                android:text="👑 VIP Ultra Noise Suppression · Unlimited Squad Rooms · Low-Latency P2P"
                 android:textColor="#A0AEC0"
                 android:textSize="11.5sp" />
 

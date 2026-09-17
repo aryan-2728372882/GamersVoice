@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — GamerVoice Zero-Cloud Audio</title>
-  <meta name="description" content="GamerVoice Privacy Policy: Encrypted WebRTC peer-to-peer audio, zero server recording, and zero third-party advertising tracking.">
+  <meta name="description" content="GamerVoice Privacy Policy: Encrypted WebRTC peer-to-peer audio with relay fallback, zero server recording, and zero third-party advertising tracking.">
   <link rel="icon" href="/logo.png">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/tokens.css">
@@ -26,18 +26,18 @@
       </header>
 
       <div class="legal reveal">
-        <h2>1. Zero Cloud Voice Recording</h2>
-        <p>Unlike traditional chat services that route your microphone stream through intermediate cloud processing, GamerVoice operates on a pure WebRTC peer-to-peer (P2P) mesh. Your voice packets are encrypted end-to-end using DTLS-SRTP and travel directly between players' phones. <strong>We do not record, store, transcribe, or listen to any squad audio.</strong></p>
+        <h2>1. Zero Server Voice Recording &amp; Storage</h2>
+        <p>GamerVoice transmits squad voice packets using WebRTC peer-to-peer connections (with encrypted relay fallback when strict Carrier-Grade NAT requires it). Voice streams are encrypted in transit using DTLS-SRTP. <strong>Normal squad voice is never uploaded, recorded, transcribed, or stored on GamerVoice servers.</strong></p>
 
-        <h2>2. On-Device 120s Clutch Audio Highlights</h2>
-        <p>Our personal clutch highlight feature maintains a temporary 2-minute rolling PCM buffer in your mobile device's volatile RAM. When you trigger the save button, that audio is packaged into a .wav file directly in your private device storage (<code>/Music/GamerVoice_Clips/</code>). Nothing is ever sent to our servers.</p>
+        <h2>2. On-Device 120s Clutch Highlights (Local RAM Buffer)</h2>
+        <p>Our optional personal clutch highlight feature operates strictly on your local device. When enabled in Settings, it maintains a temporary 120-second circular audio buffer in your device's volatile RAM. This audio is never transmitted over the internet or uploaded to any server. When you explicitly tap "Save Clutch Clip", the buffered audio is exported as a local <code>.wav</code> file directly into your device's private app directory (<code>Android/data/com.gamervoice.app/files/Music/GamerVoice_Clips/</code>). If not saved, the rolling buffer is automatically overwritten in RAM or purged immediately when the session ends.</p>
 
         <h2>3. Information We Collect</h2>
         <p>To provide account authentication, VIP synchronization, and referral crediting, we store:</p>
         <ul>
           <li>Your account email address and gamer handle (managed securely through Firebase Authentication).</li>
           <li>Entitlement metadata (active VIP tier, purchase timestamp, and referral redemption flags).</li>
-          <li>Ephemeral signaling connection data (anonymized IP addresses used solely for ICE candidate negotiation).</li>
+          <li>Ephemeral signaling connection data (anonymized IP addresses used solely for WebRTC negotiation).</li>
         </ul>
 
         <h2>4. No Third-Party Advertising SDKs</h2>
