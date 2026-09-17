@@ -1450,8 +1450,8 @@ const server = http.createServer(async (req, res) => {
   // API: Latest App Version Check (For in-app auto-update notifications)
   if (req.method === 'GET' && req.url === '/api/app-version') {
     sendResponse(res, 200, {
-      latestVersionCode: 9,
-      latestVersionName: '1.0.9',
+      latestVersionCode: 10,
+      latestVersionName: 'V1.0',
       downloadUrl: '/gamervoice-release.apk',
       mandatory: false,
       changelog: '• Free Fire AAA 3D Glory Crate Season Rewards\n• In-app auto updates & instant downloads\n• Peer network connection quality indicators\n• Multi-account Google sign-in fixes\n• Hindi localization support'

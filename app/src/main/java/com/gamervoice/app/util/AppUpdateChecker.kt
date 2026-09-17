@@ -2,12 +2,18 @@ package com.gamervoice.app.util
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import com.gamervoice.app.R
 import okhttp3.Call
 import okhttp3.Callback
@@ -15,6 +21,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -22,7 +30,11 @@ object AppUpdateChecker {
 
     private const val TAG = "AppUpdateChecker"
     private const val VERSION_API_URL = "https://gamersvoice.onrender.com/api/app-version"
-    private const val DEFAULT_DOWNLOAD_URL = "https://gamersvoice.onrender.com/download"
+    private const val DEFAULT_DOWNLOAD_URL = "https://gamersvoice.onrender.com/gamervoice-release.apk"
+    private const val WEBSITE_DOWNLOAD_URL = "https://gamersvoice.onrender.com/download"
+    private const val PREFS_NAME = "gv_update_prefs"
+    private const val KEY_LAST_CHECK = "last_check_timestamp"
+    private const val ONE_DAY_MS = 24 * 60 * 60 * 1000L
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -31,7 +43,19 @@ object AppUpdateChecker {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    fun checkForUpdate(activity: Activity, manualCheck: Boolean = false) {
+    /**
+     * Checks for updates once per day automatically on app launch.
+     */
+    fun checkForUpdate(activity: Activity) {
+        val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
+        val now = System.currentTimeMillis()
+
+        if (now - lastCheck < ONE_DAY_MS) {
+            Log.d(TAG, "Update check skipped: already checked within the last 24 hours.")
+            return
+        }
+
         val request = Request.Builder()
             .url(VERSION_API_URL)
             .get()
@@ -40,11 +64,6 @@ object AppUpdateChecker {
         httpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.w(TAG, "Update check failed: ${e.message}")
-                if (manualCheck) {
-                    mainHandler.post {
-                        Toast.makeText(activity, activity.getString(R.string.toast_update_server_unreachable), Toast.LENGTH_SHORT).show()
-                    }
-                }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -60,6 +79,9 @@ object AppUpdateChecker {
                     val changelog = json.optString("changelog", "Performance improvements and bug fixes.")
                     val mandatory = json.optBoolean("mandatory", false)
 
+                    // Mark successful daily check
+                    prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply()
+
                     val pInfo = try {
                         activity.packageManager.getPackageInfo(activity.packageName, 0)
                     } catch (_: Exception) { null }
@@ -73,10 +95,6 @@ object AppUpdateChecker {
                             if (!activity.isFinishing && !activity.isDestroyed) {
                                 showUpdateDialog(activity, serverVersionName, changelog, downloadUrl, mandatory)
                             }
-                        }
-                    } else if (manualCheck) {
-                        mainHandler.post {
-                            Toast.makeText(activity, activity.getString(R.string.toast_app_up_to_date, currentName), Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e: Exception) {
@@ -96,8 +114,11 @@ object AppUpdateChecker {
         val builder = AlertDialog.Builder(activity)
             .setTitle(activity.getString(R.string.dialog_update_title, versionName))
             .setMessage(activity.getString(R.string.dialog_update_msg, changelog))
-            .setPositiveButton(activity.getString(R.string.dialog_update_now)) { _, _ ->
-                redirectToStoreOrDownload(activity, downloadUrl)
+            .setPositiveButton("Download & Install") { _, _ ->
+                startDownloadAndInstall(activity, downloadUrl)
+            }
+            .setNeutralButton("Visit Website") { _, _ ->
+                openWebsiteDownload(activity)
             }
 
         if (!mandatory) {
@@ -109,26 +130,126 @@ object AppUpdateChecker {
         builder.show()
     }
 
-    private fun redirectToStoreOrDownload(activity: Activity, downloadUrl: String) {
-        val playStoreUri = Uri.parse("market://details?id=${activity.packageName}")
-        val playStoreIntent = Intent(Intent.ACTION_VIEW, playStoreUri).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
+    private fun openWebsiteDownload(activity: Activity) {
         try {
-            activity.startActivity(playStoreIntent)
-        } catch (_: Exception) {
-            // Fallback to web browser (official site or web play store)
-            val webUri = if (downloadUrl.startsWith("http")) {
-                Uri.parse(downloadUrl)
-            } else {
-                Uri.parse("https://gamersvoice.onrender.com/download")
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(WEBSITE_DOWNLOAD_URL)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            try {
-                activity.startActivity(Intent(Intent.ACTION_VIEW, webUri))
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to open download link", e)
-                Toast.makeText(activity, "Unable to open update link", Toast.LENGTH_SHORT).show()
+            activity.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open download website", e)
+            Toast.makeText(activity, "Unable to open website link", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun startDownloadAndInstall(activity: Activity, downloadUrl: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!activity.packageManager.canRequestPackageInstalls()) {
+                Toast.makeText(activity, activity.getString(R.string.toast_allow_install_unknown), Toast.LENGTH_LONG).show()
+                val permIntent = Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:${activity.packageName}")
+                )
+                activity.startActivity(permIntent)
+                return
             }
+        }
+
+        val progressDialog = ProgressDialog(activity).apply {
+            setTitle(activity.getString(R.string.dialog_downloading_update))
+            setMessage(activity.getString(R.string.dialog_downloading_msg))
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            max = 100
+            isIndeterminate = false
+            setCancelable(false)
+            show()
+        }
+
+        val request = Request.Builder()
+            .url(downloadUrl)
+            .get()
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                mainHandler.post {
+                    progressDialog.dismiss()
+                    Toast.makeText(activity, activity.getString(R.string.toast_download_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (!response.isSuccessful) {
+                    mainHandler.post {
+                        progressDialog.dismiss()
+                        Toast.makeText(activity, activity.getString(R.string.toast_download_server_error, response.code), Toast.LENGTH_LONG).show()
+                    }
+                    return
+                }
+
+                val body = response.body ?: return
+                val contentLength = body.contentLength()
+
+                try {
+                    val destDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: activity.cacheDir
+                    val apkFile = File(destDir, "gamervoice_update.apk")
+                    if (apkFile.exists()) {
+                        apkFile.delete()
+                    }
+
+                    body.byteStream().use { input ->
+                        FileOutputStream(apkFile).use { output ->
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
+                            var totalBytesRead = 0L
+
+                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                                totalBytesRead += bytesRead
+
+                                if (contentLength > 0) {
+                                    val progress = ((totalBytesRead * 100) / contentLength).toInt()
+                                    mainHandler.post {
+                                        progressDialog.progress = progress
+                                    }
+                                }
+                            }
+                            output.flush()
+                        }
+                    }
+
+                    mainHandler.post {
+                        progressDialog.dismiss()
+                        launchApkInstaller(activity, apkFile)
+                    }
+
+                } catch (e: Exception) {
+                    mainHandler.post {
+                        progressDialog.dismiss()
+                        Toast.makeText(activity, activity.getString(R.string.toast_update_save_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun launchApkInstaller(context: Context, apkFile: File) {
+        try {
+            val apkUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                apkFile
+            )
+
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            context.startActivity(installIntent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to launch package installer", e)
+            Toast.makeText(context, context.getString(R.string.toast_installer_start_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
         }
     }
 }

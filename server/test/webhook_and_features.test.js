@@ -41,16 +41,16 @@ describe('Production Readiness Suite: Webhooks, Versioning & Account Lifecycle',
 
   test('App version check returns valid release metadata', () => {
     const response = {
-      latestVersionCode: 9,
-      latestVersionName: '1.0.9',
+      latestVersionCode: 10,
+      latestVersionName: 'V1.0',
       downloadUrl: '/gamervoice-release.apk',
       mandatory: false
     };
 
     assert.strictEqual(typeof response.latestVersionCode, 'number');
-    assert.ok(response.latestVersionCode >= 9);
+    assert.ok(response.latestVersionCode >= 10);
     assert.ok(response.downloadUrl.endsWith('.apk'));
-    assert.strictEqual(response.latestVersionName, '1.0.9');
+    assert.strictEqual(response.latestVersionName, 'V1.0');
   });
 
   test('Calculates correct VIP expiry from plan tier', () => {

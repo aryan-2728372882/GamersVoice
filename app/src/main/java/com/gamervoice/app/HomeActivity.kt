@@ -434,21 +434,6 @@ class HomeActivity : AppCompatActivity(), VoiceService.VoiceServiceListener, Pay
             }
             true
         }
-        AnimationHelper.attachPressAnimation(binding.btnTestGloryCrate) {
-            com.gamervoice.app.util.GloryRewardDialog.showGloryCeremony(
-                this,
-                rank = 1,
-                vipDays = 14,
-                recruitsCount = 1
-            ) {
-                updatePlanUI()
-            }
-        }
-
-        AnimationHelper.attachPressAnimation(binding.btnCheckAppUpdates) {
-            com.gamervoice.app.util.AppUpdateChecker.checkForUpdate(this, manualCheck = true)
-        }
-
         AnimationHelper.attachPressAnimation(binding.btnDeleteAccount) {
             confirmAndDeleteAccount()
         }

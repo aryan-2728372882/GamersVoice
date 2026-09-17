@@ -1341,7 +1341,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif"
-                            android:text="GamerVoice v1.0.9 • Universal Release"
+                            android:text="GamerVoice V1.0 • Universal Release"
                             android:textColor="#5A6E85"
                             android:textSize="9.5sp" />
 
@@ -1701,22 +1701,6 @@
                             android:textSize="10.5sp"
                             android:clickable="true"
                             android:focusable="true" />
-
-                        <!-- Dedicated Test Button for Free Fire Glory Crate Opening -->
-                        <TextView
-                            android:id="@+id/btnTestGloryCrate"
-                            android:layout_width="match_parent"
-                            android:layout_height="38dp"
-                            android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_cyber_button_gold"
-                            android:fontFamily="sans-serif-black"
-                            android:gravity="center"
-                            android:letterSpacing="0.06"
-                            android:text="🎁 OPEN SEASON GLORY LOOT CRATE (TEST) 🔥"
-                            android:textColor="@color/black"
-                            android:textSize="11sp"
-                            android:clickable="true"
-                            android:focusable="true" />
                     </LinearLayout>
 
                     <!-- Squad Match Alarm Setting (Customizable Time) -->
@@ -2050,28 +2034,12 @@
                         android:layout_marginBottom="24dp"
                         android:orientation="vertical">
 
-                        <!-- Check for Updates Button -->
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCheckAppUpdates"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:fontFamily="sans-serif-bold"
-                            android:letterSpacing="0.04"
-                            android:text="🚀 CHECK FOR APP UPDATES"
-                            android:textColor="@color/neon_cyan"
-                            android:textSize="11sp"
-                            app:cornerRadius="8dp"
-                            app:strokeColor="@color/neon_cyan"
-                            app:strokeWidth="1dp" />
-
                         <!-- Danger Zone: Delete Account -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDeleteAccount"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="40dp"
-                            android:layout_marginTop="8dp"
                             android:fontFamily="sans-serif-bold"
                             android:letterSpacing="0.04"
                             android:text="🗑️ DELETE ACCOUNT &amp; PURGE DATA"
